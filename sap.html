@@ -47,7 +47,7 @@
         th, td {
             padding: 10px;
             text-align: left;
-            white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+            /* white-space: nowrap; */ /* 텍스트 줄바꿈 방지 제거 */
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -63,6 +63,7 @@
             border-radius: 5px;
             background-color: #F9F9F9;
             box-sizing: border-box; /* 패딩 포함 */
+            font-size: 16px; /* 폰트 크기 최소 16px로 설정 */
         }
         button {
             padding: 10px;
@@ -103,7 +104,7 @@
                 padding: 10px;
             }
             table, th, td {
-                font-size: 12px;
+                font-size: 14px; /* 모바일에서도 16px 이상 유지 */
                 padding: 5px;
             }
             button {
@@ -112,6 +113,7 @@
             }
             input[type="text"], input[type="number"] {
                 padding: 6px;
+                font-size: 16px; /* 모바일에서도 최소 폰트 크기 유지 */
             }
             .total-expense {
                 font-size: 0.9em;
