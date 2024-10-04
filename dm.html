@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -100,11 +99,11 @@
         <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
-            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAllCalculations()">
+            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAndSave()">
         </div>
         <div class="input-group">
             <label for="won">오늘의 원화</label>
-            <input type="number" id="won" placeholder="원화 입력" oninput="updateAllCalculations()">
+            <input type="number" id="won" placeholder="원화 입력" oninput="updateAndSave()">
         </div>
         <div id="yenContainer">
             <!-- 기본 1개의 쇼핑금액 입력 칸 -->
@@ -126,6 +125,35 @@
     </div>
 
     <script>
+        const API_URL = 'https://heather-valiant-seatbelt.glitch.me'; // Glitch 프로젝트 URL
+
+        // 페이지 로드 시 저장된 값을 불러오는 함수
+        window.onload = async function() {
+            const response = await fetch(`${API_URL}/getData`);
+            const data = await response.json();
+
+            document.getElementById('yen').value = data.todayYen || '';
+            document.getElementById('won').value = data.todayWon || '';
+            updateAllCalculations(); // 불러온 값으로 계산 업데이트
+        };
+
+        // 값이 변경될 때 Glitch 서버에 저장하는 함수
+        async function updateAndSave() {
+            const yenValue = document.getElementById('yen').value;
+            const wonValue = document.getElementById('won').value;
+
+            // Glitch 서버에 POST 요청
+            await fetch(`${API_URL}/saveData`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ todayYen: yenValue, todayWon: wonValue })
+            });
+
+            updateAllCalculations(); // 변경된 값으로 계산 업데이트
+        }
+
         function updateAllCalculations() {
             const yen = parseFloat(document.getElementById('yen').value) || 0;
             const won = parseFloat(document.getElementById('won').value) || 0;
