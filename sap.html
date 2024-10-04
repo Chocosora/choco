@@ -27,14 +27,22 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: 1px solid #DCE1E6; /* 연한 회색 테두리 */
         }
-        .table-container {
-            overflow-x: auto; /* 테이블 가로 스크롤 가능하게 */
-        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
-            min-width: 500px; /* 최소 너비 설정 */
+        }
+        colgroup col:nth-child(1) {
+            width: 40%; /* 항목 */
+        }
+        colgroup col:nth-child(2) {
+            width: 15%; /* 설명 */
+        }
+        colgroup col:nth-child(3) {
+            width: 15%; /* 금액 */
+        }
+        colgroup col:nth-child(4) {
+            width: 10%; /* 삭제 */
         }
         table, th, td {
             border: 1px solid #DCE1E6;
@@ -43,6 +51,8 @@
             padding: 10px;
             text-align: left;
             white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         input[type="text"], input[type="number"] {
             width: 100%;
@@ -109,6 +119,19 @@
                 font-size: 1.2em;
                 padding: 10px;
             }
+            /* 열 너비 재조정 */
+            colgroup col:nth-child(1) {
+                width: 40%; /* 항목 */
+            }
+            colgroup col:nth-child(2) {
+                width: 10%; /* 설명 */
+            }
+            colgroup col:nth-child(3) {
+                width: 10%; /* 금액 */
+            }
+            colgroup col:nth-child(4) {
+                width: 10%; /* 삭제 */
+            }
         }
     </style>
 </head>
@@ -129,20 +152,24 @@
         section.className = 'day-section';
         section.innerHTML = `
             <h2>${day}</h2>
-            <div class="table-container">
-                <table id="table-${day}">
-                    <thead>
-                        <tr>
-                            <th>항목</th>
-                            <th>설명</th>
-                            <th>금액 (₩)</th>
-                            <th>삭제</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
+            <table id="table-${day}">
+                <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>항목</th>
+                        <th>설명</th>
+                        <th>금액 (₩)</th>
+                        <th>삭제</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
             <div class="total-expense" id="total-${day}">일일 합계: 0 ₩</div>
             <button onclick="addRow('${day}')">항목 추가</button>
         `;
