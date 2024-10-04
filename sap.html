@@ -33,10 +33,10 @@
             margin-bottom: 10px;
         }
         colgroup col:nth-child(1) {
-            width: 60%; /* 항목 및 설명 */
+            width: 50%; /* 항목 */
         }
         colgroup col:nth-child(2) {
-            width: 20%; /* 금액 */
+            width: 30%; /* 금액 */
         }
         colgroup col:nth-child(3) {
             width: 20%; /* 삭제 */
@@ -51,7 +51,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        /* "항목 및 설명" 열의 텍스트 가운데 정렬 */
+        /* "항목" 열의 텍스트 가운데 정렬 */
         td:first-child, th:first-child {
             text-align: center;
         }
@@ -122,10 +122,10 @@
             }
             /* 열 너비 재조정 */
             colgroup col:nth-child(1) {
-                width: 60%; /* 항목 및 설명 */
+                width: 50%; /* 항목 */
             }
             colgroup col:nth-child(2) {
-                width: 20%; /* 금액 */
+                width: 30%; /* 금액 */
             }
             colgroup col:nth-child(3) {
                 width: 20%; /* 삭제 */
@@ -158,7 +158,7 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>항목 및 설명</th>
+                        <th>항목</th>
                         <th>금액 (₩)</th>
                         <th>삭제</th>
                     </tr>
@@ -179,12 +179,12 @@
         return parseInt(num).toLocaleString();
     }
 
-    function addRow(day, item = '', description = '', amount = '') {
+    function addRow(day, item = '', amount = '') {
         const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
             <td>
-                <input type="text" placeholder="항목 및 설명" value="${item ? item + (description ? ' - ' + description : '') : ''}">
+                <input type="text" placeholder="항목" value="${item}">
             </td>
             <td>
                 <input type="text" placeholder="금액" value="${formatNumberWithCommas(amount.toString())}" oninput="handleAmountInput(this, '${day}')">
@@ -267,10 +267,8 @@
         days.forEach(day => {
             const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
             const rows = Array.from(table.getElementsByTagName('tr')).map(row => {
-                const itemDescription = row.getElementsByTagName('input')[0].value.split(' - ');
                 return {
-                    item: itemDescription[0] || '',
-                    description: itemDescription[1] || '',
+                    item: row.getElementsByTagName('input')[0].value,
                     amount: row.getElementsByTagName('input')[1].value.replace(/,/g, '')
                 };
             });
@@ -299,7 +297,7 @@
             days.forEach(day => {
                 const dayData = data[day] || [];
                 dayData.forEach(entry => {
-                    addRow(day, entry.item, entry.description, entry.amount);
+                    addRow(day, entry.item, entry.amount);
                 });
                 calculateTotal(day);
             });
