@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>삿포로 여행 가계부</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #002244;
+            overflow: hidden;
+            color: white;
+        }
+        a {
+            display: inline-block;
+            padding: 15px 25px;
+            margin: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            width: 80%;
+            max-width: 400px;
+        }
+        a:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        @keyframes snow {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            background: white;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: snow 10s linear infinite;
+        }
+        .snowflake:nth-child(odd) {
+            width: 12px;
+            height: 12px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <a href="https://chocosora.github.io/choco/sap">삿포로 여행 가계부</a>
+    <a href="https://chocosora.github.io/choco/dm">더모아 엔화 계산기</a>
+
+    <script>
+        // Snowflake generation
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = Math.random() * 3 + 8 + 's';
+            snowflake.style.opacity = Math.random();
+            document.body.appendChild(snowflake);
+
+            setTimeout(() => {
+                snowflake.remove();
+            }, 10000);
+        }
+
+        setInterval(createSnowflake, 200);
+    </script>
+</body>
+</html>
