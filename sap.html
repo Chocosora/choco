@@ -9,23 +9,26 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #F3F8FB; /* 연한 하늘색 배경 */
+            background-color: #2C3E50; /* 어두운 배경색 */
+            overflow-y: auto; /* 스크롤 가능하게 수정 */
+            color: white;
+            position: relative;
         }
         h1 {
             text-align: center;
-            color: #4A4A4A; /* 어두운 회색 텍스트 */
-            background-color: #E6EEF4; /* 연한 파스텔 블루 */
+            color: white; /* 하얀 텍스트 */
+            background-color: #34495E; /* 약간 어두운 블루 */
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .day-section {
             margin-bottom: 20px;
-            background-color: #FAF8F5; /* 연한 크림색 배경 */
+            background-color: #3B4B5C; /* 어두운 블루 */
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 1px solid #DCE1E6; /* 연한 회색 테두리 */
+            border: 1px solid #DCE1E6;
         }
         table {
             width: 100%;
@@ -33,13 +36,13 @@
             margin-bottom: 10px;
         }
         colgroup col:nth-child(1) {
-            width: 50%; /* 항목 */
+            width: 50%;
         }
         colgroup col:nth-child(2) {
-            width: 30%; /* 금액 */
+            width: 30%;
         }
         colgroup col:nth-child(3) {
-            width: 20%; /* 삭제 */
+            width: 20%;
         }
         table, th, td {
             border: 1px solid #DCE1E6;
@@ -47,11 +50,7 @@
         th, td {
             padding: 10px;
             text-align: left;
-            /* white-space: nowrap; */ /* 텍스트 줄바꿈 방지 제거 */
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-        /* "항목" 열의 텍스트 가운데 정렬 */
         td:first-child, th:first-child {
             text-align: center;
         }
@@ -59,15 +58,15 @@
             width: 100%;
             padding: 8px;
             margin: 5px 0;
-            border: 1px solid #B4C1CB; /* 연한 회색 */
+            border: 1px solid #B4C1CB;
             border-radius: 5px;
             background-color: #F9F9F9;
-            box-sizing: border-box; /* 패딩 포함 */
-            font-size: 16px; /* 폰트 크기 최소 16px로 설정 */
+            box-sizing: border-box;
+            font-size: 16px;
         }
         button {
             padding: 10px;
-            background-color: #A7D6E3; /* 파스텔톤 하늘색 버튼 */
+            background-color: #A7D6E3;
             color: white;
             border: none;
             cursor: pointer;
@@ -76,25 +75,25 @@
             font-size: 1em;
         }
         button:hover {
-            background-color: #89C2D3; /* 버튼 호버 시 더 진한 파스텔톤 */
+            background-color: #89C2D3;
         }
         .delete-btn {
-            background-color: #F28C8C; /* 연한 파스텔 레드 */
+            background-color: #F28C8C;
             color: white;
         }
         .delete-btn:hover {
-            background-color: #E77A7A; /* 삭제 버튼 호버 시 */
+            background-color: #E77A7A;
         }
         .total-expense {
             font-weight: bold;
             text-align: right;
-            color: #4A4A4A; /* 어두운 회색 텍스트 */
+            color: white;
         }
         #overall-total {
             font-size: 1.5em;
             text-align: right;
-            color: #4A4A4A;
-            background-color: #E6EEF4;
+            color: white;
+            background-color: #34495E;
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -104,7 +103,7 @@
                 padding: 10px;
             }
             table, th, td {
-                font-size: 14px; /* 모바일에서도 16px 이상 유지 */
+                font-size: 14px;
                 padding: 5px;
             }
             button {
@@ -113,7 +112,7 @@
             }
             input[type="text"], input[type="number"] {
                 padding: 6px;
-                font-size: 16px; /* 모바일에서도 최소 폰트 크기 유지 */
+                font-size: 16px;
             }
             .total-expense {
                 font-size: 0.9em;
@@ -122,30 +121,34 @@
                 font-size: 1.2em;
                 padding: 10px;
             }
-            /* 열 너비 재조정 */
-            colgroup col:nth-child(1) {
-                width: 50%; /* 항목 */
-            }
-            colgroup col:nth-child(2) {
-                width: 30%; /* 금액 */
-            }
-            colgroup col:nth-child(3) {
-                width: 20%; /* 삭제 */
-            }
+        }
+        @keyframes snow {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+        .snowflake {
+            position: absolute;
+            top: -10px;
+            background: white;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: snow 10s linear infinite;
+        }
+        .snowflake:nth-child(odd) {
+            width: 12px;
+            height: 12px;
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
-
 <h1>삿포로 여행 가계부 (2024.10.12 - 16)</h1>
-
 <div id="budgetContainer"></div>
-
 <div id="overall-total"></div>
-
 <script>
     const days = ['여행 전', '10월 12일', '10월 13일', '10월 14일', '10월 15일', '10월 16일'];
-    const apiUrl = 'https://foam-childish-bearberry.glitch.me';  // Glitch 프로젝트의 URL
 
     function createDaySection(day) {
         const section = document.createElement('div');
@@ -174,13 +177,6 @@
         return section;
     }
 
-    function formatNumberWithCommas(value) {
-        // 숫자만 추출
-        const num = value.replace(/,/g, '');
-        if (isNaN(num) || num === '') return '';
-        return parseInt(num).toLocaleString();
-    }
-
     function addRow(day, item = '', amount = '') {
         const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
         const newRow = document.createElement('tr');
@@ -189,7 +185,7 @@
                 <input type="text" placeholder="항목" value="${item}">
             </td>
             <td>
-                <input type="text" placeholder="금액" value="${formatNumberWithCommas(amount.toString())}" oninput="handleAmountInput(this, '${day}')">
+                <input type="text" placeholder="금액" value="${amount}" oninput="handleAmountInput(this, '${day}')">
             </td>
             <td>
                 <button class="delete-btn" onclick="deleteRow(this, '${day}')">삭제</button>
@@ -197,45 +193,17 @@
         `;
         table.appendChild(newRow);
         calculateTotal(day);
-        saveData();
     }
 
     function handleAmountInput(input, day) {
-        // 현재 커서 위치 저장
-        const cursorPosition = input.selectionStart;
-        const originalLength = input.value.length;
-
-        // 입력 값에서 모든 콤마 제거
-        let value = input.value.replace(/,/g, '');
-
-        // 숫자만 남기기
-        value = value.replace(/[^0-9]/g, '');
-
-        if (value === '') {
-            input.value = '';
-            calculateTotal(day);
-            saveData();
-            return;
-        }
-
-        // 숫자를 천 단위로 포맷
-        const formattedValue = parseInt(value).toLocaleString();
-
-        input.value = formattedValue;
-
-        // 커서 위치 조정
-        const newLength = formattedValue.length;
-        input.selectionStart = input.selectionEnd = cursorPosition + (newLength - originalLength);
-
+        input.value = input.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         calculateTotal(day);
-        saveData();
     }
 
     function deleteRow(button, day) {
         const row = button.parentElement.parentElement;
         row.remove();
         calculateTotal(day);
-        saveData();
     }
 
     function calculateTotal(day) {
@@ -260,64 +228,25 @@
             overallTotal += dayTotal;
         });
         document.getElementById('overall-total').innerText = `총 경비: ${overallTotal.toLocaleString()} ₩`;
-        saveData();
     }
 
-    // 서버에 데이터를 저장하는 함수
-    async function saveData() {
-        const data = {};
-        days.forEach(day => {
-            const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
-            const rows = Array.from(table.getElementsByTagName('tr')).map(row => {
-                return {
-                    item: row.getElementsByTagName('input')[0].value,
-                    amount: row.getElementsByTagName('input')[1].value.replace(/,/g, '')
-                };
-            });
-            data[day] = rows;
-        });
+    function createSnowflake() {
+        const snowflake = document.createElement('div');
+        snowflake.classList.add('snowflake');
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        snowflake.style.animationDuration = Math.random() * 3 + 8 + 's';
+        document.body.appendChild(snowflake);
 
-        try {
-            await fetch(`${apiUrl}/saveData`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ day: 'all', items: data })
-            });
-        } catch (error) {
-            console.error('데이터 저장 실패:', error);
-        }
+        setTimeout(() => {
+            snowflake.remove();
+        }, 10000);
     }
 
-    // 서버에서 데이터를 불러오는 함수
-    async function loadData() {
-        try {
-            const response = await fetch(`${apiUrl}/loadData`);
-            const data = await response.json();
-
-            days.forEach(day => {
-                const dayData = data[day] || [];
-                dayData.forEach(entry => {
-                    addRow(day, entry.item, entry.amount);
-                });
-                calculateTotal(day);
-            });
-        } catch (error) {
-            console.error('데이터 불러오기 실패:', error);
-        }
-    }
-
-    // 페이지 로드 시 각 날짜에 대한 섹션을 만들고 데이터를 로드합니다.
-    const budgetContainer = document.getElementById('budgetContainer');
+    setInterval(createSnowflake, 200);
 
     days.forEach(day => {
-        budgetContainer.appendChild(createDaySection(day));
+        document.getElementById('budgetContainer').appendChild(createDaySection(day));
     });
-
-    loadData();
-
 </script>
-
 </body>
 </html>
