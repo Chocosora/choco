@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,22 +9,22 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #2C3E50; /* 어두운 배경색 */
+            background-color: #F0F4F8; /* 밝은 배경색 */
             overflow-y: auto; /* 스크롤 가능하게 수정 */
-            color: white;
+            color: #333333; /* 어두운 텍스트 */
             position: relative;
         }
         h1 {
             text-align: center;
-            color: white; /* 하얀 텍스트 */
-            background-color: #34495E; /* 약간 어두운 블루 */
+            color: #ffffff; /* 하얀 텍스트 */
+            background-color: #3498db; /* 밝은 블루 */
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .day-section {
             margin-bottom: 20px;
-            background-color: #3B4B5C; /* 어두운 블루 */
+            background-color: #ffffff; /* 흰색 배경 */
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -52,6 +51,10 @@
             padding: 10px;
             text-align: left;
         }
+        th {
+            background-color: #f7f9fc; /* 헤더 배경색 */
+            color: #333333; /* 헤더 텍스트 색상 */
+        }
         td:first-child, th:first-child {
             text-align: center;
         }
@@ -61,43 +64,46 @@
             margin: 5px 0;
             border: 1px solid #B4C1CB;
             border-radius: 5px;
-            background-color: #F9F9F9;
+            background-color: #ffffff; /* 입력 필드 배경색 */
             box-sizing: border-box;
             font-size: 16px;
+            color: #333333; /* 입력 필드 텍스트 색상 */
         }
         button {
             padding: 10px;
-            background-color: #A7D6E3;
+            background-color: #3498db; /* 버튼 배경색 */
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 5px;
             box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
             font-size: 1em;
+            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #89C2D3;
+            background-color: #2980b9; /* 버튼 호버 색상 */
         }
         .delete-btn {
-            background-color: #F28C8C;
+            background-color: #e74c3c; /* 삭제 버튼 색상 */
             color: white;
         }
         .delete-btn:hover {
-            background-color: #E77A7A;
+            background-color: #c0392b; /* 삭제 버튼 호버 색상 */
         }
         .total-expense {
             font-weight: bold;
             text-align: right;
-            color: white;
+            color: #333333;
         }
         #overall-total {
             font-size: 1.5em;
             text-align: right;
-            color: white;
-            background-color: #34495E;
+            color: #333333;
+            background-color: #3498db;
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: white;
         }
         @media (max-width: 600px) {
             body {
@@ -123,31 +129,12 @@
                 padding: 10px;
             }
         }
-        @keyframes snow {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(100vh); }
-        }
-        .snowflake {
-            position: absolute;
-            top: -10px;
-            background: white;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            opacity: 0.8;
-            animation: snow 10s linear infinite;
-        }
-        .snowflake:nth-child(odd) {
-            width: 12px;
-            height: 12px;
-            opacity: 0.9;
-        }
     </style>
 </head>
 <body>
 <h1>삿포로 여행 가계부 (2024.10.12 - 16)</h1>
 <div id="budgetContainer"></div>
-<div id="overall-total"></div>
+<div id="overall-total">총 경비: 0 ₩</div>
 <script>
     const days = ['여행 전', '10월 12일', '10월 13일', '10월 14일', '10월 15일', '10월 16일'];
 
@@ -231,23 +218,18 @@
         document.getElementById('overall-total').innerText = `총 경비: ${overallTotal.toLocaleString()} ₩`;
     }
 
-    function createSnowflake() {
-        const snowflake = document.createElement('div');
-        snowflake.classList.add('snowflake');
-        snowflake.style.left = Math.random() * 100 + 'vw';
-        snowflake.style.animationDuration = Math.random() * 3 + 8 + 's';
-        document.body.appendChild(snowflake);
+    // 눈 내리는 테마 제거됨
+    // days.forEach(day => {
+    //     document.getElementById('budgetContainer').appendChild(createDaySection(day));
+    // });
 
-        setTimeout(() => {
-            snowflake.remove();
-        }, 10000);
-    }
-
-    setInterval(createSnowflake, 200);
-
-    days.forEach(day => {
-        document.getElementById('budgetContainer').appendChild(createDaySection(day));
-    });
+    // 수정: budgetContainer에 각 날짜 섹션 추가
+    window.onload = function() {
+        const budgetContainer = document.getElementById('budgetContainer');
+        days.forEach(day => {
+            budgetContainer.appendChild(createDaySection(day));
+        });
+    };
 </script>
 </body>
 </html>
