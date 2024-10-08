@@ -96,15 +96,17 @@
 </head>
 <body>
     <div class="container">
-        <h1>더모아 엔화 계산기 V2</h1>
+        <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
-            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAndSave()">
+            <input type="number" id="yen" placeholder="엔화 입력">
         </div>
         <div class="input-group">
             <label for="won">오늘의 원화</label>
-            <input type="number" id="won" placeholder="원화 입력" oninput="updateAndSave()">
+            <input type="number" id="won" placeholder="원화 입력">
         </div>
+        <button onclick="updateAndSave()">저장</button> <!-- 저장 버튼 추가 -->
+
         <div id="yenContainer">
             <!-- 기본 1개의 쇼핑금액 입력 칸 -->
             <div class="input-group yen-group">
@@ -159,7 +161,7 @@
         }
       };
 
-      // Firestore에 데이터 저장
+      // Firestore에 데이터 저장 (저장 버튼을 눌렀을 때만 실행)
       async function updateAndSave() {
         const yenValue = parseFloat(document.getElementById('yen').value);
         const wonValue = parseFloat(document.getElementById('won').value);
