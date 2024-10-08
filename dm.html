@@ -55,6 +55,14 @@
             color: #333333;
         }
 
+        .shortage {
+            color: #2ecc71; /* 초록색 */
+        }
+
+        .excess {
+            color: #e74c3c; /* 빨간색 */
+        }
+
         button {
             padding: 6px 12px; /* 패딩 축소 */
             font-size: 14px;
@@ -98,15 +106,6 @@
                 font-size: 14px;
                 padding: 5px;
             }
-        }
-
-        /* 추가: 부족한 금액 색상 변경 */
-        .shortage-positive {
-            color: #e74c3c; /* 빨간색 */
-        }
-
-        .shortage-zero {
-            color: #2ecc71; /* 초록색 */
         }
     </style>
 </head>
@@ -256,18 +255,25 @@
             totalYen += parseFloat(group.value) || 0;
         });
 
-        // 부족한 금액 계산 (오늘의 엔화에서 쇼핑금액 합을 뺀 값)
-        const shortage = yen - totalYen;
+        // 부족 또는 초과한 금액 계산 (오늘의 엔화에서 쇼핑금액 합을 뺀 값)
+        const difference = yen - totalYen;
         const shortageElement = document.getElementById('shortageText');
 
-        if (shortage > 0) {
-            shortageElement.innerText = `부족한 금액: ${shortage}엔`;
-            shortageElement.classList.add('shortage-positive');
-            shortageElement.classList.remove('shortage-zero');
+        if (difference > 0) {
+            // 부족한 금액
+            shortageElement.innerText = `부족한 금액: ${difference}엔`;
+            shortageElement.classList.add('shortage');
+            shortageElement.classList.remove('excess');
+        } else if (difference < 0) {
+            // 초과한 금액
+            shortageElement.innerText = `초과한 금액: ${Math.abs(difference)}엔`;
+            shortageElement.classList.add('excess');
+            shortageElement.classList.remove('shortage');
         } else {
+            // 정확히 맞을 때
             shortageElement.innerText = `부족한 금액: 0엔`;
-            shortageElement.classList.add('shortage-zero');
-            shortageElement.classList.remove('shortage-positive');
+            shortageElement.classList.add('shortage');
+            shortageElement.classList.remove('excess');
         }
 
         // 쇼핑금액 합계를 원화로 변환하여 표시
