@@ -27,7 +27,7 @@
         }
 
         .input-group {
-            margin-bottom: 0;
+            margin-bottom: 10px; /* 간격 조정 */
         }
 
         label {
@@ -114,17 +114,23 @@
 
         <div class="spacer"></div> <!-- 줄 간격을 확보하는 공간 -->
 
+        <!-- 쇼핑금액 입력 필드들을 한 번에 표시하기 위해 상위 레이블 제거 -->
         <div id="yenContainer">
-            <!-- 기본 1개의 쇼핑금액 입력 칸 -->
+            <!-- 기본 3개의 쇼핑금액 입력 칸 -->
             <div class="input-group yen-group">
-                <label for="inputYen1">쇼핑금액</label>
-                <input type="number" id="inputYen1" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+            </div>
+            <div class="input-group yen-group">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+            </div>
+            <div class="input-group yen-group">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
             </div>
         </div>
         <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 이름 변경 -->
         <button id="removeRowButton" class="remove">줄 삭제</button> <!-- 쇼핑금액 삭제 버튼 이름 변경 -->
-        <div class="calculated-text" id="shortageText">부족한 금액: 0000엔</div>
-        <div class="calculated-text" id="totalWonText">합계: 0000원</div>
+        <div class="calculated-text" id="shortageText">부족한 금액: 0엔</div>
+        <div class="calculated-text" id="totalWonText">합계: 0원</div>
     </div>
 
     <!-- Firebase SDK 및 Firestore 연결 -->
@@ -193,7 +199,6 @@
         const newGroup = document.createElement('div');
         newGroup.classList.add('input-group', 'yen-group');
         newGroup.innerHTML = `
-            <label>쇼핑금액</label>
             <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
         `;
         yenContainer.appendChild(newGroup);
@@ -219,9 +224,9 @@
             totalYen += parseFloat(group.value) || 0;
         });
 
-        // 첫 번째 입력한 엔화보다 부족한 금액 계산
-        const shortage = yen - totalYen;
-        document.getElementById('shortageText').innerText = `부족한 금액: ${shortage >= 0 ? shortage : 0}엔`;
+        // 부족한 금액 계산 (쇼핑금액 합이 오늘의 엔화를 초과할 경우)
+        const shortage = totalYen - yen;
+        document.getElementById('shortageText').innerText = `부족한 금액: ${shortage > 0 ? shortage : 0}엔`;
 
         // 쇼핑금액 합계를 원화로 변환하여 표시
         if (!isNaN(yen) && !isNaN(won) && yen > 0) {
@@ -229,7 +234,7 @@
             const totalWon = (totalYen * exchangeRate).toFixed(0);
             document.getElementById('totalWonText').innerText = `합계: ${totalWon}원`;
         } else {
-            document.getElementById('totalWonText').innerText = '합계: 0000원';
+            document.getElementById('totalWonText').innerText = '합계: 0원';
         }
       }
     </script>
