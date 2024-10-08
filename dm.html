@@ -109,7 +109,7 @@
             <label for="won">오늘의 원화</label>
             <input type="number" id="won" placeholder="원화 입력">
         </div>
-        <button onclick="updateAndSave()">환율 저장</button> <!-- 저장 버튼 이름 변경 -->
+        <button id="saveButton">환율 저장</button> <!-- 저장 버튼 -->
         <div id="saveMessage" class="calculated-text"></div> <!-- 저장 메시지 표시를 위한 공간 추가 -->
 
         <div class="spacer"></div> <!-- 줄 간격을 확보하는 공간 -->
@@ -120,15 +120,9 @@
                 <label for="inputYen1">쇼핑금액</label>
                 <input type="number" id="inputYen1" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
             </div>
-            <div class="input-group yen-group">
-                <input type="number" id="inputYen2" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
-            </div>
-            <div class="input-group yen-group">
-                <input type="number" id="inputYen3" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
-            </div>
         </div>
-        <button onclick="addYenGroup()">쇼핑금액 추가</button>
-        <button class="remove" onclick="removeLastYenGroup()">쇼핑금액 삭제</button>
+        <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 이름 변경 -->
+        <button id="removeRowButton" class="remove">줄 삭제</button> <!-- 쇼핑금액 삭제 버튼 이름 변경 -->
         <div class="calculated-text" id="shortageText">부족한 금액: 0000엔</div>
         <div class="calculated-text" id="totalWonText">합계: 0000원</div>
     </div>
@@ -169,7 +163,7 @@
       };
 
       // Firestore에 데이터 저장 (저장 버튼을 눌렀을 때만 실행)
-      async function updateAndSave() {
+      document.getElementById("saveButton").addEventListener("click", async function() {
         const yenValue = parseFloat(document.getElementById('yen').value);
         const wonValue = parseFloat(document.getElementById('won').value);
         const saveMessage = document.getElementById("saveMessage");
@@ -191,7 +185,28 @@
           console.log("숫자가 올바르지 않습니다.");
           saveMessage.innerText = "유효한 숫자를 입력하세요."; // 유효하지 않은 숫자 입력 시 메시지 출력
         }
-      }
+      });
+
+      // 줄 추가
+      document.getElementById("addRowButton").addEventListener("click", function() {
+        const yenContainer = document.getElementById('yenContainer');
+        const newGroup = document.createElement('div');
+        newGroup.classList.add('input-group', 'yen-group');
+        newGroup.innerHTML = `
+            <label>쇼핑금액</label>
+            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+        `;
+        yenContainer.appendChild(newGroup);
+      });
+
+      // 줄 삭제
+      document.getElementById("removeRowButton").addEventListener("click", function() {
+        const yenContainer = document.getElementById('yenContainer');
+        if (yenContainer.children.length > 1) { // 최소 1개의 쇼핑금액 칸은 남겨둠
+          yenContainer.removeChild(yenContainer.lastChild);
+          updateAllCalculations(); // 삭제 후 계산 업데이트
+        }
+      });
 
       function updateAllCalculations() {
         const yen = parseFloat(document.getElementById('yen').value) || 0;
@@ -215,24 +230,6 @@
             document.getElementById('totalWonText').innerText = `합계: ${totalWon}원`;
         } else {
             document.getElementById('totalWonText').innerText = '합계: 0000원';
-        }
-      }
-
-      function addYenGroup() {
-        const yenContainer = document.getElementById('yenContainer');
-        const newGroup = document.createElement('div');
-        newGroup.classList.add('input-group', 'yen-group');
-        newGroup.innerHTML = `
-            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
-        `;
-        yenContainer.appendChild(newGroup);
-      }
-
-      function removeLastYenGroup() {
-        const yenContainer = document.getElementById('yenContainer');
-        if (yenContainer.children.length > 0) {
-            yenContainer.removeChild(yenContainer.lastChild);
-            updateAllCalculations(); // 삭제 후 계산 업데이트
         }
       }
     </script>
