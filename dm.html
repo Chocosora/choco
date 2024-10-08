@@ -99,6 +99,15 @@
                 padding: 5px;
             }
         }
+
+        /* 추가: 부족한 금액 색상 변경 */
+        .shortage-positive {
+            color: #e74c3c; /* 빨간색 */
+        }
+
+        .shortage-zero {
+            color: #2ecc71; /* 초록색 */
+        }
     </style>
 </head>
 <body>
@@ -106,11 +115,11 @@
         <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
-            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAllCalculations()" min="0">
+            <input type="number" id="yen" placeholder="엔화 입력" min="0">
         </div>
         <div class="input-group">
             <label for="won">오늘의 원화</label>
-            <input type="number" id="won" placeholder="원화 입력" oninput="updateAllCalculations()" min="0">
+            <input type="number" id="won" placeholder="원화 입력" min="0">
         </div>
         <button id="saveButton">환율 저장</button> <!-- 저장 버튼 -->
         <div id="saveMessage" class="calculated-text"></div> <!-- 저장 메시지 표시를 위한 공간 추가 -->
@@ -121,13 +130,13 @@
         <div id="yenContainer">
             <!-- 기본 3개의 쇼핑금액 입력 칸 -->
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
             </div>
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
             </div>
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
             </div>
         </div>
         <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 -->
@@ -158,7 +167,7 @@
       const db = getFirestore(app);
 
       // Firestore에서 데이터 불러오기
-      window.onload = async function() {
+      window.addEventListener('load', async function() {
         const docRef = doc(db, "exchangeRates", "today");
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
@@ -169,7 +178,7 @@
         } else {
           console.log("No such document!");
         }
-      };
+      });
 
       // Firestore에 데이터 저장 (저장 버튼을 눌렀을 때만 실행)
       document.getElementById("saveButton").addEventListener("click", async function() {
@@ -202,9 +211,12 @@
         const newGroup = document.createElement('div');
         newGroup.classList.add('input-group', 'yen-group');
         newGroup.innerHTML = `
-            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
+            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
         `;
         yenContainer.appendChild(newGroup);
+        // 새로 추가된 입력 필드에 이벤트 리스너 추가
+        const newInput = newGroup.querySelector('.inputYen');
+        newInput.addEventListener('input', updateAllCalculations);
       });
 
       // 줄 삭제
@@ -216,6 +228,7 @@
         }
       });
 
+      // 계산 함수 정의
       function updateAllCalculations() {
         const yen = parseFloat(document.getElementById('yen').value) || 0;
         const won = parseFloat(document.getElementById('won').value) || 0;
@@ -227,19 +240,38 @@
             totalYen += parseFloat(group.value) || 0;
         });
 
-        // 부족한 금액 계산 (오늘의 엔화가 쇼핑금액보다 큰 경우)
-        const shortage = yen - totalYen;
-        document.getElementById('shortageText').innerText = `부족한 금액: ${shortage > 0 ? shortage : 0}엔`;
+        // 부족한 금액 계산 (쇼핑금액 합이 오늘의 엔화를 초과할 경우)
+        const shortage = totalYen - yen;
+        const shortageElement = document.getElementById('shortageText');
+
+        if (shortage > 0) {
+            shortageElement.innerText = `부족한 금액: ${shortage}엔`;
+            shortageElement.classList.add('shortage-positive');
+            shortageElement.classList.remove('shortage-zero');
+        } else {
+            shortageElement.innerText = `부족한 금액: 0엔`;
+            shortageElement.classList.add('shortage-zero');
+            shortageElement.classList.remove('shortage-positive');
+        }
 
         // 쇼핑금액 합계를 원화로 변환하여 표시
+        const totalWonElement = document.getElementById('totalWonText');
         if (!isNaN(yen) && !isNaN(won) && yen > 0) {
             const exchangeRate = won / yen;
             const totalWon = (totalYen * exchangeRate).toFixed(0);
-            document.getElementById('totalWonText').innerText = `합계: ${totalWon}원`;
+            totalWonElement.innerText = `합계: ${totalWon}원`;
         } else {
-            document.getElementById('totalWonText').innerText = '합계: 0원';
+            totalWonElement.innerText = '합계: 0원';
         }
       }
+
+      // 초기 입력 필드에 이벤트 리스너 추가
+      window.addEventListener('load', function() {
+        const initialInputs = document.querySelectorAll('.inputYen');
+        initialInputs.forEach(input => {
+            input.addEventListener('input', updateAllCalculations);
+        });
+      });
     </script>
 </body>
 </html>
