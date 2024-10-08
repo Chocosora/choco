@@ -36,13 +36,16 @@
             margin-bottom: 10px;
         }
         colgroup col:nth-child(1) {
-            width: 50%;
+            width: 35%;
         }
         colgroup col:nth-child(2) {
-            width: 30%;
+            width: 25%;
         }
         colgroup col:nth-child(3) {
-            width: 20%;
+            width: 25%;
+        }
+        colgroup col:nth-child(4) {
+            width: 15%;
         }
         table, th, td {
             border: 1px solid #DCE1E6;
@@ -98,12 +101,11 @@
         #overall-total {
             font-size: 1.5em;
             text-align: right;
-            color: #333333;
+            color: white;
             background-color: #3498db;
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            color: white;
         }
         @media (max-width: 600px) {
             body {
@@ -134,10 +136,37 @@
 <body>
 <h1>삿포로 여행 가계부 (2024.10.12 - 16)</h1>
 <div id="budgetContainer"></div>
-<div id="overall-total">총 경비: 0 ₩</div>
+<div id="overall-total">총 경비: ¥0 (₩0)</div>
 <script>
+    // ExchangeRate-API 키
+    const apiKey = 'e147173a61b8140ba1f498eb';
+    // 환율 초기화
+    let exchangeRate = 0;
+
+    // 여행 일자 목록
     const days = ['여행 전', '10월 12일', '10월 13일', '10월 14일', '10월 15일', '10월 16일'];
 
+    // 환율을 가져오는 함수
+    async function fetchExchangeRate() {
+        try {
+            const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/JPY`);
+            const data = await response.json();
+            if (data.result === "success") {
+                exchangeRate = data.conversion_rates.KRW;
+                console.log(`현재 환율: 1 JPY = ${exchangeRate} KRW`);
+            } else {
+                console.error('환율 데이터를 가져오는 데 실패했습니다:', data['error-type']);
+                // 기본 환율 설정 (예: 1 JPY = 10 KRW)
+                exchangeRate = 10;
+            }
+        } catch (error) {
+            console.error('환율 API 오류:', error);
+            // 기본 환율 설정 (예: 1 JPY = 10 KRW)
+            exchangeRate = 10;
+        }
+    }
+
+    // 일자별 섹션을 생성하는 함수
     function createDaySection(day) {
         const section = document.createElement('div');
         section.className = 'day-section';
@@ -148,10 +177,12 @@
                     <col>
                     <col>
                     <col>
+                    <col>
                 </colgroup>
                 <thead>
                     <tr>
                         <th>항목</th>
+                        <th>금액 (¥)</th>
                         <th>금액 (₩)</th>
                         <th>삭제</th>
                     </tr>
@@ -159,13 +190,14 @@
                 <tbody>
                 </tbody>
             </table>
-            <div class="total-expense" id="total-${day}">일일 합계: 0 ₩</div>
+            <div class="total-expense" id="total-${day}">일일 합계: ¥0 (₩0)</div>
             <button onclick="addRow('${day}')">항목 추가</button>
         `;
         return section;
     }
 
-    function addRow(day, item = '', amount = '') {
+    // 새로운 행을 추가하는 함수
+    function addRow(day, item = '', amountJPY = '') {
         const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
@@ -173,7 +205,10 @@
                 <input type="text" placeholder="항목" value="${item}">
             </td>
             <td>
-                <input type="text" placeholder="금액" value="${amount}" oninput="handleAmountInput(this, '${day}')">
+                <input type="text" placeholder="금액 (¥)" value="${amountJPY}" oninput="handleAmountInput(this, '${day}')">
+            </td>
+            <td>
+                <span class="amount-krw">₩0</span>
             </td>
             <td>
                 <button class="delete-btn" onclick="deleteRow(this, '${day}')">삭제</button>
@@ -183,48 +218,60 @@
         calculateTotal(day);
     }
 
+    // 금액 입력 시 처리하는 함수
     function handleAmountInput(input, day) {
+        // 금액 입력 처리: 숫자만 허용하고, 쉼표 추가
         input.value = input.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        const row = input.parentElement.parentElement;
+        const amountJPY = parseInt(input.value.replace(/,/g, '')) || 0;
+        const amountKRW = amountJPY * exchangeRate;
+        row.querySelector('.amount-krw').innerText = `₩${amountKRW.toLocaleString()}`;
         calculateTotal(day);
     }
 
+    // 행을 삭제하는 함수
     function deleteRow(button, day) {
         const row = button.parentElement.parentElement;
         row.remove();
         calculateTotal(day);
     }
 
+    // 일일 합계를 계산하는 함수
     function calculateTotal(day) {
         const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
-        let total = 0;
+        let totalJPY = 0;
+        let totalKRW = 0;
         Array.from(table.getElementsByTagName('tr')).forEach(row => {
             const amountInput = row.getElementsByTagName('input')[1];
-            const amount = amountInput.value.replace(/,/g, '');
-            if (amount) {
-                total += parseInt(amount);
-            }
+            const amountJPY = parseInt(amountInput.value.replace(/,/g, '')) || 0;
+            const amountKRW = amountJPY * exchangeRate;
+            totalJPY += amountJPY;
+            totalKRW += amountKRW;
         });
-        document.getElementById(`total-${day}`).innerText = `일일 합계: ${total.toLocaleString()} ₩`;
+        document.getElementById(`total-${day}`).innerText = `일일 합계: ¥${totalJPY.toLocaleString()} (₩${totalKRW.toLocaleString()})`;
         calculateOverallTotal();
     }
 
+    // 전체 합계를 계산하는 함수
     function calculateOverallTotal() {
-        let overallTotal = 0;
+        let overallTotalJPY = 0;
+        let overallTotalKRW = 0;
         days.forEach(day => {
             const totalText = document.getElementById(`total-${day}`).innerText;
-            const dayTotal = parseInt(totalText.replace(/[^\d]/g, ''));
-            overallTotal += dayTotal;
+            const match = totalText.match(/¥([\d,]+) \(₩([\d,]+)\)/);
+            if (match) {
+                const dayTotalJPY = parseInt(match[1].replace(/,/g, '')) || 0;
+                const dayTotalKRW = parseInt(match[2].replace(/,/g, '')) || 0;
+                overallTotalJPY += dayTotalJPY;
+                overallTotalKRW += dayTotalKRW;
+            }
         });
-        document.getElementById('overall-total').innerText = `총 경비: ${overallTotal.toLocaleString()} ₩`;
+        document.getElementById('overall-total').innerText = `총 경비: ¥${overallTotalJPY.toLocaleString()} (₩${overallTotalKRW.toLocaleString()})`;
     }
 
-    // 눈 내리는 테마 제거됨
-    // days.forEach(day => {
-    //     document.getElementById('budgetContainer').appendChild(createDaySection(day));
-    // });
-
-    // 수정: budgetContainer에 각 날짜 섹션 추가
-    window.onload = function() {
+    // 페이지 로드 시 실행되는 함수
+    window.onload = async function() {
+        await fetchExchangeRate(); // 환율 가져오기
         const budgetContainer = document.getElementById('budgetContainer');
         days.forEach(day => {
             budgetContainer.appendChild(createDaySection(day));
