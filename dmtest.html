@@ -182,15 +182,15 @@
             <!-- 기본 3개의 쇼핑금액 입력 칸 -->
             <div class="input-group yen-group">
                 <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
-                <button class="camera-button" title="사진으로 입력"><i class="fas fa-camera"></i></button>
+                <button class="camera-button" title="사진으로 입력" aria-label="사진으로 입력"><i class="fas fa-camera"></i></button>
             </div>
             <div class="input-group yen-group">
                 <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
-                <button class="camera-button" title="사진으로 입력"><i class="fas fa-camera"></i></button>
+                <button class="camera-button" title="사진으로 입력" aria-label="사진으로 입력"><i class="fas fa-camera"></i></button>
             </div>
             <div class="input-group yen-group">
                 <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
-                <button class="camera-button" title="사진으로 입력"><i class="fas fa-camera"></i></button>
+                <button class="camera-button" title="사진으로 입력" aria-label="사진으로 입력"><i class="fas fa-camera"></i></button>
             </div>
         </div>
         <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 -->
@@ -290,7 +290,7 @@
         newGroup.classList.add('input-group', 'yen-group');
         newGroup.innerHTML = `
             <input type="number" class="inputYen" placeholder="쇼핑금액 입력" min="0">
-            <button class="camera-button" title="사진으로 입력"><i class="fas fa-camera"></i></button>
+            <button class="camera-button" title="사진으로 입력" aria-label="사진으로 입력"><i class="fas fa-camera"></i></button>
         `;
         yenContainer.appendChild(newGroup);
 
@@ -352,7 +352,7 @@
 
         Tesseract.recognize(
           imageSrc,
-          'eng+kor', // 언어 설정 (영어와 한국어)
+          'kor', // 언어 설정: 한국어만 사용
           {
             logger: m => console.log(m)
           }
@@ -372,11 +372,11 @@
 
       // 인식된 텍스트에서 숫자 추출 및 쇼핑금액 필드에 입력
       function extractNumbers(text, inputField) {
-        // 정규식을 사용하여 숫자 추출
+        // 숫자 및 쉼표만 추출 (단위 제거)
         const numbers = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?/g);
         if (numbers) {
           console.log("추출된 숫자:", numbers);
-          // 첫 번째 숫자를 선택하여 입력 필드에 채움
+          // 모든 숫자를 처리 (단일 입력 필드에 여러 숫자가 있는 경우 첫 번째 숫자만 사용)
           const firstNumber = numbers[0];
           const cleanNum = parseFloat(firstNumber.replace(/,/g, ''));
           if (!isNaN(cleanNum)) {
