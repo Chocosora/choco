@@ -203,7 +203,7 @@
     </div>
 
     <!-- Tesseract.js 라이브러리 포함 -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <!-- Firebase SDK 및 Firestore 연결 -->
     <script type="module">
       // Firebase 초기화
@@ -344,6 +344,7 @@
 
       // 이미지 처리 및 OCR 수행
       function processImage(imageSrc, inputField) {
+        console.log("이미지 처리 시작");
         // 로딩 스피너 추가
         const spinner = document.createElement('div');
         spinner.classList.add('spinner');
@@ -374,6 +375,7 @@
         // 정규식을 사용하여 숫자 추출
         const numbers = text.match(/\d{1,3}(?:,\d{3})*(?:\.\d+)?/g);
         if (numbers) {
+          console.log("추출된 숫자:", numbers);
           // 첫 번째 숫자를 선택하여 입력 필드에 채움
           const firstNumber = numbers[0];
           const cleanNum = parseFloat(firstNumber.replace(/,/g, ''));
