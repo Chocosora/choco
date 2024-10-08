@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>더모아 엔화 계산기 V2</title>
+    <title>더모아 엔화 계산기</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -96,7 +96,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>더모아 엔화 계산기 v2</h1>
+        <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
             <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAndSave()">
@@ -124,99 +124,78 @@
         <div class="calculated-text" id="totalWonText">합계: 0000원</div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-      // Import the functions you need from the SDKs you need
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
-      import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+    <script>
+        const API_URL = 'https://heather-valiant-seatbelt.glitch.me'; // Glitch 프로젝트 URL
 
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
-        authDomain: "chocosora-ad4df.firebaseapp.com",
-        projectId: "chocosora-ad4df",
-        storageBucket: "chocosora-ad4df.appspot.com",
-        messagingSenderId: "798065461606",
-        appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
-        measurementId: "G-4FYC7HVNNV"
-      };
+        // 페이지 로드 시 저장된 값을 불러오는 함수
+        window.onload = async function() {
+            const response = await fetch(`${API_URL}/getData`);
+            const data = await response.json();
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
-      const db = getFirestore(app);
+            document.getElementById('yen').value = data.todayYen || '';
+            document.getElementById('won').value = data.todayWon || '';
+            updateAllCalculations(); // 불러온 값으로 계산 업데이트
+        };
 
-      // Firestore에서 데이터 불러오기
-      window.onload = async function() {
-        const docRef = doc(db, "exchangeRates", "today");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          document.getElementById('yen').value = data.todayYen || '';
-          document.getElementById('won').value = data.todayWon || '';
-          updateAllCalculations(); // 불러온 값으로 계산 업데이트
-        } else {
-          console.log("No such document!");
+        // 값이 변경될 때 Glitch 서버에 저장하는 함수
+        async function updateAndSave() {
+            const yenValue = document.getElementById('yen').value;
+            const wonValue = document.getElementById('won').value;
+
+            // Glitch 서버에 POST 요청
+            await fetch(`${API_URL}/saveData`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ todayYen: yenValue, todayWon: wonValue })
+            });
+
+            updateAllCalculations(); // 변경된 값으로 계산 업데이트
         }
-      };
 
-      // Firestore에 데이터 저장
-      async function updateAndSave() {
-        const yenValue = document.getElementById('yen').value;
-        const wonValue = document.getElementById('won').value;
+        function updateAllCalculations() {
+            const yen = parseFloat(document.getElementById('yen').value) || 0;
+            const won = parseFloat(document.getElementById('won').value) || 0;
+            let totalYen = 0;
 
-        // Firestore에 데이터 저장
-        await setDoc(doc(db, "exchangeRates", "today"), {
-          todayYen: yenValue,
-          todayWon: wonValue
-        });
+            // 모든 쇼핑금액 입력값을 합산
+            const yenGroups = document.querySelectorAll('.inputYen');
+            yenGroups.forEach(group => {
+                totalYen += parseFloat(group.value) || 0;
+            });
 
-        updateAllCalculations(); // 변경된 값으로 계산 업데이트
-      }
+            // 첫 번째 입력한 엔화보다 부족한 금액 계산
+            const shortage = yen - totalYen;
+            document.getElementById('shortageText').innerText = `부족한 금액: ${shortage >= 0 ? shortage : 0}엔`;
 
-      function updateAllCalculations() {
-        const yen = parseFloat(document.getElementById('yen').value) || 0;
-        const won = parseFloat(document.getElementById('won').value) || 0;
-        let totalYen = 0;
-
-        // 모든 쇼핑금액 입력값을 합산
-        const yenGroups = document.querySelectorAll('.inputYen');
-        yenGroups.forEach(group => {
-            totalYen += parseFloat(group.value) || 0;
-        });
-
-        // 첫 번째 입력한 엔화보다 부족한 금액 계산
-        const shortage = yen - totalYen;
-        document.getElementById('shortageText').innerText = `부족한 금액: ${shortage >= 0 ? shortage : 0}엔`;
-
-        // 쇼핑금액 합계를 원화로 변환하여 표시
-        if (!isNaN(yen) && !isNaN(won) && yen > 0) {
-            const exchangeRate = won / yen;
-            const totalWon = (totalYen * exchangeRate).toFixed(0);
-            document.getElementById('totalWonText').innerText = `합계: ${totalWon}원`;
-        } else {
-            document.getElementById('totalWonText').innerText = '합계: 0000원';
+            // 쇼핑금액 합계를 원화로 변환하여 표시
+            if (!isNaN(yen) && !isNaN(won) && yen > 0) {
+                const exchangeRate = won / yen;
+                const totalWon = (totalYen * exchangeRate).toFixed(0);
+                document.getElementById('totalWonText').innerText = `합계: ${totalWon}원`;
+            } else {
+                document.getElementById('totalWonText').innerText = '합계: 0000원';
+            }
         }
-      }
 
-      function addYenGroup() {
-        const yenContainer = document.getElementById('yenContainer');
-        const newGroup = document.createElement('div');
-        newGroup.classList.add('input-group', 'yen-group');
-        newGroup.innerHTML = `
-            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
-        `;
-        yenContainer.appendChild(newGroup);
-      }
-
-      function removeLastYenGroup() {
-        const yenContainer = document.getElementById('yenContainer');
-        if (yenContainer.children.length > 0) {
-            yenContainer.removeChild(yenContainer.lastChild);
-            updateAllCalculations(); // 삭제 후 계산 업데이트
+        function addYenGroup() {
+            const yenContainer = document.getElementById('yenContainer');
+            const newGroup = document.createElement('div');
+            newGroup.classList.add('input-group', 'yen-group');
+            newGroup.innerHTML = `
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+            `;
+            yenContainer.appendChild(newGroup);
         }
-      }
+
+        function removeLastYenGroup() {
+            const yenContainer = document.getElementById('yenContainer');
+            if (yenContainer.children.length > 0) {
+                yenContainer.removeChild(yenContainer.lastChild);
+                updateAllCalculations(); // 삭제 후 계산 업데이트
+            }
+        }
     </script>
 </body>
 </html>
