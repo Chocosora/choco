@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 뷰포트 메타 태그 수정: 사용자가 페이지를 확대/축소하지 못하도록 설정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
     <title>더모아 엔화 계산기</title>
     <style>
         body {
@@ -41,7 +42,7 @@
         input[type="number"] {
             width: 100%;
             padding: 6px; /* 패딩 축소 */
-            font-size: 14px; /* 폰트 크기 축소 */
+            font-size: 16px; /* 모바일에서 자동 확대 방지를 위해 폰트 크기 증가 */
             border: 1px solid #cccccc;
             border-radius: 4px;
             box-sizing: border-box;
@@ -103,7 +104,7 @@
             }
 
             input[type="number"] {
-                font-size: 16px; /* 모바일에서 자동 확대 방지를 위해 폰트 크기 증가 */
+                font-size: 16px; /* 모바일에서 자동 확대 방지를 위해 폰트 크기 유지 */
                 padding: 5px;
             }
         }
