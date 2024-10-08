@@ -15,46 +15,46 @@
             max-width: 400px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 30px;
+            padding: 20px; /* 패딩을 줄여서 간격 축소 */
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* 간격 축소 */
             color: #333333;
         }
 
         .input-group {
-            margin-bottom: 10px; /* 간격 조정 */
+            margin-bottom: 8px; /* 간격 축소 */
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px; /* 간격 축소 */
             color: #555555;
         }
 
         input[type="number"] {
             width: 100%;
-            padding: 10px;
-            font-size: 16px;
+            padding: 8px; /* 패딩 축소 */
+            font-size: 14px; /* 폰트 크기 축소 */
             border: 1px solid #cccccc;
             border-radius: 4px;
             box-sizing: border-box;
-            margin-bottom: 10px;
+            margin-bottom: 8px; /* 간격 축소 */
         }
 
         .calculated-text {
-            margin-top: 10px;
-            font-size: 16px;
+            margin-top: 8px; /* 간격 축소 */
+            font-size: 14px; /* 폰트 크기 축소 */
             font-weight: bold;
             color: #333333;
         }
 
         button {
-            padding: 10px 20px;
+            padding: 8px 16px; /* 패딩 축소 */
             font-size: 14px;
             background-color: #333333;
             color: #ffffff;
@@ -62,7 +62,8 @@
             border-radius: 4px;
             cursor: pointer;
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 8px; /* 간격 축소 */
+            margin-right: 5px; /* 버튼 간 간격 추가 */
         }
 
         button.remove {
@@ -70,7 +71,7 @@
         }
 
         .spacer {
-            margin-bottom: 20px; /* 줄 간격을 확보하는 여백 추가 */
+            margin-bottom: 15px; /* 줄 간격을 확보하는 여백 조정 */
         }
 
         @media (max-width: 500px) {
@@ -88,12 +89,12 @@
 
             button {
                 font-size: 12px;
-                padding: 8px 16px;
+                padding: 6px 12px;
             }
 
             input[type="number"] {
                 font-size: 14px;
-                padding: 8px;
+                padding: 6px;
             }
         }
     </style>
@@ -103,11 +104,11 @@
         <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
-            <input type="number" id="yen" placeholder="엔화 입력">
+            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAllCalculations()">
         </div>
         <div class="input-group">
             <label for="won">오늘의 원화</label>
-            <input type="number" id="won" placeholder="원화 입력">
+            <input type="number" id="won" placeholder="원화 입력" oninput="updateAllCalculations()">
         </div>
         <button id="saveButton">환율 저장</button> <!-- 저장 버튼 -->
         <div id="saveMessage" class="calculated-text"></div> <!-- 저장 메시지 표시를 위한 공간 추가 -->
@@ -127,8 +128,8 @@
                 <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
             </div>
         </div>
-        <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 이름 변경 -->
-        <button id="removeRowButton" class="remove">줄 삭제</button> <!-- 쇼핑금액 삭제 버튼 이름 변경 -->
+        <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 -->
+        <button id="removeRowButton" class="remove">줄 삭제</button> <!-- 쇼핑금액 삭제 버튼 -->
         <div class="calculated-text" id="shortageText">부족한 금액: 0엔</div>
         <div class="calculated-text" id="totalWonText">합계: 0원</div>
     </div>
