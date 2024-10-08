@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 15px; /* 패딩을 줄여 전체 간격 축소 */
             background-color: #f5f5f5;
         }
 
@@ -15,15 +15,16 @@
             max-width: 400px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 20px; /* 패딩을 줄여서 간격 축소 */
+            padding: 15px; /* 패딩을 줄여 전체 간격 축소 */
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 15px; /* 간격 축소 */
+            margin-bottom: 12px; /* 간격 축소 */
             color: #333333;
+            font-size: 24px;
         }
 
         .input-group {
@@ -34,27 +35,28 @@
             display: block;
             margin-bottom: 3px; /* 간격 축소 */
             color: #555555;
+            font-size: 14px;
         }
 
         input[type="number"] {
             width: 100%;
-            padding: 8px; /* 패딩 축소 */
+            padding: 6px; /* 패딩 축소 */
             font-size: 14px; /* 폰트 크기 축소 */
             border: 1px solid #cccccc;
             border-radius: 4px;
             box-sizing: border-box;
-            margin-bottom: 8px; /* 간격 축소 */
+            margin-bottom: 6px; /* 간격 축소 */
         }
 
         .calculated-text {
-            margin-top: 8px; /* 간격 축소 */
+            margin-top: 6px; /* 간격 축소 */
             font-size: 14px; /* 폰트 크기 축소 */
             font-weight: bold;
             color: #333333;
         }
 
         button {
-            padding: 8px 16px; /* 패딩 축소 */
+            padding: 6px 12px; /* 패딩 축소 */
             font-size: 14px;
             background-color: #333333;
             color: #ffffff;
@@ -62,7 +64,7 @@
             border-radius: 4px;
             cursor: pointer;
             display: inline-block;
-            margin-top: 8px; /* 간격 축소 */
+            margin-top: 6px; /* 간격 축소 */
             margin-right: 5px; /* 버튼 간 간격 추가 */
         }
 
@@ -80,21 +82,21 @@
             }
 
             h1 {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             .container {
-                padding: 15px;
+                padding: 10px;
             }
 
             button {
                 font-size: 12px;
-                padding: 6px 12px;
+                padding: 5px 10px;
             }
 
             input[type="number"] {
                 font-size: 14px;
-                padding: 6px;
+                padding: 5px;
             }
         }
     </style>
@@ -104,11 +106,11 @@
         <h1>더모아 엔화 계산기</h1>
         <div class="input-group">
             <label for="yen">오늘의 엔화</label>
-            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAllCalculations()">
+            <input type="number" id="yen" placeholder="엔화 입력" oninput="updateAllCalculations()" min="0">
         </div>
         <div class="input-group">
             <label for="won">오늘의 원화</label>
-            <input type="number" id="won" placeholder="원화 입력" oninput="updateAllCalculations()">
+            <input type="number" id="won" placeholder="원화 입력" oninput="updateAllCalculations()" min="0">
         </div>
         <button id="saveButton">환율 저장</button> <!-- 저장 버튼 -->
         <div id="saveMessage" class="calculated-text"></div> <!-- 저장 메시지 표시를 위한 공간 추가 -->
@@ -119,13 +121,13 @@
         <div id="yenContainer">
             <!-- 기본 3개의 쇼핑금액 입력 칸 -->
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
             </div>
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
             </div>
             <div class="input-group yen-group">
-                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+                <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
             </div>
         </div>
         <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 -->
@@ -200,7 +202,7 @@
         const newGroup = document.createElement('div');
         newGroup.classList.add('input-group', 'yen-group');
         newGroup.innerHTML = `
-            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()">
+            <input type="number" class="inputYen" placeholder="쇼핑금액 입력" oninput="updateAllCalculations()" min="0">
         `;
         yenContainer.appendChild(newGroup);
       });
@@ -225,8 +227,8 @@
             totalYen += parseFloat(group.value) || 0;
         });
 
-        // 부족한 금액 계산 (쇼핑금액 합이 오늘의 엔화를 초과할 경우)
-        const shortage = totalYen - yen;
+        // 부족한 금액 계산 (오늘의 엔화가 쇼핑금액보다 큰 경우)
+        const shortage = yen - totalYen;
         document.getElementById('shortageText').innerText = `부족한 금액: ${shortage > 0 ? shortage : 0}엔`;
 
         // 쇼핑금액 합계를 원화로 변환하여 표시
