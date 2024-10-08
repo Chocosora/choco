@@ -61,6 +61,9 @@
             padding: 6px;
             cursor: pointer;
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .input-group button.camera-button:hover {
@@ -97,14 +100,6 @@
 
         button.remove {
             background-color: #e74c3c;
-        }
-
-        button#scanButton {
-            background-color: #28a745;
-        }
-
-        button#scanButton:hover {
-            background-color: #218838;
         }
 
         .spacer {
@@ -200,8 +195,7 @@
         </div>
         <button id="addRowButton">줄 추가</button> <!-- 쇼핑금액 추가 버튼 -->
         <button id="removeRowButton" class="remove">줄 삭제</button> <!-- 쇼핑금액 삭제 버튼 -->
-        <button id="scanButton">사진으로 입력</button> <!-- 사진 입력 버튼 -->
-        <input type="file" id="imageInput" accept="image/*" capture="environment" style="display: none;">
+        <!-- 사진으로 입력 버튼 제거 -->
         <img id="preview" src="#" alt="Captured Image Preview">
 
         <div class="calculated-text" id="shortageText">부족한 금액: 0엔</div>
@@ -318,26 +312,6 @@
         }
       });
 
-      // 사진으로 입력 버튼 클릭 시 파일 입력 트리거
-      document.getElementById("scanButton").addEventListener("click", function() {
-        document.getElementById("imageInput").click();
-      });
-
-      // 이미지 선택 시 처리
-      document.getElementById("imageInput").addEventListener("change", function(event) {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const img = document.getElementById('preview');
-            img.src = e.target.result;
-            img.style.display = 'block';
-            processImage(e.target.result);
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-
       // 각 카메라 버튼 클릭 시 처리
       function handleCameraButtonClick(event) {
         const cameraButton = event.currentTarget;
@@ -357,13 +331,8 @@
             const reader = new FileReader();
             reader.onload = function(evt) {
               const imageSrc = evt.target.result;
-              // 미리보기 이미지 생성 (선택 사항)
-              const previewImg = document.createElement('img');
-              previewImg.src = imageSrc;
-              previewImg.style.display = 'none'; // 숨김
-              document.body.appendChild(previewImg);
+              // 이미지 처리 및 OCR 수행
               processImage(imageSrc, inputField);
-              document.body.removeChild(previewImg);
             };
             reader.readAsDataURL(file);
           }
@@ -387,7 +356,7 @@
             logger: m => console.log(m)
           }
         ).then(({ data: { text } }) => {
-          console.log(text);
+          console.log("인식된 텍스트:", text);
           extractNumbers(text, inputField);
         })
         .catch(err => {
