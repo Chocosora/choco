@@ -22,6 +22,12 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+        #exchange-rate-display {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: #333333;
+        }
         .day-section {
             margin-bottom: 20px;
             background-color: #ffffff; /* 흰색 배경 */
@@ -36,15 +42,21 @@
             margin-bottom: 10px;
         }
         colgroup col:nth-child(1) {
-            width: 35%;
+            width: 20%;
         }
         colgroup col:nth-child(2) {
-            width: 25%;
+            width: 20%;
         }
         colgroup col:nth-child(3) {
-            width: 25%;
+            width: 15%;
         }
         colgroup col:nth-child(4) {
+            width: 15%;
+        }
+        colgroup col:nth-child(5) {
+            width: 15%;
+        }
+        colgroup col:nth-child(6) {
             width: 15%;
         }
         table, th, td {
@@ -61,7 +73,7 @@
         td:first-child, th:first-child {
             text-align: center;
         }
-        input[type="text"], input[type="number"] {
+        input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 8px;
             margin: 5px 0;
@@ -106,6 +118,7 @@
             padding: 15px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
         }
         @media (max-width: 600px) {
             body {
@@ -119,7 +132,7 @@
                 padding: 8px;
                 font-size: 0.9em;
             }
-            input[type="text"], input[type="number"] {
+            input[type="text"], input[type="number"], select {
                 padding: 6px;
                 font-size: 16px;
             }
@@ -135,6 +148,7 @@
 </head>
 <body>
 <h1>삿포로 여행 가계부 (2024.10.12 - 16)</h1>
+<div id="exchange-rate-display">환율을 가져오는 중...</div>
 <div id="budgetContainer"></div>
 <div id="overall-total">총 경비: ¥0 (₩0)</div>
 <script>
@@ -154,15 +168,18 @@
             if (data.result === "success") {
                 exchangeRate = data.conversion_rates.KRW;
                 console.log(`현재 환율: 1 JPY = ${exchangeRate} KRW`);
+                document.getElementById('exchange-rate-display').innerText = `현재 환율: 1 JPY = ₩${exchangeRate.toLocaleString()}`;
             } else {
                 console.error('환율 데이터를 가져오는 데 실패했습니다:', data['error-type']);
                 // 기본 환율 설정 (예: 1 JPY = 10 KRW)
                 exchangeRate = 10;
+                document.getElementById('exchange-rate-display').innerText = `현재 환율: 1 JPY = ₩${exchangeRate.toLocaleString()} (기본 환율)`;
             }
         } catch (error) {
             console.error('환율 API 오류:', error);
             // 기본 환율 설정 (예: 1 JPY = 10 KRW)
             exchangeRate = 10;
+            document.getElementById('exchange-rate-display').innerText = `현재 환율: 1 JPY = ₩${exchangeRate.toLocaleString()} (기본 환율)`;
         }
     }
 
@@ -178,10 +195,14 @@
                     <col>
                     <col>
                     <col>
+                    <col>
+                    <col>
                 </colgroup>
                 <thead>
                     <tr>
                         <th>항목</th>
+                        <th>금액</th>
+                        <th>통화</th>
                         <th>금액 (¥)</th>
                         <th>금액 (₩)</th>
                         <th>삭제</th>
@@ -197,7 +218,7 @@
     }
 
     // 새로운 행을 추가하는 함수
-    function addRow(day, item = '', amountJPY = '') {
+    function addRow(day, item = '', amount = '') {
         const table = document.getElementById(`table-${day}`).getElementsByTagName('tbody')[0];
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
@@ -205,7 +226,16 @@
                 <input type="text" placeholder="항목" value="${item}">
             </td>
             <td>
-                <input type="text" placeholder="금액 (¥)" value="${amountJPY}" oninput="handleAmountInput(this, '${day}')">
+                <input type="text" placeholder="금액" value="${amount}" oninput="handleAmountInput(this, '${day}')">
+            </td>
+            <td>
+                <select onchange="handleCurrencyChange(this, '${day}')">
+                    <option value="JPY">¥ 엔화</option>
+                    <option value="KRW">₩ 원화</option>
+                </select>
+            </td>
+            <td>
+                <span class="amount-jpy">¥0</span>
             </td>
             <td>
                 <span class="amount-krw">₩0</span>
@@ -218,14 +248,40 @@
         calculateTotal(day);
     }
 
+    // 통화 변경 시 처리하는 함수
+    function handleCurrencyChange(select, day) {
+        const row = select.parentElement.parentElement;
+        const amountInput = row.querySelector('input[type="text"]');
+        const amountValue = parseInt(amountInput.value.replace(/,/g, '')) || 0;
+        const currency = select.value;
+
+        if (currency === 'JPY') {
+            row.querySelector('.amount-jpy').innerText = `¥${amountValue.toLocaleString()}`;
+            row.querySelector('.amount-krw').innerText = `₩${(amountValue * exchangeRate).toLocaleString()}`;
+        } else if (currency === 'KRW') {
+            row.querySelector('.amount-krw').innerText = `₩${amountValue.toLocaleString()}`;
+            row.querySelector('.amount-jpy').innerText = `¥${(amountValue / exchangeRate).toLocaleString()}`;
+        }
+        calculateTotal(day);
+    }
+
     // 금액 입력 시 처리하는 함수
     function handleAmountInput(input, day) {
         // 금액 입력 처리: 숫자만 허용하고, 쉼표 추가
         input.value = input.value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         const row = input.parentElement.parentElement;
-        const amountJPY = parseInt(input.value.replace(/,/g, '')) || 0;
-        const amountKRW = amountJPY * exchangeRate;
-        row.querySelector('.amount-krw').innerText = `₩${amountKRW.toLocaleString()}`;
+        const amountStr = input.value.replace(/,/g, '');
+        const amount = parseInt(amountStr) || 0;
+        const select = row.querySelector('select');
+        const currency = select.value;
+
+        if (currency === 'JPY') {
+            row.querySelector('.amount-jpy').innerText = `¥${amount.toLocaleString()}`;
+            row.querySelector('.amount-krw').innerText = `₩${(amount * exchangeRate).toLocaleString()}`;
+        } else if (currency === 'KRW') {
+            row.querySelector('.amount-krw').innerText = `₩${amount.toLocaleString()}`;
+            row.querySelector('.amount-jpy').innerText = `¥${(amount / exchangeRate).toLocaleString()}`;
+        }
         calculateTotal(day);
     }
 
@@ -242,9 +298,10 @@
         let totalJPY = 0;
         let totalKRW = 0;
         Array.from(table.getElementsByTagName('tr')).forEach(row => {
-            const amountInput = row.getElementsByTagName('input')[1];
-            const amountJPY = parseInt(amountInput.value.replace(/,/g, '')) || 0;
-            const amountKRW = amountJPY * exchangeRate;
+            const amountJPYText = row.querySelector('.amount-jpy').innerText;
+            const amountKRWText = row.querySelector('.amount-krw').innerText;
+            const amountJPY = parseFloat(amountJPYText.replace(/[^0-9.]/g, '')) || 0;
+            const amountKRW = parseFloat(amountKRWText.replace(/[^0-9.]/g, '')) || 0;
             totalJPY += amountJPY;
             totalKRW += amountKRW;
         });
@@ -260,8 +317,8 @@
             const totalText = document.getElementById(`total-${day}`).innerText;
             const match = totalText.match(/¥([\d,]+) \(₩([\d,]+)\)/);
             if (match) {
-                const dayTotalJPY = parseInt(match[1].replace(/,/g, '')) || 0;
-                const dayTotalKRW = parseInt(match[2].replace(/,/g, '')) || 0;
+                const dayTotalJPY = parseFloat(match[1].replace(/,/g, '')) || 0;
+                const dayTotalKRW = parseFloat(match[2].replace(/,/g, '')) || 0;
                 overallTotalJPY += dayTotalJPY;
                 overallTotalKRW += dayTotalKRW;
             }
