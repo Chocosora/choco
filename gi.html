@@ -15,7 +15,7 @@
     
     .header {
       display: flex;
-      justify-content: center; /* 가운데 정렬 */
+      justify-content: center;
       align-items: center;
       margin-bottom: 15px;
       position: relative;
@@ -25,7 +25,7 @@
       color: #333;
       font-size: 20px;
       margin: 0;
-      text-align: center; /* 텍스트 자체도 가운데 정렬 */
+      text-align: center;
     }
     
     .date-container {
@@ -414,7 +414,7 @@
   <script type="module">
     // Firebase SDK 가져오기
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
     // Firebase 구성
     const firebaseConfig = {
@@ -436,6 +436,33 @@
       // 오늘 날짜 기본값 설정
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('config-date').value = today;
+
+      // Firebase에서 데이터 불러오기
+      function loadMembersFromFirebase() {
+        const membersRef = ref(database, 'members');
+        onValue(membersRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+            groups.forEach(group => {
+              const memberContainer = document.getElementById(`${group}-members`);
+              // 기존 멤버 제거
+              while (memberContainer.firstChild) {
+                memberContainer.removeChild(memberContainer.firstChild);
+              }
+              // Firebase에서 가져온 데이터로 멤버 추가
+              if (data[group]) {
+                data[group].forEach(memberData => {
+                  if (memberData && memberData.name) {
+                    addMember(memberContainer, memberData.name, group);
+                  }
+                });
+              }
+            });
+            updateCounts();
+          }
+        }, { onlyOnce: true }); // 한 번만 로드
+      }
 
       // 멤버 추가 함수 (공통)
       function addMemberToGroup(group, memberName) {
@@ -634,6 +661,8 @@
           });
       });
 
+      // 페이지 로드 시 데이터 불러오기
+      loadMembersFromFirebase();
       updateCounts();
     });
   </script>
