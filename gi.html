@@ -207,25 +207,6 @@
       font-weight: bold;
     }
     
-    .save-container {
-      text-align: center;
-      margin-top: 20px;
-    }
-    
-    .save-btn {
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    
-    .save-btn:hover {
-      background-color: #1976D2;
-    }
-    
     /* 집단별 색상 */
     .love { background-color: #FF9999; }
     .joy { background-color: #FFDD99; }
@@ -407,10 +388,6 @@
     <p class="total-count">총 인원: <span id="total-members">0</span>명</p>
   </div>
 
-  <div class="save-container">
-    <button class="save-btn">저장</button>
-  </div>
-
   <script type="module">
     // Firebase SDK 가져오기
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
@@ -445,7 +422,6 @@
           if (data) {
             const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
             groups.forEach(group => {
-              // 기존 데이터 제거
               const memberContainer = document.getElementById(`${group}-members`);
               const supervisorSlot = document.getElementById(`${group}-supervisor`);
               const assistantSlot = document.getElementById(`${group}-assistant`);
@@ -453,24 +429,16 @@
               while (supervisorSlot.firstChild) supervisorSlot.removeChild(supervisorSlot.firstChild);
               while (assistantSlot.firstChild) assistantSlot.removeChild(assistantSlot.firstChild);
 
-              // Firebase 데이터로 채우기
               if (data[group]) {
-                // 날짜 반영
                 if (data[group].date) {
                   document.getElementById('config-date').value = data[group].date;
                 }
-
-                // 감독자 반영
                 if (data[group].supervisor) {
                   addRoleMember(supervisorSlot, data[group].supervisor.name, group);
                 }
-
-                // 보조자 반영
                 if (data[group].assistant) {
                   addRoleMember(assistantSlot, data[group].assistant.name, group);
                 }
-
-                // 일반 멤버 반영
                 if (data[group].members) {
                   data[group].members.forEach(memberData => {
                     if (memberData && memberData.name) {
@@ -485,12 +453,42 @@
         });
       }
 
+      // 데이터 저장 함수
+      function saveToFirebase() {
+        const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+        const date = document.getElementById('config-date').value || new Date().toISOString().split('T')[0];
+        const allGroupsData = {};
+
+        groups.forEach(group => {
+          const members = document.getElementById(`${group}-members`).querySelectorAll('.member');
+          const supervisor = document.getElementById(`${group}-supervisor`).querySelector('.member');
+          const assistant = document.getElementById(`${group}-assistant`).querySelector('.member');
+
+          allGroupsData[group] = {
+            date: date,
+            supervisor: supervisor ? { name: supervisor.getAttribute('data-name'), group: group } : null,
+            assistant: assistant ? { name: assistant.getAttribute('data-name'), group: group } : null,
+            members: Array.from(members).map(member => ({
+              name: member.getAttribute('data-name'),
+              group: group,
+              addedDate: date
+            }))
+          };
+        });
+
+        set(ref(database, 'groups'), allGroupsData)
+          .catch((error) => {
+            console.error('저장 실패:', error);
+          });
+      }
+
       // 멤버 추가 함수 (공통)
       function addMemberToGroup(group, memberName) {
         const groupName = group.getAttribute('data-group');
         const memberContainer = document.getElementById(`${groupName}-members`);
         addMember(memberContainer, memberName, groupName);
         updateCounts();
+        saveToFirebase(); // 추가 후 즉시 저장
       }
 
       // 역할 멤버 추가 함수 (감독자/보조자)
@@ -505,6 +503,7 @@
         memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
           memberDiv.remove();
           updateCounts();
+          saveToFirebase(); // 삭제 후 즉시 저장
         });
         
         memberDiv.addEventListener('dragstart', function(e) {
@@ -557,6 +556,7 @@
         memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
           memberDiv.remove();
           updateCounts();
+          saveToFirebase(); // 삭제 후 즉시 저장
         });
         
         memberDiv.addEventListener('dragstart', function(e) {
@@ -625,6 +625,7 @@
             memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
               memberDiv.remove();
               updateCounts();
+              saveToFirebase(); // 삭제 후 즉시 저장
             });
             
             memberDiv.addEventListener('dragstart', function(e) {
@@ -641,6 +642,7 @@
           }
           
           updateCounts();
+          saveToFirebase(); // 드롭 후 즉시 저장
         });
       });
       
@@ -661,38 +663,9 @@
         document.getElementById('total-members').textContent = totalMembers;
       }
 
-      // 저장 버튼 클릭 시 Firebase에 데이터 저장
-      document.querySelector('.save-btn').addEventListener('click', function() {
-        const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
-        const date = document.getElementById('config-date').value || new Date().toISOString().split('T')[0];
-        const allGroupsData = {};
-
-        groups.forEach(group => {
-          const members = document.getElementById(`${group}-members`).querySelectorAll('.member');
-          const supervisor = document.getElementById(`${group}-supervisor`).querySelector('.member');
-          const assistant = document.getElementById(`${group}-assistant`).querySelector('.member');
-
-          allGroupsData[group] = {
-            date: date,
-            supervisor: supervisor ? { name: supervisor.getAttribute('data-name'), group: group } : null,
-            assistant: assistant ? { name: assistant.getAttribute('data-name'), group: group } : null,
-            members: Array.from(members).map(member => ({
-              name: member.getAttribute('data-name'),
-              group: group,
-              addedDate: date
-            }))
-          };
-        });
-
-        // Firebase에 데이터 저장
-        set(ref(database, 'groups'), allGroupsData)
-          .then(() => {
-            alert('서버에 저장되었습니다');
-          })
-          .catch((error) => {
-            console.error('저장 실패:', error);
-            alert('저장에 실패했습니다');
-          });
+      // 날짜 변경 시 즉시 저장
+      document.getElementById('config-date').addEventListener('change', function() {
+        saveToFirebase();
       });
 
       // 페이지 로드 시 실시간 동기화 시작
