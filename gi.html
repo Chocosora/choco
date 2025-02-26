@@ -437,8 +437,8 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('config-date').value = today;
 
-      // Firebase에서 데이터 불러오기
-      function loadDataFromFirebase() {
+      // Firebase에서 데이터 실시간 감지 및 업데이트
+      function syncDataFromFirebase() {
         const dataRef = ref(database, 'groups');
         onValue(dataRef, (snapshot) => {
           const data = snapshot.val();
@@ -455,8 +455,8 @@
 
               // Firebase 데이터로 채우기
               if (data[group]) {
-                // 날짜 반영 (첫 번째 그룹의 날짜로 통일)
-                if (data[group].date && !document.getElementById('config-date').value) {
+                // 날짜 반영
+                if (data[group].date) {
                   document.getElementById('config-date').value = data[group].date;
                 }
 
@@ -482,7 +482,7 @@
             });
             updateCounts();
           }
-        }, { onlyOnce: true }); // 한 번만 로드
+        });
       }
 
       // 멤버 추가 함수 (공통)
@@ -695,8 +695,8 @@
           });
       });
 
-      // 페이지 로드 시 데이터 불러오기
-      loadDataFromFirebase();
+      // 페이지 로드 시 실시간 동기화 시작
+      syncDataFromFirebase();
       updateCounts();
     });
   </script>
