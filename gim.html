@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>강일 회중 집단 관리 (모바일)</title>
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 10px;
+      background-color: #f5f5f5;
+      font-size: 12px;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    
+    h1 {
+      color: #333;
+      font-size: 18px;
+      margin: 0;
+      text-align: center;
+    }
+    
+    .date-container {
+      display: flex;
+      align-items: center;
+      margin-top: 5px;
+    }
+    
+    .date-label {
+      margin-right: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .date-input {
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .group {
+      background-color: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .group-header {
+      text-align: center;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .group-name {
+      font-size: 14px;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .group-color {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      margin-top: 4px;
+    }
+    
+    .section {
+      margin-bottom: 8px;
+    }
+    
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+    }
+    
+    .role-container {
+      min-height: 24px;
+      background-color: #f7f7f7;
+      border-radius: 3px;
+      margin-bottom: 4px;
+    }
+    
+    .role-slot {
+      height: 24px;
+      padding: 2px;
+      margin: 2px;
+      border: 1px dashed #ccc;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .members {
+      min-height: 30px;
+      padding: 6px;
+      background-color: #f7f7f7;
+      border-radius: 3px;
+      margin-bottom: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .member {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 2px 6px;
+      margin: 2px 0;
+      cursor: move;
+      font-size: 11px;
+      text-align: center;
+      width: 90%;
+      max-width: 120px;
+      box-sizing: border-box;
+    }
+    
+    .remove-btn {
+      margin-left: 4px;
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .add-member {
+      display: flex;
+      margin-top: 4px;
+    }
+    
+    .add-member input {
+      flex: 1;
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      margin-right: 2px;
+      font-size: 10px;
+    }
+    
+    .add-member button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+    
+    .summary {
+      background-color: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      margin-top: 10px;
+    }
+    
+    .summary h2 {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .group-stats {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      font-size: 10px;
+    }
+    
+    .group-stat {
+      text-align: center;
+      padding: 4px;
+      border-radius: 3px;
+      min-width: 60px;
+    }
+    
+    .total-count {
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    /* 집단별 색상 */
+    .love { background-color: #FF9999; }
+    .joy { background-color: #FFDD99; }
+    .peace { background-color: #99CCFF; }
+    .goodness { background-color: #99FF99; }
+    .faith { background-color: #CC99FF; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>강일 회중 집단 관리 (모바일)</h1>
+    <div class="date-container">
+      <span class="date-label">구성 날짜:</span>
+      <input type="date" class="date-input" id="config-date">
+    </div>
+  </div>
+  
+  <div class="container">
+    <!-- 사랑 집단 -->
+    <div class="group" data-group="love">
+      <div class="group-header">
+        <h2 class="group-name">사랑 집단</h2>
+        <div class="group-color love"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">감독자</div>
+        <div class="role-container">
+          <div class="role-slot" id="love-supervisor" data-group="love" data-role="supervisor"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">보조자</div>
+        <div class="role-container">
+          <div class="role-slot" id="love-assistant" data-group="love" data-role="assistant"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">집단 성원 <span class="member-count">(0명)</span></div>
+        <div class="members" id="love-members" data-group="love" data-role="member"></div>
+      </div>
+      <div class="add-member">
+        <input type="text" placeholder="이름 입력..." class="member-input">
+        <button class="add-btn">추가</button>
+      </div>
+    </div>
+    
+    <!-- 기쁨 집단 -->
+    <div class="group" data-group="joy">
+      <div class="group-header">
+        <h2 class="group-name">기쁨 집단</h2>
+        <div class="group-color joy"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">감독자</div>
+        <div class="role-container">
+          <div class="role-slot" id="joy-supervisor" data-group="joy" data-role="supervisor"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">보조자</div>
+        <div class="role-container">
+          <div class="role-slot" id="joy-assistant" data-group="joy" data-role="assistant"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">집단 성원 <span class="member-count">(0명)</span></div>
+        <div class="members" id="joy-members" data-group="joy" data-role="member"></div>
+      </div>
+      <div class="add-member">
+        <input type="text" placeholder="이름 입력..." class="member-input">
+        <button class="add-btn">추가</button>
+      </div>
+    </div>
+    
+    <!-- 평화 집단 -->
+    <div class="group" data-group="peace">
+      <div class="group-header">
+        <h2 class="group-name">평화 집단</h2>
+        <div class="group-color peace"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">감독자</div>
+        <div class="role-container">
+          <div class="role-slot" id="peace-supervisor" data-group="peace" data-role="supervisor"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">보조자</div>
+        <div class="role-container">
+          <div class="role-slot" id="peace-assistant" data-group="peace" data-role="assistant"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">집단 성원 <span class="member-count">(0명)</span></div>
+        <div class="members" id="peace-members" data-group="peace" data-role="member"></div>
+      </div>
+      <div class="add-member">
+        <input type="text" placeholder="이름 입력..." class="member-input">
+        <button class="add-btn">추가</button>
+      </div>
+    </div>
+    
+    <!-- 선함 집단 -->
+    <div class="group" data-group="goodness">
+      <div class="group-header">
+        <h2 class="group-name">선함 집단</h2>
+        <div class="group-color goodness"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">감독자</div>
+        <div class="role-container">
+          <div class="role-slot" id="goodness-supervisor" data-group="goodness" data-role="supervisor"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">보조자</div>
+        <div class="role-container">
+          <div class="role-slot" id="goodness-assistant" data-group="goodness" data-role="assistant"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">집단 성원 <span class="member-count">(0명)</span></div>
+        <div class="members" id="goodness-members" data-group="goodness" data-role="member"></div>
+      </div>
+      <div class="add-member">
+        <input type="text" placeholder="이름 입력..." class="member-input">
+        <button class="add-btn">추가</button>
+      </div>
+    </div>
+    
+    <!-- 믿음 집단 -->
+    <div class="group" data-group="faith">
+      <div class="group-header">
+        <h2 class="group-name">믿음 집단</h2>
+        <div class="group-color faith"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">감독자</div>
+        <div class="role-container">
+          <div class="role-slot" id="faith-supervisor" data-group="faith" data-role="supervisor"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">보조자</div>
+        <div class="role-container">
+          <div class="role-slot" id="faith-assistant" data-group="faith" data-role="assistant"></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">집단 성원 <span class="member-count">(0명)</span></div>
+        <div class="members" id="faith-members" data-group="faith" data-role="member"></div>
+      </div>
+      <div class="add-member">
+        <input type="text" placeholder="이름 입력..." class="member-input">
+        <button class="add-btn">추가</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="summary">
+    <h2>전체 인원 현황</h2>
+    <div class="group-stats">
+      <div class="group-stat love">
+        <strong>사랑 집단</strong>: <span id="love-count">0</span>명
+      </div>
+      <div class="group-stat joy">
+        <strong>기쁨 집단</strong>: <span id="joy-count">0</span>명
+      </div>
+      <div class="group-stat peace">
+        <strong>평화 집단</strong>: <span id="peace-count">0</span>명
+      </div>
+      <div class="group-stat goodness">
+        <strong>선함 집단</strong>: <span id="goodness-count">0</span>명
+      </div>
+      <div class="group-stat faith">
+        <strong>믿음 집단</strong>: <span id="faith-count">0</span>명
+      </div>
+    </div>
+    <p class="total-count">총 인원: <span id="total-members">0</span>명</p>
+  </div>
+
+  <script type="module">
+    // Firebase SDK 가져오기
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
+
+    // Firebase 구성
+    const firebaseConfig = {
+      apiKey: "AIzaSyBc7tQ6lwkAuiIlwDZekdovWmui-OKvxjE",
+      authDomain: "gang-il.firebaseapp.com",
+      databaseURL: "https://gang-il-default-rtdb.firebaseio.com",
+      projectId: "gang-il",
+      storageBucket: "gang-il.firebasestorage.app",
+      messagingSenderId: "205484863244",
+      appId: "1:205484863244:web:5c32cccc80c126aa272329",
+      measurementId: "G-Y2VK9QH8JQ"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 오늘 날짜 기본값 설정
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('config-date').value = today;
+
+      // Firebase에서 데이터 실시간 감지 및 업데이트
+      function syncDataFromFirebase() {
+        const dataRef = ref(database, 'groups');
+        onValue(dataRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+            groups.forEach(group => {
+              const memberContainer = document.getElementById(`${group}-members`);
+              const supervisorSlot = document.getElementById(`${group}-supervisor`);
+              const assistantSlot = document.getElementById(`${group}-assistant`);
+              while (memberContainer.firstChild) memberContainer.removeChild(memberContainer.firstChild);
+              while (supervisorSlot.firstChild) supervisorSlot.removeChild(supervisorSlot.firstChild);
+              while (assistantSlot.firstChild) assistantSlot.removeChild(assistantSlot.firstChild);
+
+              if (data[group]) {
+                if (data[group].date) {
+                  document.getElementById('config-date').value = data[group].date;
+                }
+                if (data[group].supervisor) {
+                  addRoleMember(supervisorSlot, data[group].supervisor.name, group);
+                }
+                if (data[group].assistant) {
+                  addRoleMember(assistantSlot, data[group].assistant.name, group);
+                }
+                if (data[group].members) {
+                  data[group].members.forEach(memberData => {
+                    if (memberData && memberData.name) {
+                      addMember(memberContainer, memberData.name, group);
+                    }
+                  });
+                }
+              }
+            });
+            updateCounts();
+          }
+        });
+      }
+
+      // 데이터 저장 함수
+      function saveToFirebase() {
+        const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+        const date = document.getElementById('config-date').value || new Date().toISOString().split('T')[0];
+        const allGroupsData = {};
+
+        groups.forEach(group => {
+          const members = document.getElementById(`${group}-members`).querySelectorAll('.member');
+          const supervisor = document.getElementById(`${group}-supervisor`).querySelector('.member');
+          const assistant = document.getElementById(`${group}-assistant`).querySelector('.member');
+
+          allGroupsData[group] = {
+            date: date,
+            supervisor: supervisor ? { name: supervisor.getAttribute('data-name'), group: group } : null,
+            assistant: assistant ? { name: assistant.getAttribute('data-name'), group: group } : null,
+            members: Array.from(members).map(member => ({
+              name: member.getAttribute('data-name'),
+              group: group,
+              addedDate: date
+            }))
+          };
+        });
+
+        set(ref(database, 'groups'), allGroupsData)
+          .catch((error) => {
+            console.error('저장 실패:', error);
+          });
+      }
+
+      // 멤버 추가 함수 (공통)
+      function addMemberToGroup(group, memberName) {
+        const groupName = group.getAttribute('data-group');
+        const memberContainer = document.getElementById(`${groupName}-members`);
+        addMember(memberContainer, memberName, groupName);
+        updateCounts();
+        saveToFirebase(); // 추가 후 즉시 저장
+      }
+
+      // 역할 멤버 추가 함수 (감독자/보조자)
+      function addRoleMember(container, name, groupName) {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'member';
+        memberDiv.setAttribute('draggable', 'true');
+        memberDiv.setAttribute('data-name', name);
+        memberDiv.setAttribute('data-group', groupName);
+        memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+        
+        memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
+          memberDiv.remove();
+          updateCounts();
+          saveToFirebase(); // 삭제 후 즉시 저장
+        });
+        
+        memberDiv.addEventListener('dragstart', function(e) {
+          e.dataTransfer.setData('text/plain', name);
+          e.dataTransfer.setData('sourceId', container.id);
+          e.dataTransfer.setData('sourceGroup', groupName);
+        });
+        
+        container.appendChild(memberDiv);
+      }
+
+      // 버튼으로 멤버 추가
+      document.querySelectorAll('.add-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const group = this.closest('.group');
+          const input = group.querySelector('.member-input');
+          const memberName = input.value.trim();
+          
+          if (memberName) {
+            addMemberToGroup(group, memberName);
+            input.value = '';
+          }
+        });
+      });
+
+      // 엔터키로 멤버 추가
+      document.querySelectorAll('.member-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            const memberName = this.value.trim();
+            const group = this.closest('.group');
+            
+            if (memberName) {
+              addMemberToGroup(group, memberName);
+              this.value = '';
+            }
+          }
+        });
+      });
+      
+      // 멤버 추가 함수
+      function addMember(container, name, groupName) {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'member';
+        memberDiv.setAttribute('draggable', 'true');
+        memberDiv.setAttribute('data-name', name);
+        memberDiv.setAttribute('data-group', groupName);
+        memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+        
+        memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
+          memberDiv.remove();
+          updateCounts();
+          saveToFirebase(); // 삭제 후 즉시 저장
+        });
+        
+        memberDiv.addEventListener('dragstart', function(e) {
+          e.dataTransfer.setData('text/plain', name);
+          e.dataTransfer.setData('sourceId', container.id);
+          e.dataTransfer.setData('sourceGroup', groupName);
+        });
+        
+        container.appendChild(memberDiv);
+      }
+      
+      // 드롭 대상 설정
+      const dropTargets = document.querySelectorAll('.role-slot, .members');
+      dropTargets.forEach(target => {
+        target.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          this.style.backgroundColor = '#e0e0e0';
+        });
+        
+        target.addEventListener('dragleave', function() {
+          this.style.backgroundColor = target.classList.contains('role-slot') ? '' : '#f7f7f7';
+        });
+        
+        target.addEventListener('drop', function(e) {
+          e.preventDefault();
+          this.style.backgroundColor = this.classList.contains('role-slot') ? '' : '#f7f7f7';
+          
+          const name = e.dataTransfer.getData('text/plain');
+          const sourceId = e.dataTransfer.getData('sourceId');
+          const sourceGroup = e.dataTransfer.getData('sourceGroup');
+          
+          if (this.classList.contains('role-slot')) {
+            if (this.firstChild) return;
+            const sourceContainer = document.getElementById(sourceId);
+            if (sourceContainer) {
+              const members = sourceContainer.querySelectorAll('.member');
+              members.forEach(member => {
+                if (member.getAttribute('data-name') === name) member.remove();
+              });
+            }
+            addRoleMember(this, name, this.getAttribute('data-group'));
+          } else {
+            const sourceContainer = document.getElementById(sourceId);
+            if (sourceContainer) {
+              const members = sourceContainer.querySelectorAll('.member');
+              members.forEach(member => {
+                if (member.getAttribute('data-name') === name) member.remove();
+              });
+            }
+            
+            const rect = this.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            const members = Array.from(this.children);
+            const dropIndex = members.findIndex(member => {
+              const memberRect = member.getBoundingClientRect();
+              return y < (memberRect.top - rect.top + memberRect.height / 2);
+            });
+            
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'member';
+            memberDiv.setAttribute('draggable', 'true');
+            memberDiv.setAttribute('data-name', name);
+            memberDiv.setAttribute('data-group', this.getAttribute('data-group'));
+            memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+            
+            memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
+              memberDiv.remove();
+              updateCounts();
+              saveToFirebase(); // 삭제 후 즉시 저장
+            });
+            
+            memberDiv.addEventListener('dragstart', function(e) {
+              e.dataTransfer.setData('text/plain', name);
+              e.dataTransfer.setData('sourceId', this.parentElement.id);
+              e.dataTransfer.setData('sourceGroup', this.getAttribute('data-group'));
+            });
+            
+            if (dropIndex === -1) {
+              this.appendChild(memberDiv);
+            } else {
+              this.insertBefore(memberDiv, members[dropIndex]);
+            }
+          }
+          
+          updateCounts();
+          saveToFirebase(); // 드롭 후 즉시 저장
+        });
+      });
+      
+      // 카운트 업데이트 함수
+      function updateCounts() {
+        const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+        groups.forEach(group => {
+          const memberCount = document.getElementById(`${group}-members`).querySelectorAll('.member').length;
+          document.querySelector(`[data-group="${group}"] .member-count`).textContent = `(${memberCount}명)`;
+          document.getElementById(`${group}-count`).textContent = memberCount;
+        });
+        
+        let totalMembers = 0;
+        groups.forEach(group => {
+          totalMembers += parseInt(document.getElementById(`${group}-count`).textContent);
+        });
+        
+        document.getElementById('total-members').textContent = totalMembers;
+      }
+
+      // 날짜 변경 시 즉시 저장
+      document.getElementById('config-date').addEventListener('change', function() {
+        saveToFirebase();
+      });
+
+      // 페이지 로드 시 실시간 동기화 시작
+      syncDataFromFirebase();
+      updateCounts();
+    });
+  </script>
+</body>
+</html>
