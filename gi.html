@@ -139,6 +139,9 @@
       width: 80%;
       max-width: 150px;
       box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .remove-btn {
@@ -146,6 +149,14 @@
       color: red;
       cursor: pointer;
       font-weight: bold;
+    }
+    
+    .status-select {
+      font-size: 11px;
+      padding: 2px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      margin-left: 5px;
     }
     
     .add-member {
@@ -213,6 +224,12 @@
     .peace { background-color: #99CCFF; }
     .goodness { background-color: #99FF99; }
     .faith { background-color: #CC99FF; }
+    
+    /* 상태별 색상 */
+    .status-장 { background-color: #cce5ff; } /* 파스텔 블루 */
+    .status-종 { background-color: #ccffcc; } /* 파스텔 그린 */
+    .status-파 { background-color: #ffffcc; } /* 파스텔 옐로우 */
+    .status-전 { background-color: #ffffff; } /* 화이트 */
   </style>
 </head>
 <body>
@@ -434,15 +451,15 @@
                   document.getElementById('config-date').value = data[group].date;
                 }
                 if (data[group].supervisor) {
-                  addRoleMember(supervisorSlot, data[group].supervisor.name, group);
+                  addRoleMember(supervisorSlot, data[group].supervisor.name, group, data[group].supervisor.status);
                 }
                 if (data[group].assistant) {
-                  addRoleMember(assistantSlot, data[group].assistant.name, group);
+                  addRoleMember(assistantSlot, data[group].assistant.name, group, data[group].assistant.status);
                 }
                 if (data[group].members) {
                   data[group].members.forEach(memberData => {
                     if (memberData && memberData.name) {
-                      addMember(memberContainer, memberData.name, group);
+                      addMember(memberContainer, memberData.name, group, memberData.status);
                     }
                   });
                 }
@@ -466,12 +483,21 @@
 
           allGroupsData[group] = {
             date: date,
-            supervisor: supervisor ? { name: supervisor.getAttribute('data-name'), group: group } : null,
-            assistant: assistant ? { name: assistant.getAttribute('data-name'), group: group } : null,
+            supervisor: supervisor ? { 
+              name: supervisor.getAttribute('data-name'), 
+              group: group, 
+              status: supervisor.querySelector('.status-select').value || '전'
+            } : null,
+            assistant: assistant ? { 
+              name: assistant.getAttribute('data-name'), 
+              group: group, 
+              status: assistant.querySelector('.status-select').value || '전'
+            } : null,
             members: Array.from(members).map(member => ({
               name: member.getAttribute('data-name'),
               group: group,
-              addedDate: date
+              addedDate: date,
+              status: member.querySelector('.status-select').value || '전'
             }))
           };
         });
@@ -492,14 +518,31 @@
       }
 
       // 역할 멤버 추가 함수 (감독자/보조자)
-      function addRoleMember(container, name, groupName) {
+      function addRoleMember(container, name, groupName, status = '전') {
         const memberDiv = document.createElement('div');
         memberDiv.className = 'member';
         memberDiv.setAttribute('draggable', 'true');
         memberDiv.setAttribute('data-name', name);
         memberDiv.setAttribute('data-group', groupName);
-        memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+        memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
         
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'status-select';
+        ['장', '종', '파', '전'].forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.text = opt;
+          if (opt === status) option.selected = true;
+          statusSelect.appendChild(option);
+        });
+        statusSelect.addEventListener('change', function() {
+          updateMemberStatus(memberDiv, this.value);
+          saveToFirebase();
+        });
+        memberDiv.appendChild(statusSelect);
+
+        updateMemberStatus(memberDiv, status);
+
         memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
           memberDiv.remove();
           updateCounts();
@@ -510,6 +553,7 @@
           e.dataTransfer.setData('text/plain', name);
           e.dataTransfer.setData('sourceId', container.id);
           e.dataTransfer.setData('sourceGroup', groupName);
+          e.dataTransfer.setData('status', statusSelect.value);
         });
         
         container.appendChild(memberDiv);
@@ -545,14 +589,31 @@
       });
       
       // 멤버 추가 함수
-      function addMember(container, name, groupName) {
+      function addMember(container, name, groupName, status = '전') {
         const memberDiv = document.createElement('div');
         memberDiv.className = 'member';
         memberDiv.setAttribute('draggable', 'true');
         memberDiv.setAttribute('data-name', name);
         memberDiv.setAttribute('data-group', groupName);
-        memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+        memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
         
+        const statusSelect = document.createElement('select');
+        statusSelect.className = 'status-select';
+        ['장', '종', '파', '전'].forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.text = opt;
+          if (opt === status) option.selected = true;
+          statusSelect.appendChild(option);
+        });
+        statusSelect.addEventListener('change', function() {
+          updateMemberStatus(memberDiv, this.value);
+          saveToFirebase();
+        });
+        memberDiv.appendChild(statusSelect);
+
+        updateMemberStatus(memberDiv, status);
+
         memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
           memberDiv.remove();
           updateCounts();
@@ -563,9 +624,17 @@
           e.dataTransfer.setData('text/plain', name);
           e.dataTransfer.setData('sourceId', container.id);
           e.dataTransfer.setData('sourceGroup', groupName);
+          e.dataTransfer.setData('status', statusSelect.value);
         });
         
         container.appendChild(memberDiv);
+      }
+
+      // 상태 업데이트 함수
+      function updateMemberStatus(memberDiv, status) {
+        memberDiv.classList.remove('status-장', 'status-종', 'status-파', 'status-전');
+        memberDiv.classList.add(`status-${status}`);
+        memberDiv.querySelector('.status-text').textContent = `(${status})`;
       }
       
       // 드롭 대상 설정
@@ -587,6 +656,7 @@
           const name = e.dataTransfer.getData('text/plain');
           const sourceId = e.dataTransfer.getData('sourceId');
           const sourceGroup = e.dataTransfer.getData('sourceGroup');
+          const status = e.dataTransfer.getData('status');
           
           if (this.classList.contains('role-slot')) {
             if (this.firstChild) return;
@@ -597,7 +667,7 @@
                 if (member.getAttribute('data-name') === name) member.remove();
               });
             }
-            addRoleMember(this, name, this.getAttribute('data-group'));
+            addRoleMember(this, name, this.getAttribute('data-group'), status);
           } else {
             const sourceContainer = document.getElementById(sourceId);
             if (sourceContainer) {
@@ -620,8 +690,25 @@
             memberDiv.setAttribute('draggable', 'true');
             memberDiv.setAttribute('data-name', name);
             memberDiv.setAttribute('data-group', this.getAttribute('data-group'));
-            memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+            memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
             
+            const statusSelect = document.createElement('select');
+            statusSelect.className = 'status-select';
+            ['장', '종', '파', '전'].forEach(opt => {
+              const option = document.createElement('option');
+              option.value = opt;
+              option.text = opt;
+              if (opt === status) option.selected = true;
+              statusSelect.appendChild(option);
+            });
+            statusSelect.addEventListener('change', function() {
+              updateMemberStatus(memberDiv, this.value);
+              saveToFirebase();
+            });
+            memberDiv.appendChild(statusSelect);
+
+            updateMemberStatus(memberDiv, status);
+
             memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
               memberDiv.remove();
               updateCounts();
@@ -632,6 +719,7 @@
               e.dataTransfer.setData('text/plain', name);
               e.dataTransfer.setData('sourceId', this.parentElement.id);
               e.dataTransfer.setData('sourceGroup', this.getAttribute('data-group'));
+              e.dataTransfer.setData('status', statusSelect.value);
             });
             
             if (dropIndex === -1) {
