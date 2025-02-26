@@ -438,25 +438,46 @@
       document.getElementById('config-date').value = today;
 
       // Firebase에서 데이터 불러오기
-      function loadMembersFromFirebase() {
-        const membersRef = ref(database, 'members');
-        onValue(membersRef, (snapshot) => {
+      function loadDataFromFirebase() {
+        const dataRef = ref(database, 'groups');
+        onValue(dataRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
             const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
             groups.forEach(group => {
+              // 기존 데이터 제거
               const memberContainer = document.getElementById(`${group}-members`);
-              // 기존 멤버 제거
-              while (memberContainer.firstChild) {
-                memberContainer.removeChild(memberContainer.firstChild);
-              }
-              // Firebase에서 가져온 데이터로 멤버 추가
+              const supervisorSlot = document.getElementById(`${group}-supervisor`);
+              const assistantSlot = document.getElementById(`${group}-assistant`);
+              while (memberContainer.firstChild) memberContainer.removeChild(memberContainer.firstChild);
+              while (supervisorSlot.firstChild) supervisorSlot.removeChild(supervisorSlot.firstChild);
+              while (assistantSlot.firstChild) assistantSlot.removeChild(assistantSlot.firstChild);
+
+              // Firebase 데이터로 채우기
               if (data[group]) {
-                data[group].forEach(memberData => {
-                  if (memberData && memberData.name) {
-                    addMember(memberContainer, memberData.name, group);
-                  }
-                });
+                // 날짜 반영 (첫 번째 그룹의 날짜로 통일)
+                if (data[group].date && !document.getElementById('config-date').value) {
+                  document.getElementById('config-date').value = data[group].date;
+                }
+
+                // 감독자 반영
+                if (data[group].supervisor) {
+                  addRoleMember(supervisorSlot, data[group].supervisor.name, group);
+                }
+
+                // 보조자 반영
+                if (data[group].assistant) {
+                  addRoleMember(assistantSlot, data[group].assistant.name, group);
+                }
+
+                // 일반 멤버 반영
+                if (data[group].members) {
+                  data[group].members.forEach(memberData => {
+                    if (memberData && memberData.name) {
+                      addMember(memberContainer, memberData.name, group);
+                    }
+                  });
+                }
               }
             });
             updateCounts();
@@ -470,6 +491,29 @@
         const memberContainer = document.getElementById(`${groupName}-members`);
         addMember(memberContainer, memberName, groupName);
         updateCounts();
+      }
+
+      // 역할 멤버 추가 함수 (감독자/보조자)
+      function addRoleMember(container, name, groupName) {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'member';
+        memberDiv.setAttribute('draggable', 'true');
+        memberDiv.setAttribute('data-name', name);
+        memberDiv.setAttribute('data-group', groupName);
+        memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
+        
+        memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
+          memberDiv.remove();
+          updateCounts();
+        });
+        
+        memberDiv.addEventListener('dragstart', function(e) {
+          e.dataTransfer.setData('text/plain', name);
+          e.dataTransfer.setData('sourceId', container.id);
+          e.dataTransfer.setData('sourceGroup', groupName);
+        });
+        
+        container.appendChild(memberDiv);
       }
 
       // 버튼으로 멤버 추가
@@ -553,25 +597,7 @@
                 if (member.getAttribute('data-name') === name) member.remove();
               });
             }
-            const memberDiv = document.createElement('div');
-            memberDiv.className = 'member';
-            memberDiv.setAttribute('draggable', 'true');
-            memberDiv.setAttribute('data-name', name);
-            memberDiv.setAttribute('data-group', this.getAttribute('data-group'));
-            memberDiv.innerHTML = name + '<span class="remove-btn">×</span>';
-            
-            memberDiv.querySelector('.remove-btn').addEventListener('click', function() {
-              memberDiv.remove();
-              updateCounts();
-            });
-            
-            memberDiv.addEventListener('dragstart', function(e) {
-              e.dataTransfer.setData('text/plain', name);
-              e.dataTransfer.setData('sourceId', target.id);
-              e.dataTransfer.setData('sourceGroup', target.getAttribute('data-group'));
-            });
-            
-            this.appendChild(memberDiv);
+            addRoleMember(this, name, this.getAttribute('data-group'));
           } else {
             const sourceContainer = document.getElementById(sourceId);
             if (sourceContainer) {
@@ -639,19 +665,27 @@
       document.querySelector('.save-btn').addEventListener('click', function() {
         const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
         const date = document.getElementById('config-date').value || new Date().toISOString().split('T')[0];
-        const allMembers = {};
+        const allGroupsData = {};
 
         groups.forEach(group => {
           const members = document.getElementById(`${group}-members`).querySelectorAll('.member');
-          allMembers[group] = Array.from(members).map(member => ({
-            name: member.getAttribute('data-name'),
-            group: group,
-            addedDate: date
-          }));
+          const supervisor = document.getElementById(`${group}-supervisor`).querySelector('.member');
+          const assistant = document.getElementById(`${group}-assistant`).querySelector('.member');
+
+          allGroupsData[group] = {
+            date: date,
+            supervisor: supervisor ? { name: supervisor.getAttribute('data-name'), group: group } : null,
+            assistant: assistant ? { name: assistant.getAttribute('data-name'), group: group } : null,
+            members: Array.from(members).map(member => ({
+              name: member.getAttribute('data-name'),
+              group: group,
+              addedDate: date
+            }))
+          };
         });
 
         // Firebase에 데이터 저장
-        set(ref(database, 'members'), allMembers)
+        set(ref(database, 'groups'), allGroupsData)
           .then(() => {
             alert('서버에 저장되었습니다');
           })
@@ -662,7 +696,7 @@
       });
 
       // 페이지 로드 시 데이터 불러오기
-      loadMembersFromFirebase();
+      loadDataFromFirebase();
       updateCounts();
     });
   </script>
