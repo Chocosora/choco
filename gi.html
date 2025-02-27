@@ -136,12 +136,13 @@
       position: relative;
       font-size: 13px;
       text-align: center;
-      width: 80%;
-      max-width: 150px;
+      width: 90%; /* 너비를 늘려서 공간 확보 */
+      max-width: 180px; /* 최대 너비 조정 */
       box-sizing: border-box;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      white-space: nowrap; /* 텍스트가 줄바꿈되지 않도록 */
     }
     
     .remove-btn {
@@ -157,6 +158,7 @@
       border: 1px solid #ddd;
       border-radius: 3px;
       margin-left: 5px;
+      width: 60px; /* 고정 너비로 조정 */
     }
     
     .add-member {
@@ -230,6 +232,12 @@
     .status-종 { background-color: #ccffcc; } /* 파스텔 그린 */
     .status-파 { background-color: #ffffcc; } /* 파스텔 옐로우 */
     .status-전 { background-color: #ffffff; } /* 화이트 */
+    .status-장파 { 
+      background: linear-gradient(to right, #cce5ff 50%, #ffffcc 50%); 
+    } /* 파스텔 블루 + 파스텔 옐로우 */
+    .status-종파 { 
+      background: linear-gradient(to right, #ccffcc 50%, #ffffcc 50%); 
+    } /* 파스텔 그린 + 파스텔 옐로우 */
   </style>
 </head>
 <body>
@@ -402,6 +410,20 @@
         <strong>믿음 집단</strong>: <span id="faith-count">0</span>명
       </div>
     </div>
+    <div class="group-stats">
+      <div class="group-stat">
+        <strong>장로</strong>: <span id="elder-count">0</span>명
+      </div>
+      <div class="group-stat">
+        <strong>봉사의 종</strong>: <span id="servant-count">0</span>명
+      </div>
+      <div class="group-stat">
+        <strong>파이오니아</strong>: <span id="pioneer-count">0</span>명
+      </div>
+      <div class="group-stat">
+        <strong>전도인</strong>: <span id="publisher-count">0</span>명
+      </div>
+    </div>
     <p class="total-count">총 인원: <span id="total-members">0</span>명</p>
   </div>
 
@@ -524,11 +546,11 @@
         memberDiv.setAttribute('draggable', 'true');
         memberDiv.setAttribute('data-name', name);
         memberDiv.setAttribute('data-group', groupName);
-        memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
+        memberDiv.innerHTML = `${name}<span class="remove-btn">×</span>`;
         
         const statusSelect = document.createElement('select');
         statusSelect.className = 'status-select';
-        ['장', '종', '파', '전'].forEach(opt => {
+        ['장', '종', '파', '전', '장파', '종파'].forEach(opt => {
           const option = document.createElement('option');
           option.value = opt;
           option.text = opt;
@@ -595,11 +617,11 @@
         memberDiv.setAttribute('draggable', 'true');
         memberDiv.setAttribute('data-name', name);
         memberDiv.setAttribute('data-group', groupName);
-        memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
+        memberDiv.innerHTML = `${name}<span class="remove-btn">×</span>`;
         
         const statusSelect = document.createElement('select');
         statusSelect.className = 'status-select';
-        ['장', '종', '파', '전'].forEach(opt => {
+        ['장', '종', '파', '전', '장파', '종파'].forEach(opt => {
           const option = document.createElement('option');
           option.value = opt;
           option.text = opt;
@@ -632,9 +654,8 @@
 
       // 상태 업데이트 함수
       function updateMemberStatus(memberDiv, status) {
-        memberDiv.classList.remove('status-장', 'status-종', 'status-파', 'status-전');
+        memberDiv.classList.remove('status-장', 'status-종', 'status-파', 'status-전', 'status-장파', 'status-종파');
         memberDiv.classList.add(`status-${status}`);
-        memberDiv.querySelector('.status-text').textContent = `(${status})`;
       }
       
       // 드롭 대상 설정
@@ -690,11 +711,11 @@
             memberDiv.setAttribute('draggable', 'true');
             memberDiv.setAttribute('data-name', name);
             memberDiv.setAttribute('data-group', this.getAttribute('data-group'));
-            memberDiv.innerHTML = `${name} <span class="status-text">(${status})</span><span class="remove-btn">×</span>`;
+            memberDiv.innerHTML = `${name}<span class="remove-btn">×</span>`;
             
             const statusSelect = document.createElement('select');
             statusSelect.className = 'status-select';
-            ['장', '종', '파', '전'].forEach(opt => {
+            ['장', '종', '파', '전', '장파', '종파'].forEach(opt => {
               const option = document.createElement('option');
               option.value = opt;
               option.text = opt;
@@ -737,18 +758,39 @@
       // 카운트 업데이트 함수
       function updateCounts() {
         const groups = ['love', 'joy', 'peace', 'goodness', 'faith'];
+        let totalMembers = 0;
+        let elderCount = 0;
+        let servantCount = 0;
+        let pioneerCount = 0;
+        let publisherCount = 0;
+
         groups.forEach(group => {
           const memberCount = document.getElementById(`${group}-members`).querySelectorAll('.member').length;
           document.querySelector(`[data-group="${group}"] .member-count`).textContent = `(${memberCount}명)`;
           document.getElementById(`${group}-count`).textContent = memberCount;
+          totalMembers += memberCount;
+
+          // 감독자와 보조자 포함 상태 계산
+          const allMembers = [
+            ...document.getElementById(`${group}-members`).querySelectorAll('.member'),
+            ...document.getElementById(`${group}-supervisor`).querySelectorAll('.member'),
+            ...document.getElementById(`${group}-assistant`).querySelectorAll('.member')
+          ];
+
+          allMembers.forEach(member => {
+            const status = member.querySelector('.status-select').value;
+            if (status === '장' || status === '장파') elderCount++;
+            if (status === '종' || status === '종파') servantCount++;
+            if (status === '파' || status === '장파' || status === '종파') pioneerCount++;
+            if (status === '전') publisherCount++;
+          });
         });
-        
-        let totalMembers = 0;
-        groups.forEach(group => {
-          totalMembers += parseInt(document.getElementById(`${group}-count`).textContent);
-        });
-        
+
         document.getElementById('total-members').textContent = totalMembers;
+        document.getElementById('elder-count').textContent = elderCount;
+        document.getElementById('servant-count').textContent = servantCount;
+        document.getElementById('pioneer-count').textContent = pioneerCount;
+        document.getElementById('publisher-count').textContent = publisherCount;
       }
 
       // 날짜 변경 시 즉시 저장
