@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 모바일에서 전체 화면을 띄우고 핀치 줌 가능하도록 설정 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>강일 회중 집단 관리</title>
   <style>
     body {
@@ -778,20 +779,27 @@
         let servantCount = 0;
         let pioneerCount = 0;
         let publisherCount = 0;
+        const uniqueMembers = new Set(); // 중복 제거를 위한 Set
 
         groups.forEach(group => {
-          const memberCount = document.getElementById(`${group}-members`).querySelectorAll('.member').length +
-                             document.getElementById(`${group}-supervisor`).querySelectorAll('.member').length +
-                             document.getElementById(`${group}-assistant`).querySelectorAll('.member').length;
+          const memberContainer = document.getElementById(`${group}-members`);
+          const supervisorSlot = document.getElementById(`${group}-supervisor`);
+          const assistantSlot = document.getElementById(`${group}-assistant`);
+          
+          const members = memberContainer.querySelectorAll('.member');
+          const supervisor = supervisorSlot.querySelector('.member');
+          const assistant = assistantSlot.querySelector('.member');
+
+          // 집단 성원 수 업데이트 (감독자, 보조자 제외)
+          const memberCount = members.length;
           document.querySelector(`[data-group="${group}"] .member-count`).textContent = `(${memberCount}명)`;
           document.getElementById(`${group}-count`).textContent = memberCount;
-          totalMembers += memberCount;
 
-          // 감독자와 보조자 포함 상태 계산
+          // 모든 멤버(감독자, 보조자 포함) 상태 계산
           const allMembers = [
-            ...document.getElementById(`${group}-members`).querySelectorAll('.member'),
-            ...document.getElementById(`${group}-supervisor`).querySelectorAll('.member'),
-            ...document.getElementById(`${group}-assistant`).querySelectorAll('.member')
+            ...members,
+            ...(supervisor ? [supervisor] : []),
+            ...(assistant ? [assistant] : [])
           ];
 
           let groupElderCount = 0;
@@ -799,7 +807,16 @@
           let groupPioneerCount = 0;
 
           allMembers.forEach(member => {
+            const name = member.getAttribute('data-name');
             const status = member.querySelector('.status-select').value;
+
+            // 총 인원에서 중복 제거
+            if (!uniqueMembers.has(name)) {
+              uniqueMembers.add(name);
+              totalMembers++;
+            }
+
+            // 상태별 카운트
             if (status === '장' || status === '장파') {
               groupElderCount++;
               elderCount++;
