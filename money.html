@@ -78,16 +78,24 @@
       padding-top: 10px;
       border-top: 2px solid #e0e0e0;
     }
-    #history div {
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 8px 12px;
       margin: 6px 0;
       background: #f7f7f7;
       border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.2s;
     }
-    #history div:hover {
+    .history-item:hover {
       background: #e0e0e0;
+    }
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: red;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -167,9 +175,9 @@
     </div>
   </div>
 
-  <!-- Firebase SDK 및 스크립트 -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+  <!-- Firebase SDK (compat 모드 사용) 및 스크립트 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
     // Firebase 설정 (databaseURL만 지정)
     const firebaseConfig = {
@@ -207,13 +215,13 @@
       return parseFloat(value.toString().replace(/,/g, "")) || 0;
     }
 
-    // 각 입력 필드에 이벤트 추가 (실시간 계산 및 blur/Enter 시 포맷팅, 저장)
+    // 각 입력 필드에 이벤트 추가 (실시간 계산 및 포맷팅, 저장)
     function addFormattingEvents(input) {
-      // 실시간 계산
+      // 실시간 계산: 입력할 때마다 결과 업데이트
       input.addEventListener("input", function() {
         calculateTotals();
       });
-      // 포맷팅 및 저장
+      // 포맷팅 및 저장: blur 또는 Enter 키 이벤트 시 처리
       input.addEventListener("blur", function() {
         let num = parseInput(this.value);
         this.value = num ? formatNumber(num) : "";
@@ -284,15 +292,17 @@
           monthlySalaryInput.value = "";
         }
         calculateTotals();
+      }).catch((error) => {
+        console.error("데이터 불러오기 에러:", error);
       });
     }
 
-    // 드롭다운에 년월 옵션 생성 (현재년도 전후 1년, 전체 24개월 옵션)
+    // 드롭다운에 년월 옵션 생성 (현재 월 기준, 지난 12개월 ~ 다음 12개월 옵션)
     function populateMonthSelect() {
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
-      // 12개월 전부터 12개월 후까지 총 24개월 옵션 생성
+      // -11부터 +12까지 24개월 옵션 생성
       for(let i = -11; i <= 12; i++){
         const date = new Date(currentYear, currentMonth - 1 + i);
         const year = date.getFullYear();
@@ -308,24 +318,60 @@
       monthSelect.value = currentOption;
     }
 
-    // 히스토리 영역 업데이트: 저장된 모든 년월 데이터를 나열
+    // 히스토리 영역 업데이트: 저장된 모든 년월 데이터를 최신순(최근 자료 상단)으로 나열하고, 삭제 버튼 추가
     function updateHistory() {
       const historyDiv = document.getElementById("history");
       firebase.database().ref('expenses').once('value').then((snapshot) => {
-        historyDiv.innerHTML = "";
+        let items = [];
         snapshot.forEach((childSnapshot) => {
-          const monthKey = childSnapshot.key;
-          const data = childSnapshot.val();
+          let monthKey = childSnapshot.key;
+          let data = childSnapshot.val();
+          items.push({ monthKey, data });
+        });
+        // timestamp 기준 내림차순 정렬 (최근 자료가 상단에 오도록)
+        items.sort((a, b) => (b.data.timestamp || 0) - (a.data.timestamp || 0));
+        historyDiv.innerHTML = "";
+        items.forEach(item => {
+          const { monthKey, data } = item;
           const shinhanTotal = (data.shinhanCard || 0) + (data.transportation || 0) + SAVINGS_FIXED + (data.interest1 || 0) + (data.interest2 || 0);
           const wooriTotal = (data.samsungCard || 0) + WOORI_FIXED;
-          const div = document.createElement("div");
-          div.textContent = `${monthKey} : 신한은행 입금액 ${formatNumber(shinhanTotal)}원, 우리은행 입금액 ${formatNumber(wooriTotal)}원`;
-          div.addEventListener("click", () => {
+          
+          // 각 히스토리 항목 컨테이너 생성
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "history-item";
+          
+          // 기록 내용
+          const textSpan = document.createElement("span");
+          textSpan.textContent = `${monthKey} : 신한은행 입금액 ${formatNumber(shinhanTotal)}원, 우리은행 입금액 ${formatNumber(wooriTotal)}원`;
+          
+          // 삭제 버튼 생성
+          const delBtn = document.createElement("button");
+          delBtn.className = "delete-btn";
+          delBtn.textContent = "×";
+          delBtn.title = "기록 삭제";
+          delBtn.addEventListener("click", function(e) {
+            e.stopPropagation();  // 클릭 이벤트가 아이템 클릭으로 전달되지 않도록
+            if(confirm(`${monthKey} 기록을 삭제하시겠습니까?`)) {
+              firebase.database().ref('expenses/' + monthKey).remove().then(() => {
+                updateHistory();
+              }).catch((error) => {
+                console.error("삭제 에러:", error);
+              });
+            }
+          });
+          
+          // 기록 항목 클릭 시 해당 월 데이터 로드
+          itemDiv.addEventListener("click", function() {
             monthSelect.value = monthKey;
             loadData(monthKey);
           });
-          historyDiv.appendChild(div);
+          
+          itemDiv.appendChild(textSpan);
+          itemDiv.appendChild(delBtn);
+          historyDiv.appendChild(itemDiv);
         });
+      }).catch((error) => {
+        console.error("히스토리 업데이트 에러:", error);
       });
     }
 
