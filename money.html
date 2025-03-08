@@ -1,513 +1,345 @@
-import React, { useState, useEffect, useRef } from 'react';
-
-const ExpenseTracker = () => {
-  const [expenses, setExpenses] = useState({
-    shinhan: {
-      creditCard: '',
-      transportation: '',
-      savings: '100000', // Fixed
-      interest1: '',
-      interest2: '',
-      total: '0'
-    },
-    woori: {
-      samsung: '',
-      savingsInsurance: '200950', // Fixed
-      total: '0'
-    },
-    date: new Date().toISOString().substring(0, 7), // YYYY-MM format
-    salary: '',
-    balance: '0'
-  });
-  
-  const [history, setHistory] = useState([]);
-  const [availableDates, setAvailableDates] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState('');
-  const [formattedInputs, setFormattedInputs] = useState({
-    shinhan: {
-      creditCard: '',
-      transportation: '',
-      savings: '100,000', // Fixed
-      interest1: '',
-      interest2: ''
-    },
-    woori: {
-      samsung: '',
-      savingsInsurance: '200,950' // Fixed
-    },
-    salary: ''
-  });
-  
-  // Debounce timer for auto-save
-  const saveTimer = useRef(null);
-
-  // Firebase URL
-  const firebaseUrl = 'https://money-a58a8-default-rtdb.firebaseio.com';
-
-  // Load expense history on component mount
-  useEffect(() => {
-    fetchExpenseHistory();
-  }, []);
-
-  // Calculate totals whenever expenses change
-  useEffect(() => {
-    const shinhanTotal = parseFloat(expenses.shinhan.creditCard || 0) + 
-                        parseFloat(expenses.shinhan.transportation || 0) + 
-                        parseFloat(expenses.shinhan.savings || 0) + 
-                        parseFloat(expenses.shinhan.interest1 || 0) + 
-                        parseFloat(expenses.shinhan.interest2 || 0);
-    
-    const wooriTotal = parseFloat(expenses.woori.samsung || 0) + 
-                      parseFloat(expenses.woori.savingsInsurance || 0);
-                     
-    const totalExpenses = shinhanTotal + wooriTotal;
-    const currentBalance = parseFloat(expenses.salary || 0) - totalExpenses;
-
-    setExpenses(prev => ({
-      ...prev,
-      shinhan: { ...prev.shinhan, total: shinhanTotal.toFixed(0) },
-      woori: { ...prev.woori, total: wooriTotal.toFixed(0) },
-      balance: currentBalance.toFixed(0)
-    }));
-    
-    // Auto-save with debounce (800ms)
-    if (saveTimer.current) {
-      clearTimeout(saveTimer.current);
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>월간 생활비 관리</title>
+  <style>
+    /* 전체 레이아웃 스타일 */
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
     }
-    
-    saveTimer.current = setTimeout(() => {
-      saveExpenses();
-    }, 800);
-    
-  }, [expenses.shinhan.creditCard, expenses.shinhan.transportation, 
-      expenses.shinhan.savings, expenses.shinhan.interest1, expenses.shinhan.interest2,
-      expenses.woori.samsung, expenses.woori.savingsInsurance, expenses.salary, expenses.date]);
-
-  // Fetch all expense history from Firebase
-  const fetchExpenseHistory = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${firebaseUrl}/expenses.json`);
-      const data = await response.json();
-      
-      if (data) {
-        const historyArray = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key]
-        }));
-        
-        historyArray.sort((a, b) => b.date.localeCompare(a.date));
-        setHistory(historyArray);
-        
-        const dates = [...new Set(historyArray.map(item => item.date))];
-        setAvailableDates(dates);
-        
-        if (historyArray.length > 0) {
-          const latestData = historyArray[0];
-          setExpenses(latestData);
-          setFormattedInputs({
-            shinhan: {
-              creditCard: formatNumberInput(latestData.shinhan.creditCard),
-              transportation: formatNumberInput(latestData.shinhan.transportation),
-              savings: formatNumberInput(latestData.shinhan.savings),
-              interest1: formatNumberInput(latestData.shinhan.interest1),
-              interest2: formatNumberInput(latestData.shinhan.interest2)
-            },
-            woori: {
-              samsung: formatNumberInput(latestData.woori.samsung),
-              savingsInsurance: formatNumberInput(latestData.woori.savingsInsurance)
-            },
-            salary: formatNumberInput(latestData.salary)
-          });
-        }
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setIsLoading(false);
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 8px;
     }
-  };
-
-  // Save current expenses to Firebase
-  const saveExpenses = async () => {
-    setSaveStatus('저장 중...');
-    try {
-      const existingEntryIndex = history.findIndex(item => item.date === expenses.date);
-      
-      if (existingEntryIndex >= 0) {
-        const entryId = history[existingEntryIndex].id;
-        await fetch(`${firebaseUrl}/expenses/${entryId}.json`, {
-          method: 'PUT',
-          body: JSON.stringify(expenses)
-        });
-        
-        const updatedHistory = [...history];
-        updatedHistory[existingEntryIndex] = { ...expenses, id: entryId };
-        setHistory(updatedHistory);
-      } else {
-        const response = await fetch(`${firebaseUrl}/expenses.json`, {
-          method: 'POST',
-          body: JSON.stringify(expenses)
-        });
-        const data = await response.json();
-        
-        const newEntry = { id: data.name, ...expenses };
-        setHistory([newEntry, ...history]);
-        setAvailableDates([expenses.date, ...availableDates.filter(d => d !== expenses.date)]);
-      }
-      
-      setSaveStatus('저장 완료');
-      setTimeout(() => setSaveStatus(''), 3000);
-    } catch (error) {
-      console.error("Error saving data:", error);
-      setSaveStatus('저장 실패');
-      setTimeout(() => setSaveStatus(''), 3000);
+    h1, h2 {
+      text-align: center;
+      color: #333;
     }
-  };
-
-  // Format numbers with commas for display
-  const formatNumber = (num) => {
-    if (!num) return '0';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-  
-  const formatNumberInput = (value) => {
-    if (!value) return '';
-    const numericValue = value.toString().replace(/,/g, '');
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-  
-  const parseFormattedNumber = (formatted) => {
-    if (!formatted) return '';
-    return formatted.replace(/,/g, '');
-  };
-
-  // Handle input changes with formatted display
-  const handleFormattedChange = (bank, field, formattedValue) => {
-    setFormattedInputs(prev => ({
-      ...prev,
-      [bank]: { ...prev[bank], [field]: formattedValue }
-    }));
-    
-    const numericValue = parseFormattedNumber(formattedValue);
-    setExpenses(prev => ({
-      ...prev,
-      [bank]: { ...prev[bank], [field]: numericValue }
-    }));
-  };
-  
-  const handleSalaryChange = (formattedValue) => {
-    setFormattedInputs(prev => ({ ...prev, salary: formattedValue }));
-    const numericValue = parseFormattedNumber(formattedValue);
-    setExpenses(prev => ({ ...prev, salary: numericValue }));
-  };
-
-  // Handle date selection change (수정된 부분)
-  const handleDateChange = (e) => {
-    const selectedDate = e.target.value;
-
-    if (selectedDate === "new") {
-      const newDate = new Date().toISOString().substring(0, 7);
-
-      // 중복 날짜 체크
-      if (availableDates.includes(newDate)) {
-        alert("이미 해당 월의 데이터가 존재합니다. 기존 항목을 선택해주세요.");
-        return;
-      }
-
-      const newExpenses = {
-        shinhan: {
-          creditCard: '',
-          transportation: '',
-          savings: '100000',
-          interest1: '',
-          interest2: '',
-          total: '100000'
-        },
-        woori: {
-          samsung: '',
-          savingsInsurance: '200950',
-          total: '200950'
-        },
-        date: newDate,
-        salary: '',
-        balance: '0'
-      };
-
-      setExpenses(newExpenses);
-      setFormattedInputs({
-        shinhan: {
-          creditCard: '',
-          transportation: '',
-          savings: '100,000',
-          interest1: '',
-          interest2: ''
-        },
-        woori: {
-          samsung: '',
-          savingsInsurance: '200,950'
-        },
-        salary: ''
-      });
-
-      // 새 날짜를 드롭다운에 즉시 반영
-      setAvailableDates(prev => [newDate, ...prev.filter(d => d !== newDate)]);
-    } else {
-      const selectedEntry = history.find(item => item.date === selectedDate);
-      if (selectedEntry) {
-        setExpenses(selectedEntry);
-        setFormattedInputs({
-          shinhan: {
-            creditCard: formatNumberInput(selectedEntry.shinhan.creditCard),
-            transportation: formatNumberInput(selectedEntry.shinhan.transportation),
-            savings: formatNumberInput(selectedEntry.shinhan.savings),
-            interest1: formatNumberInput(selectedEntry.shinhan.interest1),
-            interest2: formatNumberInput(selectedEntry.shinhan.interest2)
-          },
-          woori: {
-            samsung: formatNumberInput(selectedEntry.woori.samsung),
-            savingsInsurance: formatNumberInput(selectedEntry.woori.savingsInsurance)
-          },
-          salary: formatNumberInput(selectedEntry.salary)
-        });
-      }
+    h2 {
+      margin-top: 30px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 5px;
     }
-  };
-  
-  const formatDateString = (dateStr) => {
-    if (!dateStr) return '';
-    const [year, month] = dateStr.split('-');
-    return `${year}년 ${month}월`;
-  };
+    /* 입력 폼 스타일 */
+    form {
+      margin-top: 20px;
+    }
+    .field {
+      display: flex;
+      align-items: center;
+      margin: 12px 0;
+    }
+    .field label {
+      flex: 1;
+      font-weight: bold;
+      color: #555;
+    }
+    .field input[type="text"] {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: right;
+    }
+    .field span {
+      flex: 1;
+      font-size: 16px;
+      text-align: right;
+      color: #333;
+    }
+    .result {
+      font-size: 18px;
+      font-weight: bold;
+      color: #007BFF;
+    }
+    /* 년월 선택 스타일 */
+    .month-selector {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .month-selector select {
+      padding: 8px 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    /* 히스토리 스타일 */
+    #history {
+      margin-top: 30px;
+      padding-top: 10px;
+      border-top: 2px solid #e0e0e0;
+    }
+    #history div {
+      padding: 8px 12px;
+      margin: 6px 0;
+      background: #f7f7f7;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #history div:hover {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>월간 생활비 관리</h1>
 
-  return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-center">월별 지출 관리</h1>
-      
-      {isLoading ? (
-        <div className="text-center p-4">데이터 로딩 중...</div>
-      ) : (
-        <>
-          <div className="mb-4">
-            <label className="block mb-1 font-medium">날짜 선택:</label>
-            <select
-              value={expenses.date}
-              onChange={handleDateChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="new">새 항목 추가</option>
-              {availableDates.map(date => (
-                <option key={date} value={date}>
-                  {formatDateString(date)}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          {saveStatus && (
-            <div className={`mb-4 p-2 text-center rounded ${saveStatus.includes('실패') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {saveStatus}
-            </div>
-          )}
-          
-          <div className="mb-4 p-4 bg-yellow-50 rounded-lg">
-            <label className="block mb-1 font-medium">월급:</label>
-            <input
-              type="text"
-              value={formattedInputs.salary}
-              onChange={(e) => handleSalaryChange(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="이번달 월급 입력"
-              onFocus={(e) => e.target.select()}
-              onBlur={(e) => {
-                const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                handleSalaryChange(formatted);
-              }}
-            />
-          </div>
-          
-          <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">신한은행</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1">신한카드:</label>
-                <input
-                  type="text"
-                  value={formattedInputs.shinhan.creditCard}
-                  onChange={(e) => handleFormattedChange('shinhan', 'creditCard', e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="금액 입력"
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                    handleFormattedChange('shinhan', 'creditCard', formatted);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-1">교통비:</label>
-                <input
-                  type="text"
-                  value={formattedInputs.shinhan.transportation}
-                  onChange={(e) => handleFormattedChange('shinhan', 'transportation', e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="금액 입력"
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                    handleFormattedChange('shinhan', 'transportation', formatted);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-1">적금 (고정):</label>
-                <input
-                  type="text"
-                  value={formattedInputs.shinhan.savings}
-                  className="w-full p-2 border rounded bg-gray-100"
-                  disabled
-                />
-              </div>
-              <div>
-                <label className="block mb-1">이자 1:</label>
-                <input
-                  type="text"
-                  value={formattedInputs.shinhan.interest1}
-                  onChange={(e) => handleFormattedChange('shinhan', 'interest1', e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="금액 입력"
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                    handleFormattedChange('shinhan', 'interest1', formatted);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-1">이자 2:</label>
-                <input
-                  type="text"
-                  value={formattedInputs.shinhan.interest2}
-                  onChange={(e) => handleFormattedChange('shinhan', 'interest2', e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="금액 입력"
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                    handleFormattedChange('shinhan', 'interest2', formatted);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-100 rounded font-bold">
-              신한은행 입금 필요액: {formatNumber(expenses.shinhan.total)}원
-            </div>
-          </div>
-          
-          <div className="mb-8 p-4 bg-green-50 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">우리은행</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1">삼성카드:</label>
-                <input
-                  type="text"
-                  value={formattedInputs.woori.samsung}
-                  onChange={(e) => handleFormattedChange('woori', 'samsung', e.target.value)}
-                  className="w-full p-2 border rounded"
-                  placeholder="금액 입력"
-                  onFocus={(e) => e.target.select()}
-                  onBlur={(e) => {
-                    const formatted = formatNumberInput(parseFormattedNumber(e.target.value));
-                    handleFormattedChange('woori', 'samsung', formatted);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-1">적금 & 보험 (고정):</label>
-                <input
-                  type="text"
-                  value={formattedInputs.woori.savingsInsurance}
-                  className="w-full p-2 border rounded bg-gray-100"
-                  disabled
-                />
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-green-100 rounded font-bold">
-              우리은행 입금 필요액: {formatNumber(expenses.woori.total)}원
-            </div>
-          </div>
-          
-          <div className="p-4 bg-gray-100 rounded-lg">
-            <div className="mb-4 text-center">
-              <h2 className="text-xl font-bold mb-2">총 입금 필요액</h2>
-              <p className="text-2xl font-bold">
-                {formatNumber(parseInt(expenses.shinhan.total) + parseInt(expenses.woori.total))}원
-              </p>
-            </div>
-            
-            <div className="p-3 bg-indigo-100 rounded text-center">
-              <h3 className="text-lg font-bold mb-1">잔액 계산</h3>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <p className="font-medium">월급</p>
-                  <p>{formatNumber(expenses.salary)}원</p>
-                </div>
-                <div>
-                  <p className="font-medium">지출</p>
-                  <p>-{formatNumber(parseInt(expenses.shinhan.total) + parseInt(expenses.woori.total))}원</p>
-                </div>
-                <div>
-                  <p className="font-medium">잔액</p>
-                  <p className={`font-bold ${parseInt(expenses.balance) >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                    {formatNumber(expenses.balance)}원
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {history.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4">지출 내역 기록</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="p-2 border">날짜</th>
-                      <th className="p-2 border">월급</th>
-                      <th className="p-2 border">신한은행</th>
-                      <th className="p-2 border">우리은행</th>
-                      <th className="p-2 border">총 지출</th>
-                      <th className="p-2 border">잔액</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map((item) => {
-                      const totalExpense = parseInt(item.shinhan.total) + parseInt(item.woori.total);
-                      const balance = parseInt(item.salary || 0) - totalExpense;
-                      return (
-                        <tr key={item.id} className="hover:bg-gray-50">
-                          <td className="p-2 border">{formatDateString(item.date)}</td>
-                          <td className="p-2 border text-right">{formatNumber(item.salary)}원</td>
-                          <td className="p-2 border text-right">{formatNumber(item.shinhan.total)}원</td>
-                          <td className="p-2 border text-right">{formatNumber(item.woori.total)}원</td>
-                          <td className="p-2 border text-right">{formatNumber(totalExpense)}원</td>
-                          <td className={`p-2 border text-right font-bold ${balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                            {formatNumber(balance)}원
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
-      )}
+    <!-- 년월 선택 드롭다운 -->
+    <div class="month-selector">
+      <label for="month-select">년월 선택:</label>
+      <select id="month-select"></select>
     </div>
-  );
-};
 
-export default ExpenseTracker;
+    <form id="expense-form">
+      <!-- 신한은행 섹션 -->
+      <h2>신한은행</h2>
+      <div class="field">
+        <label for="shinhan-card">신한카드 사용 금액:</label>
+        <input type="text" id="shinhan-card" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label for="transportation">교통비:</label>
+        <input type="text" id="transportation" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label>적금 (고정):</label>
+        <span id="savings-fixed">100,000</span> 원
+      </div>
+      <div class="field">
+        <label for="interest1">이자 1:</label>
+        <input type="text" id="interest1" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label for="interest2">이자 2:</label>
+        <input type="text" id="interest2" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label>신한은행 입금액:</label>
+        <span id="shinhan-total" class="result">0</span> 원
+      </div>
+
+      <!-- 우리은행 섹션 -->
+      <h2>우리은행</h2>
+      <div class="field">
+        <label for="samsung-card">삼성카드 사용 금액:</label>
+        <input type="text" id="samsung-card" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label>적금 &amp; 보험 (고정):</label>
+        <span id="woori-fixed">200,950</span> 원
+      </div>
+      <div class="field">
+        <label>우리은행 입금액:</label>
+        <span id="woori-total" class="result">0</span> 원
+      </div>
+
+      <!-- 총 입금 필요액 및 잔액 -->
+      <h2>총 입금 및 잔액</h2>
+      <div class="field">
+        <label>총 입금 필요액:</label>
+        <span id="grand-total" class="result">0</span> 원
+      </div>
+      <div class="field">
+        <label for="monthly-salary">이번달 월급:</label>
+        <input type="text" id="monthly-salary" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
+        <label>잔액:</label>
+        <span id="balance" class="result">0</span> 원
+      </div>
+    </form>
+
+    <!-- 히스토리 섹션 -->
+    <h2>히스토리</h2>
+    <div id="history">
+      <!-- 저장된 기록들이 표시됩니다 -->
+    </div>
+  </div>
+
+  <!-- Firebase SDK 및 스크립트 -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js"></script>
+  <script>
+    // Firebase 설정 (databaseURL만 지정)
+    const firebaseConfig = {
+      databaseURL: "https://money-a58a8-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 고정 상수
+    const SAVINGS_FIXED = 100000;
+    const WOORI_FIXED = 200950;
+
+    // DOM 요소들
+    const monthSelect = document.getElementById("month-select");
+    const shinhanCardInput = document.getElementById("shinhan-card");
+    const transportationInput = document.getElementById("transportation");
+    const interest1Input = document.getElementById("interest1");
+    const interest2Input = document.getElementById("interest2");
+    const samsungCardInput = document.getElementById("samsung-card");
+    const monthlySalaryInput = document.getElementById("monthly-salary");
+
+    const shinhanTotalDisplay = document.getElementById("shinhan-total");
+    const wooriTotalDisplay = document.getElementById("woori-total");
+    const grandTotalDisplay = document.getElementById("grand-total");
+    const balanceDisplay = document.getElementById("balance");
+
+    // 숫자에 천단위 콤마 추가 함수
+    function formatNumber(num) {
+      if(isNaN(num)) return "0";
+      return Number(num).toLocaleString('ko-KR');
+    }
+
+    // 입력값에서 콤마 제거 후 숫자로 변환
+    function parseInput(value) {
+      return parseFloat(value.toString().replace(/,/g, "")) || 0;
+    }
+
+    // 각 입력 필드에 이벤트 추가 (실시간 계산 및 blur/Enter 시 포맷팅, 저장)
+    function addFormattingEvents(input) {
+      // 실시간 계산
+      input.addEventListener("input", function() {
+        calculateTotals();
+      });
+      // 포맷팅 및 저장
+      input.addEventListener("blur", function() {
+        let num = parseInput(this.value);
+        this.value = num ? formatNumber(num) : "";
+        calculateTotals();
+        saveData();
+        updateHistory();
+      });
+      input.addEventListener("keyup", function(e) {
+        if(e.key === "Enter") {
+          this.blur();
+        }
+      });
+    }
+    [shinhanCardInput, transportationInput, interest1Input, interest2Input, samsungCardInput, monthlySalaryInput].forEach(addFormattingEvents);
+
+    // 총계 계산 (신한은행: 신한카드 + 교통비 + 적금 + 이자1 + 이자2, 우리은행: 삼성카드 + 고정)
+    function calculateTotals() {
+      const shinhanCard = parseInput(shinhanCardInput.value);
+      const transportation = parseInput(transportationInput.value);
+      const interest1 = parseInput(interest1Input.value);
+      const interest2 = parseInput(interest2Input.value);
+      const samsungCard = parseInput(samsungCardInput.value);
+      const monthlySalary = parseInput(monthlySalaryInput.value);
+
+      const shinhanTotal = shinhanCard + transportation + SAVINGS_FIXED + interest1 + interest2;
+      const wooriTotal = samsungCard + WOORI_FIXED;
+      const grandTotal = shinhanTotal + wooriTotal;
+      const balance = monthlySalary - grandTotal;
+
+      shinhanTotalDisplay.textContent = formatNumber(shinhanTotal);
+      wooriTotalDisplay.textContent = formatNumber(wooriTotal);
+      grandTotalDisplay.textContent = formatNumber(grandTotal);
+      balanceDisplay.textContent = formatNumber(balance);
+    }
+
+    // 현재 폼 데이터를 Firebase에 저장 (선택된 년월 기준)
+    function saveData() {
+      const selectedMonth = monthSelect.value;
+      const data = {
+        shinhanCard: parseInput(shinhanCardInput.value),
+        transportation: parseInput(transportationInput.value),
+        interest1: parseInput(interest1Input.value),
+        interest2: parseInput(interest2Input.value),
+        samsungCard: parseInput(samsungCardInput.value),
+        monthlySalary: parseInput(monthlySalaryInput.value),
+        timestamp: Date.now()
+      };
+      firebase.database().ref('expenses/' + selectedMonth).set(data);
+    }
+
+    // 선택된 년월의 데이터를 Firebase에서 불러오기
+    function loadData(monthKey) {
+      firebase.database().ref('expenses/' + monthKey).get().then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          shinhanCardInput.value = data.shinhanCard ? formatNumber(data.shinhanCard) : "";
+          transportationInput.value = data.transportation ? formatNumber(data.transportation) : "";
+          interest1Input.value = data.interest1 ? formatNumber(data.interest1) : "";
+          interest2Input.value = data.interest2 ? formatNumber(data.interest2) : "";
+          samsungCardInput.value = data.samsungCard ? formatNumber(data.samsungCard) : "";
+          monthlySalaryInput.value = data.monthlySalary ? formatNumber(data.monthlySalary) : "";
+        } else {
+          shinhanCardInput.value = "";
+          transportationInput.value = "";
+          interest1Input.value = "";
+          interest2Input.value = "";
+          samsungCardInput.value = "";
+          monthlySalaryInput.value = "";
+        }
+        calculateTotals();
+      });
+    }
+
+    // 드롭다운에 년월 옵션 생성 (현재년도 전후 1년, 전체 24개월 옵션)
+    function populateMonthSelect() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      // 12개월 전부터 12개월 후까지 총 24개월 옵션 생성
+      for(let i = -11; i <= 12; i++){
+        const date = new Date(currentYear, currentMonth - 1 + i);
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const optionValue = `${year}-${month}`;
+        const option = document.createElement("option");
+        option.value = optionValue;
+        option.textContent = optionValue;
+        monthSelect.appendChild(option);
+      }
+      // 기본값: 현재 년월
+      const currentOption = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
+      monthSelect.value = currentOption;
+    }
+
+    // 히스토리 영역 업데이트: 저장된 모든 년월 데이터를 나열
+    function updateHistory() {
+      const historyDiv = document.getElementById("history");
+      firebase.database().ref('expenses').once('value').then((snapshot) => {
+        historyDiv.innerHTML = "";
+        snapshot.forEach((childSnapshot) => {
+          const monthKey = childSnapshot.key;
+          const data = childSnapshot.val();
+          const shinhanTotal = (data.shinhanCard || 0) + (data.transportation || 0) + SAVINGS_FIXED + (data.interest1 || 0) + (data.interest2 || 0);
+          const wooriTotal = (data.samsungCard || 0) + WOORI_FIXED;
+          const div = document.createElement("div");
+          div.textContent = `${monthKey} : 신한은행 입금액 ${formatNumber(shinhanTotal)}원, 우리은행 입금액 ${formatNumber(wooriTotal)}원`;
+          div.addEventListener("click", () => {
+            monthSelect.value = monthKey;
+            loadData(monthKey);
+          });
+          historyDiv.appendChild(div);
+        });
+      });
+    }
+
+    // 년월 선택 변경 시 해당 데이터 불러오기
+    monthSelect.addEventListener("change", function() {
+      loadData(this.value);
+    });
+
+    // 페이지 로드시 드롭다운 초기화 및 데이터 로드
+    window.addEventListener("load", function() {
+      populateMonthSelect();
+      loadData(monthSelect.value);
+      updateHistory();
+    });
+  </script>
+</body>
+</html>
