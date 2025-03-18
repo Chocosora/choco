@@ -16,7 +16,23 @@
     h1 {
       color: #333;
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
+    }
+    .view-btn {
+      display: block;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .view-btn a {
+      background-color: #4caf50;
+      color: white;
+      padding: 8px 16px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .view-btn a:hover {
+      background-color: #45a049;
     }
     .container {
       max-width: 1000px;
@@ -34,7 +50,6 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
-      table-layout: fixed;
     }
     th, td {
       padding: 10px;
@@ -48,16 +63,6 @@
       background-color: #f0f0f0;
       font-weight: bold;
     }
-    th:nth-child(1), td:nth-child(1) { width: 10%; }
-    th:nth-child(2), td:nth-child(2) { width: 8%; }
-    th:nth-child(3), td:nth-child(3) { width: 15%; }
-    th:nth-child(4), td:nth-child(4) { width: 8%; }
-    th:nth-child(5), td:nth-child(5) { width: 12%; }
-    th:nth-child(6), td:nth-child(6) { width: 8%; }
-    th:nth-child(7), td:nth-child(7) { width: 25%; }
-    th:nth-child(8), td:nth-child(8) { width: 7%; }
-    th:nth-child(9), td:nth-child(9) { width: 7%; }
-    
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
@@ -183,16 +188,60 @@
       100% { background-color: transparent; }
     }
     @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
       .participant-list {
-        overflow-x: scroll;
+        overflow-x: auto;
       }
-      th, td {
-        padding: 6px;
-        font-size: 0.9em;
+      table, thead, tbody, th, td, tr {
+        display: block;
       }
+      thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        background-color: #fff;
+      }
+      td {
+        border: none;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+        padding-left: 50%;
+        text-align: left;
+        white-space: normal;
+      }
+      td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
+        padding-right: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      td:nth-child(1):before { content: "이름"; }
+      td:nth-child(2):before { content: "성별"; }
+      td:nth-child(3):before { content: "참여자 회중"; }
+      td:nth-child(4):before { content: "출생연도"; }
+      td:nth-child(5):before { content: "연락처"; }
+      td:nth-child(6):before { content: "결혼"; }
+      td:nth-child(7):before { content: "참여 날짜"; }
+      td:nth-child(8):before { content: "저장"; }
+      td:nth-child(9):before { content: "삭제"; }
       .action-btn {
-        padding: 4px;
+        padding: 4px 8px;
         font-size: 0.8em;
+      }
+      .form-group {
+        margin-bottom: 10px;
+      }
+      input {
+        font-size: 0.9em;
       }
     }
   </style>
@@ -200,6 +249,9 @@
 <body>
   <div class="container">
     <h1>참여자 명단 수정</h1>
+    <div class="view-btn">
+      <a href="https://chocosora.github.io/choco/sc">참여자 명단 보기</a>
+    </div>
     
     <div class="participant-list">
       <table>
@@ -353,22 +405,22 @@
         
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><div class="editable" contenteditable="true" data-field="name" data-index="${index}">${participant.name || ''}</div></td>
-          <td><div class="editable" contenteditable="true" data-field="gender" data-index="${index}">${participant.gender || ''}</div></td>
-          <td><div class="editable" contenteditable="true" data-field="part_congregation" data-index="${index}">${participant.part_congregation || ''}</div></td>
-          <td><div class="editable" contenteditable="true" data-field="birth_year" data-index="${index}">${participant.birth_year || ''}</div></td>
-          <td><div class="editable" contenteditable="true" data-field="phone" data-index="${index}">${participant.phone || ''}</div></td>
-          <td><div class="editable" contenteditable="true" data-field="marriage" data-index="${index}">${participant.marriage || ''}</div></td>
-          <td>
+          <td data-label="이름"><div class="editable" contenteditable="true" data-field="name" data-index="${index}">${participant.name || ''}</div></td>
+          <td data-label="성별"><div class="editable" contenteditable="true" data-field="gender" data-index="${index}">${participant.gender || ''}</div></td>
+          <td data-label="참여자 회중"><div class="editable" contenteditable="true" data-field="part_congregation" data-index="${index}">${participant.part_congregation || ''}</div></td>
+          <td data-label="출생연도"><div class="editable" contenteditable="true" data-field="birth_year" data-index="${index}">${participant.birth_year || ''}</div></td>
+          <td data-label="연락처"><div class="editable" contenteditable="true" data-field="phone" data-index="${index}">${participant.phone || ''}</div></td>
+          <td data-label="결혼"><div class="editable" contenteditable="true" data-field="marriage" data-index="${index}">${participant.marriage || ''}</div></td>
+          <td data-label="참여 날짜">
             <div class="date-container" id="dates-container-${index}">
               ${participant.dates.map(date => `<span class="date-tag" data-date="${date}">${date} <span class="remove">×</span></span>`).join('')}
               <button class="date-add" data-index="${index}">+</button>
             </div>
           </td>
-          <td>
+          <td data-label="저장">
             <button class="action-btn save-btn" data-index="${index}" disabled>저장</button>
           </td>
-          <td>
+          <td data-label="삭제">
             <button class="action-btn delete-btn" data-index="${index}">삭제</button>
           </td>
         `;
@@ -494,13 +546,11 @@
           dates
         };
 
-        // 현재 최대 번호 계산 (기존 데이터가 0부터 시작한다고 가정)
         const currentMaxNumber = participantsKeys.length > 0 
           ? Math.max(...participantsKeys.map(key => parseInt(key))) 
-          : 22; // 23부터 시작하려면 22가 최대값
+          : 22;
         const newNumber = currentMaxNumber + 1;
 
-        // 새 번호를 키로 사용
         const newParticipantRef = child(participantsRef, newNumber.toString());
         set(newParticipantRef, newParticipant)
           .then(() => {
