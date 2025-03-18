@@ -194,6 +194,29 @@
     .participants-table tr:hover {
       background-color: #f0f8ff;
     }
+    /* 수정 버튼 스타일 */
+    .edit-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #2196f3; /* 파란색 배경 */
+      color: #000; /* 검은 글씨 */
+      border: none;
+      border-radius: 50%; /* 동그란 모양 */
+      width: 60px;
+      height: 60px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-decoration: none; /* 링크 기본 스타일 제거 */
+    }
+    .edit-btn:hover {
+      background-color: #1976d2; /* 호버 시 약간 어두운 파란색 */
+    }
     @media (max-width: 768px) {
       body {
         padding: 10px;
@@ -245,6 +268,11 @@
         top: 5px;
         left: 50%;
         transform: translateX(-50%);
+      }
+      .edit-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 14px;
       }
     }
   </style>
@@ -304,6 +332,8 @@
       </table>
     </div>
   </div>
+  <!-- 수정 버튼 추가 -->
+  <a href="https://chocosora.github.io/choco/scr" class="edit-btn">수정</a>
 
   <script type="module">
     // Firebase SDK 가져오기
@@ -525,8 +555,8 @@
       generateMonthCalendar(2025, 5, 'may-calendar-days');
     }
 
-    // 페이지 로드 시 초기 설정 (최초 데이터 저장은 주석 처리)
-    // saveParticipantsToFirebase(); // 최초 실행 시 주석 해제하여 데이터 저장
+    // 페이지 로드 시 데이터 업로드 및 캘린더 초기화
+    saveParticipantsToFirebase(); // 주석 해제된 상태로 Firebase에 데이터 저장
   </script>
 </body>
 </html>
