@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>참여자 명단 수정</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .participant-list {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #f0f0f0;
+      font-weight: bold;
+    }
+    th:nth-child(1), td:nth-child(1) { width: 10%; }
+    th:nth-child(2), td:nth-child(2) { width: 8%; }
+    th:nth-child(3), td:nth-child(3) { width: 15%; }
+    th:nth-child(4), td:nth-child(4) { width: 8%; }
+    th:nth-child(5), td:nth-child(5) { width: 12%; }
+    th:nth-child(6), td:nth-child(6) { width: 8%; }
+    th:nth-child(7), td:nth-child(7) { width: 25%; }
+    th:nth-child(8), td:nth-child(8) { width: 7%; }
+    th:nth-child(9), td:nth-child(9) { width: 7%; }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f0f8ff;
+    }
+    .action-btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 0 2px;
+      color: white;
+    }
+    .save-btn {
+      background-color: #2196f3;
+    }
+    .save-btn:hover {
+      background-color: #0b7dda;
+    }
+    .save-btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    .delete-btn {
+      background-color: #f44336;
+    }
+    .delete-btn:hover {
+      background-color: #d32f2f;
+    }
+    .add-form {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 1em;
+    }
+    .add-btn {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .add-btn:hover {
+      background-color: #45a049;
+    }
+    .editable {
+      border: 1px solid transparent;
+      padding: 5px;
+      cursor: pointer;
+      width: 100%;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .editable:hover {
+      border: 1px dashed #2196f3;
+      background-color: #e8f4fd;
+    }
+    .editable:focus {
+      outline: none;
+      border: 1px solid #2196f3;
+      background-color: white;
+      white-space: normal;
+      overflow: visible;
+    }
+    .date-tag {
+      display: inline-block;
+      background-color: #e0e0e0;
+      padding: 2px 8px;
+      margin: 2px;
+      border-radius: 12px;
+      font-size: 0.85em;
+    }
+    .date-tag .remove {
+      margin-left: 5px;
+      cursor: pointer;
+      color: #f44336;
+      font-weight: bold;
+    }
+    .date-container {
+      display: flex;
+      flex-wrap: wrap;
+      min-height: 30px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 5px;
+      background-color: white;
+      overflow-x: auto;
+    }
+    .date-add {
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin: 2px;
+      cursor: pointer;
+    }
+    .modified {
+      animation: highlight 2s;
+    }
+    @keyframes highlight {
+      0% { background-color: #ffff99; }
+      100% { background-color: transparent; }
+    }
+    @media (max-width: 768px) {
+      .participant-list {
+        overflow-x: scroll;
+      }
+      th, td {
+        padding: 6px;
+        font-size: 0.9em;
+      }
+      .action-btn {
+        padding: 4px;
+        font-size: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>참여자 명단 수정</h1>
+    
+    <div class="participant-list">
+      <table>
+        <thead>
+          <tr>
+            <th>이름</th>
+            <th>성별</th>
+            <th>참여자 회중</th>
+            <th>출생연도</th>
+            <th>연락처</th>
+            <th>결혼</th>
+            <th>참여 날짜</th>
+            <th>저장</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="participants-table"></tbody>
+      </table>
+    </div>
+
+    <div class="add-form">
+      <h2>새 참여자 추가</h2>
+      <div class="form-group">
+        <label for="name">이름</label>
+        <input type="text" id="name" placeholder="이름 입력">
+      </div>
+      <div class="form-group">
+        <label for="gender">성별</label>
+        <input type="text" id="gender" placeholder="예: 자매, 형제">
+      </div>
+      <div class="form-group">
+        <label for="part_congregation">참여자 회중</label>
+        <input type="text" id="part_congregation" placeholder="회중 입력">
+      </div>
+      <div class="form-group">
+        <label for="birth_year">출생연도</label>
+        <input type="text" id="birth_year" placeholder="예: 1990">
+      </div>
+      <div class="form-group">
+        <label for="phone">연락처</label>
+        <input type="text" id="phone" placeholder="예: 010-1234-5678">
+      </div>
+      <div class="form-group">
+        <label for="marriage">결혼 여부</label>
+        <input type="text" id="marriage" placeholder="예: 미혼, 기혼">
+      </div>
+      <div class="form-group">
+        <label for="dates">참여 날짜</label>
+        <div class="date-container" id="new-dates-container">
+          <button id="add-date" class="date-add">+</button>
+        </div>
+      </div>
+      <button class="add-btn" id="add-participant">추가</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove, set, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBc7tQ6lwkAuiIlwDZekdovWmui-OKvxjE",
+      authDomain: "gang-il.firebaseapp.com",
+      databaseURL: "https://gang-il-default-rtdb.firebaseio.com",
+      projectId: "gang-il",
+      storageBucket: "gang-il.firebasestorage.app",
+      messagingSenderId: "205484863244",
+      appId: "1:205484863244:web:5c32cccc80c126aa272329",
+      measurementId: "G-Y2VK9QH8JQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const participantsRef = ref(db, 'participants');
+
+    let participantsData = [];
+    let participantsKeys = [];
+    let modifiedParticipants = new Set();
+
+    const initDatePicker = () => {
+      flatpickr("#add-date", {
+        locale: "ko",
+        dateFormat: "m/d",
+        onChange: function(selectedDates, dateStr) {
+          if (dateStr) {
+            addDateTag(dateStr, "new-dates-container");
+          }
+        }
+      });
+    };
+
+    function addDateTag(dateStr, containerId) {
+      const container = document.getElementById(containerId);
+      const addButton = container.querySelector(".date-add");
+      
+      const existingTags = container.querySelectorAll('.date-tag');
+      for (let tag of existingTags) {
+        if (tag.getAttribute('data-date') === dateStr) return;
+      }
+      
+      const dateTag = document.createElement('span');
+      dateTag.className = 'date-tag';
+      dateTag.setAttribute('data-date', dateStr);
+      dateTag.innerHTML = `${dateStr} <span class="remove">×</span>`;
+      
+      dateTag.querySelector('.remove').addEventListener('click', () => {
+        container.removeChild(dateTag);
+        if (containerId !== "new-dates-container") {
+          const index = containerId.split('-').pop();
+          if (index && participantsData[index]) {
+            participantsData[index].dates = participantsData[index].dates.filter(date => date !== dateStr);
+            markAsModified(index);
+          }
+        }
+      });
+      
+      container.insertBefore(dateTag, addButton);
+    }
+
+    function markAsModified(index) {
+      modifiedParticipants.add(parseInt(index));
+      const saveBtn = document.querySelector(`.save-btn[data-index="${index}"]`);
+      if (saveBtn) {
+        saveBtn.disabled = false;
+      }
+    }
+
+    onValue(participantsRef, (snapshot) => {
+      participantsData = [];
+      participantsKeys = [];
+      
+      snapshot.forEach((childSnapshot) => {
+        const childKey = childSnapshot.key;
+        const childData = childSnapshot.val();
+        
+        participantsKeys.push(childKey);
+        participantsData.push(childData);
+      });
+      
+      renderParticipants();
+    });
+
+    function renderParticipants() {
+      const tableBody = document.getElementById('participants-table');
+      tableBody.innerHTML = '';
+
+      participantsData.forEach((participant, index) => {
+        if (!participant.dates) participant.dates = [];
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><div class="editable" contenteditable="true" data-field="name" data-index="${index}">${participant.name || ''}</div></td>
+          <td><div class="editable" contenteditable="true" data-field="gender" data-index="${index}">${participant.gender || ''}</div></td>
+          <td><div class="editable" contenteditable="true" data-field="part_congregation" data-index="${index}">${participant.part_congregation || ''}</div></td>
+          <td><div class="editable" contenteditable="true" data-field="birth_year" data-index="${index}">${participant.birth_year || ''}</div></td>
+          <td><div class="editable" contenteditable="true" data-field="phone" data-index="${index}">${participant.phone || ''}</div></td>
+          <td><div class="editable" contenteditable="true" data-field="marriage" data-index="${index}">${participant.marriage || ''}</div></td>
+          <td>
+            <div class="date-container" id="dates-container-${index}">
+              ${participant.dates.map(date => `<span class="date-tag" data-date="${date}">${date} <span class="remove">×</span></span>`).join('')}
+              <button class="date-add" data-index="${index}">+</button>
+            </div>
+          </td>
+          <td>
+            <button class="action-btn save-btn" data-index="${index}" disabled>저장</button>
+          </td>
+          <td>
+            <button class="action-btn delete-btn" data-index="${index}">삭제</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      document.querySelectorAll('.editable').forEach(cell => {
+        cell.addEventListener('input', (e) => {
+          const field = e.target.dataset.field;
+          const index = e.target.dataset.index;
+          participantsData[index][field] = e.target.innerText;
+          markAsModified(index);
+        });
+      });
+
+      document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          updateParticipant(index);
+          e.target.disabled = true;
+          modifiedParticipants.delete(index);
+          
+          const row = e.target.closest('tr');
+          row.classList.add('modified');
+          setTimeout(() => {
+            row.classList.remove('modified');
+          }, 2000);
+        });
+      });
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          deleteParticipant(index);
+        });
+      });
+
+      document.querySelectorAll('.date-add').forEach(btn => {
+        if(btn.id !== "add-date") {
+          const index = parseInt(btn.dataset.index);
+          flatpickr(btn, {
+            locale: "ko",
+            dateFormat: "m/d",
+            onChange: function(selectedDates, dateStr) {
+              if (dateStr) {
+                if (!participantsData[index].dates.includes(dateStr)) {
+                  if (!participantsData[index].dates) {
+                    participantsData[index].dates = [];
+                  }
+                  participantsData[index].dates.push(dateStr);
+                  addDateTag(dateStr, `dates-container-${index}`);
+                  markAsModified(index);
+                }
+              }
+            }
+          });
+        }
+      });
+
+      document.querySelectorAll('.date-tag .remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dateTag = e.target.parentElement;
+          const dateStr = dateTag.getAttribute('data-date');
+          const container = dateTag.parentElement;
+          
+          if (container.id !== "new-dates-container") {
+            const index = parseInt(container.id.split('-').pop());
+            participantsData[index].dates = participantsData[index].dates.filter(date => date !== dateStr);
+            markAsModified(index);
+          }
+          
+          container.removeChild(dateTag);
+        });
+      });
+    }
+
+    function updateParticipant(index) {
+      const key = participantsKeys[index];
+      const updates = {};
+      updates[`/${key}`] = participantsData[index];
+      
+      update(participantsRef, updates)
+        .then(() => console.log(`참여자 ${index}번의 정보가 저장되었습니다.`))
+        .catch((error) => console.error("저장 실패:", error));
+    }
+
+    function deleteParticipant(index) {
+      if (confirm("정말 삭제하시겠습니까?")) {
+        const key = participantsKeys[index];
+        const participantRef = child(participantsRef, key);
+        
+        remove(participantRef)
+          .then(() => console.log("참여자가 삭제되었습니다."))
+          .catch((error) => console.error("삭제 실패:", error));
+      }
+    }
+
+    document.getElementById('add-participant').addEventListener('click', () => {
+      const name = document.getElementById('name').value;
+      const gender = document.getElementById('gender').value;
+      const part_congregation = document.getElementById('part_congregation').value;
+      const birth_year = document.getElementById('birth_year').value;
+      const phone = document.getElementById('phone').value;
+      const marriage = document.getElementById('marriage').value;
+      
+      const dateTags = document.querySelectorAll('#new-dates-container .date-tag');
+      const dates = Array.from(dateTags).map(tag => tag.getAttribute('data-date'));
+
+      if (name && gender && part_congregation && birth_year && phone && marriage) {
+        if (dates.length === 0) {
+          alert("참여 날짜를 최소 하나 이상 추가해주세요.");
+          return;
+        }
+        
+        const newParticipant = {
+          name,
+          gender,
+          part_congregation,
+          birth_year,
+          phone,
+          marriage,
+          dates
+        };
+
+        // 현재 최대 번호 계산 (기존 데이터가 0부터 시작한다고 가정)
+        const currentMaxNumber = participantsKeys.length > 0 
+          ? Math.max(...participantsKeys.map(key => parseInt(key))) 
+          : 22; // 23부터 시작하려면 22가 최대값
+        const newNumber = currentMaxNumber + 1;
+
+        // 새 번호를 키로 사용
+        const newParticipantRef = child(participantsRef, newNumber.toString());
+        set(newParticipantRef, newParticipant)
+          .then(() => {
+            console.log(`참여자 ${newNumber}번이 추가되었습니다.`);
+            document.getElementById('name').value = '';
+            document.getElementById('gender').value = '';
+            document.getElementById('part_congregation').value = '';
+            document.getElementById('birth_year').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('marriage').value = '';
+            
+            const container = document.getElementById('new-dates-container');
+            const dateTags = container.querySelectorAll('.date-tag');
+            dateTags.forEach(tag => container.removeChild(tag));
+          })
+          .catch((error) => console.error("추가 실패:", error));
+      } else {
+        alert("모든 필드를 입력해주세요.");
+      }
+    });
+
+    initDatePicker();
+  </script>
+</body>
+</html>
