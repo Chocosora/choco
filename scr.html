@@ -261,7 +261,7 @@
   <div class="container">
     <h1>참여자 명단 수정</h1>
     <div class="view-btn">
-      <a href="https://chocosora.github.io/choco/sc">참여자 명단 보기</a>
+      <a href="https://chocosora.github.io/choco/sc">참여자 명단으로 가기</a>
     </div>
     
     <div class="participant-list">
@@ -370,6 +370,10 @@
 
     function addDateTag(dateStr, containerId) {
       const container = document.getElementById(containerId);
+      if (!container) {
+        console.error(`Container with ID ${containerId} not found`);
+        return;
+      }
       const addButton = container.querySelector(".date-add");
       
       const existingTags = container.querySelectorAll('.date-tag');
@@ -382,22 +386,35 @@
       dateTag.setAttribute('data-date', dateStr);
       dateTag.innerHTML = `${dateStr} <span class="remove">×</span>`;
       
-      dateTag.querySelector('.remove').addEventListener('click', () => {
-        container.removeChild(dateTag);
-        if (containerId !== "new-dates-container") {
-          const index = containerId.split('-').pop();
-          if (index && participantsData[index]) {
-            participantsData[index].dates = participantsData[index].dates.filter(date => date !== dateStr);
-            markAsModified(index);
-          }
-        }
+      const removeBtn = dateTag.querySelector('.remove');
+      removeBtn.addEventListener('click', () => handleDateRemove(dateTag, dateStr, containerId));
+      removeBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // 모바일에서 기본 이벤트 방지
+        handleDateRemove(dateTag, dateStr, containerId);
       });
       
       container.insertBefore(dateTag, addButton);
     }
 
+    function handleDateRemove(dateTag, dateStr, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.removeChild(dateTag);
+      if (containerId !== "new-dates-container") {
+        const index = parseInt(containerId.split('-').pop());
+        if (!isNaN(index) && participantsData[index]) {
+          participantsData[index].dates = participantsData[index].dates.filter(date => date !== dateStr);
+          console.log(`Removed date ${dateStr} from participant ${index}. New dates:`, participantsData[index].dates);
+          markAsModified(index);
+        } else {
+          console.error(`Invalid index ${index} or participant data not found`);
+        }
+      }
+    }
+
     function markAsModified(index) {
-      modifiedParticipants.add(parseInt(index));
+      modifiedParticipants.add(index);
       const saveBtn = document.querySelector(`.save-btn[data-index="${index}"]`);
       if (saveBtn) saveBtn.disabled = false;
     }
@@ -451,7 +468,7 @@
       document.querySelectorAll('.editable').forEach(cell => {
         cell.addEventListener('input', (e) => {
           const field = e.target.dataset.field;
-          const index = e.target.dataset.index;
+          const index = parseInt(e.target.dataset.index);
           participantsData[index][field] = e.target.innerText;
           markAsModified(index);
         });
@@ -480,6 +497,20 @@
       document.querySelectorAll('.date-add').forEach(btn => {
         const index = btn.dataset.index ? parseInt(btn.dataset.index) : null;
         initDatePicker(btn, index);
+      });
+
+      // 기존 날짜 태그의 삭제 버튼에도 이벤트 추가
+      document.querySelectorAll('.date-tag .remove').forEach(removeBtn => {
+        const dateTag = removeBtn.parentElement;
+        const dateStr = dateTag.getAttribute('data-date');
+        const container = dateTag.closest('.date-container');
+        const containerId = container.id;
+
+        removeBtn.addEventListener('click', () => handleDateRemove(dateTag, dateStr, containerId));
+        removeBtn.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          handleDateRemove(dateTag, dateStr, containerId);
+        });
       });
     }
 
