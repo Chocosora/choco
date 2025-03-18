@@ -6,6 +6,7 @@
   <title>강일 회중 서울 캠페인 참여자 확인</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
+    /* 기존 스타일 유지 */
     body {
       font-family: 'Noto Sans KR', sans-serif;
       margin: 0;
@@ -331,13 +332,12 @@
       </table>
     </div>
   </div>
-  <!-- 수정 버튼 (링크 대신 버튼으로 변경) -->
   <button class="edit-btn" id="edit-btn">수정</button>
 
   <script type="module">
     // Firebase SDK 가져오기
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // Firebase 설정
     const firebaseConfig = {
@@ -355,41 +355,48 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 참가자 데이터를 Firebase에 저장하는 함수 (최초 실행 시 사용)
-    function saveParticipantsToFirebase() {
-      const participantsData = [
-        {name: "김다현", gender: "자매", part_congregation: "광주월곡", birth_year: "2001", phone: "010-5152-7505", marriage: "미혼", dates: ["05/04", "05/05"]},
-        {name: "조아혜", gender: "자매", part_congregation: "광주신가", birth_year: "1991", phone: "010-2498-2397", marriage: "미혼", dates: ["05/04", "05/05"]},
-        {name: "김시빈", gender: "자매", part_congregation: "인천만수남부", birth_year: "1999", phone: "010-3396-3138", marriage: "미혼", dates: ["05/17", "05/18"]},
-        {name: "이하은", gender: "자매", part_congregation: "인천만수남부", birth_year: "1989", phone: "010-2344-8838", marriage: "미혼", dates: ["05/17", "05/18"]},
-        {name: "조예린", gender: "자매", part_congregation: "인천만수남부", birth_year: "2000", phone: "010-5493-0327", marriage: "미혼", dates: ["05/17", "05/18"]},
-        {name: "민경희(+자녀)", gender: "자매", part_congregation: "경기용인어정", birth_year: "1972", phone: "010-3516-0169", marriage: "기혼", dates: ["05/10", "05/14", "05/17"]},
-        {name: "조유민", gender: "자매", part_congregation: "경기용인어정", birth_year: "2009", phone: "010-3507-0169", marriage: "미혼", dates: ["05/10", "05/17"]},
-        {name: "민경체", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1988", phone: "010-5016-9934", marriage: "미혼", dates: ["05/18"]},
-        {name: "김정인", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1998", phone: "010-7279-1931", marriage: "미혼", dates: ["05/18"]},
-        {name: "나시린", gender: "형제", part_congregation: "충남아산둔포", birth_year: "1999", phone: "010-7724-2264", marriage: "미혼", dates: ["05/18"]},
-        {name: "최지혜", gender: "자매", part_congregation: "경남창원양덕", birth_year: "1988", phone: "010-4871-6457", marriage: "기혼", dates: ["05/04", "05/05"]},
-        {name: "윤예본", gender: "자매", part_congregation: "경기안성남부", birth_year: "2000", phone: "010-5582-6457", marriage: "미혼", dates: ["05/04", "05/05"]},
-        {name: "장재훈", gender: "형제", part_congregation: "전북군산삼학", birth_year: "1995", phone: "010-5590-1820", marriage: "기혼", dates: ["05/10", "05/11"]},
-        {name: "이예은", gender: "자매", part_congregation: "전북군산삼학", birth_year: "1998", phone: "010-3284-8079", marriage: "기혼", dates: ["05/10", "05/11"]},
-        {name: "박수연", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "1988", phone: "010-6269-4232", marriage: "미혼", dates: ["05/10", "05/11"]},
-        {name: "문채영", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "2001", phone: "010-5506-1935", marriage: "미혼", dates: ["05/10", "05/11"]},
-        {name: "김용민", gender: "형제", part_congregation: "충남천안백석", birth_year: "1996", phone: "010-6633-8121", marriage: "기혼", dates: ["05/10", "05/11"]},
-        {name: "한은주", gender: "자매", part_congregation: "충남천안백석", birth_year: "1997", phone: "010-8357-5716", marriage: "기혼", dates: ["05/10", "05/11"]},
-        {name: "최윤미", gender: "자매", part_congregation: "경기평택동삭", birth_year: "1979", phone: "010-9983-3273", marriage: "기혼", dates: ["04/26", "04/27"]},
-        {name: "박여원", gender: "자매", part_congregation: "경기평택동삭", birth_year: "2006", phone: "010-5647-3273", marriage: "미혼", dates: ["04/26", "04/27"]},
-        {name: "권락희", gender: "자매", part_congregation: "충북청주비하", birth_year: "1971", phone: "010-2572-3996", marriage: "기혼", dates: ["04/26", "04/27"]},
-        {name: "박선욱", gender: "자매", part_congregation: "전북군산중앙", birth_year: "1973", phone: "010-6631-0579", marriage: "기혼", dates: ["04/26", "04/27"]},
-        {name: "송낙원", gender: "형제", part_congregation: "경기고양행신서부", birth_year: "1994", phone: "010-6624-9395", marriage: "미혼", dates: ["04/23", "04/26", "04/27", "05/01", "05/16", "05/17"]},
-        {name: "우정인", gender: "자매", part_congregation: "강원강릉성덕", birth_year: "1999", phone: "010-7583-4664", marriage: "미혼", dates: ["04/26", "04/27", "05/13", "05/14"]}
-      ];
+    // 초기 데이터 설정 함수 (최초 1회 실행용)
+    async function initializeParticipantsData() {
+      const participantsRef = ref(db, 'participants');
+      const snapshot = await get(participantsRef);
+      
+      // Firebase에 데이터가 없을 경우에만 초기 데이터 저장
+      if (!snapshot.exists()) {
+        const initialParticipantsData = [
+          {name: "김다현", gender: "자매", part_congregation: "광주월곡", birth_year: "2001", phone: "010-5152-7505", marriage: "미혼", dates: ["05/04", "05/05"]},
+          {name: "조아혜", gender: "자매", part_congregation: "광주신가", birth_year: "1991", phone: "010-2498-2397", marriage: "미혼", dates: ["05/04", "05/05"]},
+          {name: "김시빈", gender: "자매", part_congregation: "인천만수남부", birth_year: "1999", phone: "010-3396-3138", marriage: "미혼", dates: ["05/17", "05/18"]},
+          {name: "이하은", gender: "자매", part_congregation: "인천만수남부", birth_year: "1989", phone: "010-2344-8838", marriage: "미혼", dates: ["05/17", "05/18"]},
+          {name: "조예린", gender: "자매", part_congregation: "인천만수남부", birth_year: "2000", phone: "010-5493-0327", marriage: "미혼", dates: ["05/17", "05/18"]},
+          {name: "민경희(+자녀)", gender: "자매", part_congregation: "경기용인어정", birth_year: "1972", phone: "010-3516-0169", marriage: "기혼", dates: ["05/10", "05/14", "05/17"]},
+          {name: "조유민", gender: "자매", part_congregation: "경기용인어정", birth_year: "2009", phone: "010-3507-0169", marriage: "미혼", dates: ["05/10", "05/17"]},
+          {name: "민경체", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1988", phone: "010-5016-9934", marriage: "미혼", dates: ["05/18"]},
+          {name: "김정인", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1998", phone: "010-7279-1931", marriage: "미혼", dates: ["05/18"]},
+          {name: "나시린", gender: "형제", part_congregation: "충남아산둔포", birth_year: "1999", phone: "010-7724-2264", marriage: "미혼", dates: ["05/18"]},
+          {name: "최지혜", gender: "자매", part_congregation: "경남창원양덕", birth_year: "1988", phone: "010-4871-6457", marriage: "기혼", dates: ["05/04", "05/05"]},
+          {name: "윤예본", gender: "자매", part_congregation: "경기안성남부", birth_year: "2000", phone: "010-5582-6457", marriage: "미혼", dates: ["05/04", "05/05"]},
+          {name: "장재훈", gender: "형제", part_congregation: "전북군산삼학", birth_year: "1995", phone: "010-5590-1820", marriage: "기혼", dates: ["05/10", "05/11"]},
+          {name: "이예은", gender: "자매", part_congregation: "전북군산삼학", birth_year: "1998", phone: "010-3284-8079", marriage: "기혼", dates: ["05/10", "05/11"]},
+          {name: "박수연", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "1988", phone: "010-6269-4232", marriage: "미혼", dates: ["05/10", "05/11"]},
+          {name: "문채영", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "2001", phone: "010-5506-1935", marriage: "미혼", dates: ["05/10", "05/11"]},
+          {name: "김용민", gender: "형제", part_congregation: "충남천안백석", birth_year: "1996", phone: "010-6633-8121", marriage: "기혼", dates: ["05/10", "05/11"]},
+          {name: "한은주", gender: "자매", part_congregation: "충남천안백석", birth_year: "1997", phone: "010-8357-5716", marriage: "기혼", dates: ["05/10", "05/11"]},
+          {name: "최윤미", gender: "자매", part_congregation: "경기평택동삭", birth_year: "1979", phone: "010-9983-3273", marriage: "기혼", dates: ["04/26", "04/27"]},
+          {name: "박여원", gender: "자매", part_congregation: "경기평택동삭", birth_year: "2006", phone: "010-5647-3273", marriage: "미혼", dates: ["04/26", "04/27"]},
+          {name: "권락희", gender: "자매", part_congregation: "충북청주비하", birth_year: "1971", phone: "010-2572-3996", marriage: "기혼", dates: ["04/26", "04/27"]},
+          {name: "박선욱", gender: "자매", part_congregation: "전북군산중앙", birth_year: "1973", phone: "010-6631-0579", marriage: "기혼", dates: ["04/26", "04/27"]},
+          {name: "송낙원", gender: "형제", part_congregation: "경기고양행신서부", birth_year: "1994", phone: "010-6624-9395", marriage: "미혼", dates: ["04/23", "04/26", "04/27", "05/01", "05/16", "05/17"]},
+          {name: "우정인", gender: "자매", part_congregation: "강원강릉성덕", birth_year: "1999", phone: "010-7583-4664", marriage: "미혼", dates: ["04/26", "04/27", "05/13", "05/14"]}
+        ];
 
-      set(ref(db, 'participants'), participantsData)
-        .then(() => console.log("데이터가 Firebase에 저장되었습니다."))
-        .catch((error) => console.error("데이터 저장 실패:", error));
+        await set(participantsRef, initialParticipantsData);
+        console.log("초기 데이터가 Firebase에 저장되었습니다.");
+      } else {
+        console.log("이미 데이터가 존재합니다. 기존 데이터를 불러옵니다.");
+      }
     }
 
-    // Firebase에서 데이터 가져오기
+    // Firebase에서 데이터 실시간으로 가져오기
     let participantsData = [];
     const participantsRef = ref(db, 'participants');
     onValue(participantsRef, (snapshot) => {
@@ -554,7 +561,7 @@
       generateMonthCalendar(2025, 5, 'may-calendar-days');
     }
 
-    // 수정 버튼 비밀번호 확인 로직 추가
+    // 수정 버튼 비밀번호 확인 로직
     document.getElementById('edit-btn').addEventListener('click', () => {
       const password = prompt('비밀번호를 입력하세요:');
       if (password === '17343') {
@@ -564,8 +571,12 @@
       }
     });
 
-    // 페이지 로드 시 데이터 업로드 및 캘린더 초기화
-    saveParticipantsToFirebase(); // 주석 해제된 상태로 Firebase에 데이터 저장
+    // 페이지 로드 시 초기 데이터 설정 및 캘린더 업데이트
+    initializeParticipantsData().then(() => {
+      // 초기 데이터 설정 후 실시간 업데이트는 onValue로 처리됨
+    }).catch(error => {
+      console.error("초기 데이터 설정 실패:", error);
+    });
   </script>
 </body>
 </html>
