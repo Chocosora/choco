@@ -194,15 +194,14 @@
     .participants-table tr:hover {
       background-color: #f0f8ff;
     }
-    /* 수정 버튼 스타일 */
     .edit-btn {
       position: fixed;
       bottom: 20px;
       right: 20px;
-      background-color: #2196f3; /* 파란색 배경 */
-      color: #000; /* 검은 글씨 */
+      background-color: #2196f3;
+      color: #000;
       border: none;
-      border-radius: 50%; /* 동그란 모양 */
+      border-radius: 50%;
       width: 60px;
       height: 60px;
       font-size: 16px;
@@ -212,10 +211,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      text-decoration: none; /* 링크 기본 스타일 제거 */
+      text-decoration: none;
     }
     .edit-btn:hover {
-      background-color: #1976d2; /* 호버 시 약간 어두운 파란색 */
+      background-color: #1976d2;
     }
     @media (max-width: 768px) {
       body {
@@ -332,8 +331,8 @@
       </table>
     </div>
   </div>
-  <!-- 수정 버튼 추가 -->
-  <a href="https://chocosora.github.io/choco/scr" class="edit-btn">수정</a>
+  <!-- 수정 버튼 (링크 대신 버튼으로 변경) -->
+  <button class="edit-btn" id="edit-btn">수정</button>
 
   <script type="module">
     // Firebase SDK 가져오기
@@ -554,6 +553,16 @@
       generateMonthCalendar(2025, 4, 'april-calendar-days');
       generateMonthCalendar(2025, 5, 'may-calendar-days');
     }
+
+    // 수정 버튼 비밀번호 확인 로직 추가
+    document.getElementById('edit-btn').addEventListener('click', () => {
+      const password = prompt('비밀번호를 입력하세요:');
+      if (password === '17343') {
+        window.location.href = 'https://chocosora.github.io/choco/scr';
+      } else {
+        alert('비밀번호가 틀렸습니다. 다시 시도해주세요.');
+      }
+    });
 
     // 페이지 로드 시 데이터 업로드 및 캘린더 초기화
     saveParticipantsToFirebase(); // 주석 해제된 상태로 Firebase에 데이터 저장
