@@ -100,6 +100,7 @@
       background-color: #e3f2fd;
       font-weight: bold;
     }
+    /* 파란색 점: PC/모바일 모두 위쪽에 표시 */
     .has-participants:after {
       content: "";
       display: block;
@@ -108,7 +109,7 @@
       background-color: #2196f3;
       border-radius: 50%;
       position: absolute;
-      bottom: 10px; /* PC 환경 기본 위치 */
+      top: 5px;
       left: 50%;
       transform: translateX(-50%);
     }
@@ -242,12 +243,13 @@
       .participant-count {
         font-size: 0.6em;
       }
-      /* 모바일에서 파란색 점 크기 축소 및 위치 조정 */
+      /* 모바일: 파란색 점 크기 축소 */
       .has-participants:after {
         width: 6px;
         height: 6px;
         top: 5px;
-        bottom: auto;
+        left: 50%;
+        transform: translateX(-50%);
       }
     }
   </style>
