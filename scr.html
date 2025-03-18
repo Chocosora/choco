@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>참여자 명단 수정</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@latest/dist/flatpickr.min.css">
   <style>
     body {
       font-family: 'Noto Sans KR', sans-serif;
@@ -187,6 +187,9 @@
       0% { background-color: #ffff99; }
       100% { background-color: transparent; }
     }
+    .flatpickr-calendar {
+      z-index: 9999;
+    }
     @media (max-width: 768px) {
       body {
         padding: 10px;
@@ -242,6 +245,14 @@
       }
       input {
         font-size: 0.9em;
+      }
+      .flatpickr-calendar {
+        width: 100%;
+        max-width: 300px;
+        left: 50% !important;
+        transform: translateX(-50%);
+        top: auto !important;
+        bottom: 10px;
       }
     }
   </style>
@@ -308,8 +319,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@latest/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@latest/dist/l10n/ko.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, remove, set, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -333,17 +344,29 @@
     let participantsKeys = [];
     let modifiedParticipants = new Set();
 
-    const initDatePicker = () => {
-      flatpickr("#add-date", {
+    function initDatePicker(element, index = null) {
+      flatpickr(element, {
         locale: "ko",
         dateFormat: "m/d",
+        position: "auto center",
         onChange: function(selectedDates, dateStr) {
           if (dateStr) {
-            addDateTag(dateStr, "new-dates-container");
+            if (index === null) {
+              addDateTag(dateStr, "new-dates-container");
+            } else {
+              if (!participantsData[index].dates.includes(dateStr)) {
+                if (!participantsData[index].dates) participantsData[index].dates = [];
+                participantsData[index].dates.push(dateStr);
+                addDateTag(dateStr, `dates-container-${index}`);
+                markAsModified(index);
+              }
+            }
           }
-        }
+        },
+        clickOpens: true,
+        enableTouch: true
       });
-    };
+    }
 
     function addDateTag(dateStr, containerId) {
       const container = document.getElementById(containerId);
@@ -376,9 +399,7 @@
     function markAsModified(index) {
       modifiedParticipants.add(parseInt(index));
       const saveBtn = document.querySelector(`.save-btn[data-index="${index}"]`);
-      if (saveBtn) {
-        saveBtn.disabled = false;
-      }
+      if (saveBtn) saveBtn.disabled = false;
     }
 
     onValue(participantsRef, (snapshot) => {
@@ -445,9 +466,7 @@
           
           const row = e.target.closest('tr');
           row.classList.add('modified');
-          setTimeout(() => {
-            row.classList.remove('modified');
-          }, 2000);
+          setTimeout(() => row.classList.remove('modified'), 2000);
         });
       });
 
@@ -459,42 +478,8 @@
       });
 
       document.querySelectorAll('.date-add').forEach(btn => {
-        if(btn.id !== "add-date") {
-          const index = parseInt(btn.dataset.index);
-          flatpickr(btn, {
-            locale: "ko",
-            dateFormat: "m/d",
-            onChange: function(selectedDates, dateStr) {
-              if (dateStr) {
-                if (!participantsData[index].dates.includes(dateStr)) {
-                  if (!participantsData[index].dates) {
-                    participantsData[index].dates = [];
-                  }
-                  participantsData[index].dates.push(dateStr);
-                  addDateTag(dateStr, `dates-container-${index}`);
-                  markAsModified(index);
-                }
-              }
-            }
-          });
-        }
-      });
-
-      document.querySelectorAll('.date-tag .remove').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const dateTag = e.target.parentElement;
-          const dateStr = dateTag.getAttribute('data-date');
-          const container = dateTag.parentElement;
-          
-          if (container.id !== "new-dates-container") {
-            const index = parseInt(container.id.split('-').pop());
-            participantsData[index].dates = participantsData[index].dates.filter(date => date !== dateStr);
-            markAsModified(index);
-          }
-          
-          container.removeChild(dateTag);
-        });
+        const index = btn.dataset.index ? parseInt(btn.dataset.index) : null;
+        initDatePicker(btn, index);
       });
     }
 
@@ -572,7 +557,9 @@
       }
     });
 
-    initDatePicker();
+    document.addEventListener('DOMContentLoaded', () => {
+      initDatePicker(document.getElementById('add-date'));
+    });
   </script>
 </body>
 </html>
