@@ -1,562 +1,552 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>강일 회중 서울 캠페인 참여자 확인</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 24px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .calendar {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 30px;
-        }
-        .month-selector {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .month-selector h2 {
-            margin: 0;
-            font-size: 20px;
-        }
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            width: 100%;
-        }
-        .day-header {
-            text-align: center;
-            font-weight: bold;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 5px;
-        }
-        .day-header.sunday {
-            color: #ff0000;
-        }
-        .day-header.saturday {
-            color: #0066cc;
-        }
-        .calendar-day {
-            height: 60px;
-            border-radius: 5px;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            padding: 5px;
-            text-align: center;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            word-wrap: break-word; /* Prevent text from overflowing */
-        }
-        .calendar-day:hover {
-            background-color: #f0f8ff;
-        }
-        .calendar-day.saturday {
-            color: #0066cc;
-        }
-        .calendar-day.sunday {
-            color: #ff0000;
-        }
-        .calendar-day.holiday {
-            color: #ff0000;
-            background-color: #fff0f0;
-        }
-        .empty-day {
-            background-color: transparent;
-            border: none;
-            cursor: default;
-        }
-        .has-participants {
-            background-color: #e3f2fd;
-            font-weight: bold;
-        }
-        .has-participants:after {
-            content: "";
-            display: block;
-            width: 8px;
-            height: 8px;
-            background-color: #2196f3;
-            border-radius: 50%;
-            position: absolute;
-            bottom: 10px; /* 파란색 점 위치 수정 */
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .holiday-label {
-            font-size: 0.65em;
-            color: #ff0000;
-            margin-top: 2px;
-            line-height: 1;
-        }
-        .participant-count {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 3px;
-            white-space: normal; /* Ensures text wraps properly */
-            word-wrap: break-word; /* Prevents text from overflowing */
-        }
-        .active-day {
-            background-color: #bbdefb;
-            border: 2px solid #1976d2;
-        }
-        
-        /* 모달 스타일 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            padding: 20px;
-            width: 90%;
-            max-width: 900px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .modal-header h2 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .close-btn {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .close-btn:hover {
-            background-color: #d32f2f;
-        }
-        .participants-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .participants-table th, .participants-table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-        .participants-table th {
-            background-color: #f5f5f5;
-        }
-        .participants-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .participants-table tr:hover {
-            background-color: #f0f8ff;
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            h1 {
-                font-size: 20px;
-                margin-bottom: 20px;
-            }
-            .calendar {
-                padding: 10px;
-            }
-            .month-selector h2 {
-                font-size: 16px;
-            }
-            .calendar-grid {
-                display: grid;
-                grid-template-columns: repeat(7, minmax(30px, 1fr));
-                gap: 3px;
-            }
-            .calendar-day {
-                height: 40px;
-                font-size: 0.7em; /* 모바일에서 글씨 크기 더 작게 */
-                padding: 4px;
-            }
-            .day-header {
-                padding: 5px 2px;
-                font-size: 0.75em;
-            }
-            .modal-content {
-                width: 95%;
-                padding: 10px;
-            }
-            .participants-table th, .participants-table td {
-                padding: 6px 3px;
-                font-size: 0.8em;
-            }
-            .holiday-label {
-                font-size: 0.5em;
-            }
-            .participant-count {
-                font-size: 0.6em; /* 참가자 수 글씨 크기 추가 최적화 */
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>강일 회중 서울 캠페인 참여자 확인</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 24px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .calendar {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 30px;
+    }
+    .month-selector {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .month-selector h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .day-header {
+      text-align: center;
+      font-weight: bold;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+    }
+    .day-header.sunday {
+      color: #ff0000;
+    }
+    .day-header.saturday {
+      color: #0066cc;
+    }
+    .calendar-day {
+      height: 60px;
+      border-radius: 5px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 5px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      word-wrap: break-word;
+    }
+    .calendar-day:hover {
+      background-color: #f0f8ff;
+    }
+    .calendar-day.saturday {
+      color: #0066cc;
+    }
+    .calendar-day.sunday {
+      color: #ff0000;
+    }
+    .calendar-day.holiday {
+      color: #ff0000;
+      background-color: #fff0f0;
+    }
+    .empty-day {
+      background-color: transparent;
+      border: none;
+      cursor: default;
+    }
+    .has-participants {
+      background-color: #e3f2fd;
+      font-weight: bold;
+    }
+    .has-participants:after {
+      content: "";
+      display: block;
+      width: 8px;
+      height: 8px;
+      background-color: #2196f3;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 10px; /* PC 환경 기본 위치 */
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .holiday-label {
+      font-size: 0.65em;
+      color: #ff0000;
+      margin-top: 2px;
+      line-height: 1;
+    }
+    .participant-count {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 3px;
+      white-space: nowrap;  /* 한 줄 유지 */
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .active-day {
+      background-color: #bbdefb;
+      border: 2px solid #1976d2;
+    }
+    
+    /* 모달 스타일 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .close-btn {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .close-btn:hover {
+      background-color: #d32f2f;
+    }
+    .participants-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .participants-table th,
+    .participants-table td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    .participants-table th {
+      background-color: #f5f5f5;
+    }
+    .participants-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .participants-table tr:hover {
+      background-color: #f0f8ff;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      h1 {
+        font-size: 20px;
+        margin-bottom: 20px;
+      }
+      .calendar {
+        padding: 10px;
+      }
+      .month-selector h2 {
+        font-size: 16px;
+      }
+      .calendar-grid {
+        grid-template-columns: repeat(7, minmax(30px, 1fr));
+        gap: 3px;
+      }
+      .calendar-day {
+        height: 40px;
+        font-size: 0.7em; /* 모바일 글씨 크기 추가 최적화 */
+        padding: 4px;
+      }
+      .day-header {
+        padding: 5px 2px;
+        font-size: 0.75em;
+      }
+      .modal-content {
+        width: 95%;
+        padding: 10px;
+      }
+      .participants-table th,
+      .participants-table td {
+        padding: 6px 3px;
+        font-size: 0.8em;
+      }
+      .holiday-label {
+        font-size: 0.5em;
+      }
+      .participant-count {
+        font-size: 0.6em;
+      }
+      /* 모바일에서 파란색 점이 참여자 수와 겹치지 않도록 위치를 상단으로 변경 */
+      .has-participants:after {
+        top: 5px;
+        bottom: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>강일 회중 서울 캠페인 참여자 확인</h1>
-        
-        <!-- 4월 달력 -->
-        <div class="calendar">
-            <div class="month-selector">
-                <h2>2025년 4월</h2>
-            </div>
-            <div class="calendar-grid">
-                <div class="day-header sunday">일</div>
-                <div class="day-header">월</div>
-                <div class="day-header">화</div>
-                <div class="day-header">수</div>
-                <div class="day-header">목</div>
-                <div class="day-header">금</div>
-                <div class="day-header saturday">토</div>
-            </div>
-            <div class="calendar-grid" id="april-calendar-days">
-                <!-- 4월 달력이 여기에 추가됩니다 -->
-            </div>
-        </div>
-        
-        <!-- 5월 달력 -->
-        <div class="calendar">
-            <div class="month-selector">
-                <h2>2025년 5월</h2>
-            </div>
-            <div class="calendar-grid">
-                <div class="day-header sunday">일</div>
-                <div class="day-header">월</div>
-                <div class="day-header">화</div>
-                <div class="day-header">수</div>
-                <div class="day-header">목</div>
-                <div class="day-header">금</div>
-                <div class="day-header saturday">토</div>
-            </div>
-            <div class="calendar-grid" id="may-calendar-days">
-                <!-- 5월 달력이 여기에 추가됩니다 -->
-            </div>
-        </div>
+  <div class="container">
+    <h1>강일 회중 서울 캠페인 참여자 확인</h1>
+    
+    <!-- 4월 달력 -->
+    <div class="calendar">
+      <div class="month-selector">
+        <h2>2025년 4월</h2>
+      </div>
+      <div class="calendar-grid">
+        <div class="day-header sunday">일</div>
+        <div class="day-header">월</div>
+        <div class="day-header">화</div>
+        <div class="day-header">수</div>
+        <div class="day-header">목</div>
+        <div class="day-header">금</div>
+        <div class="day-header saturday">토</div>
+      </div>
+      <div class="calendar-grid" id="april-calendar-days">
+        <!-- 4월 달력이 여기에 추가됩니다 -->
+      </div>
     </div>
     
-    <!-- 모달 팝업 -->
-    <div class="modal" id="participants-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="selected-date">날짜 선택됨</h2>
-                <button class="close-btn" id="close-modal">닫기</button>
-            </div>
-            <table class="participants-table">
-                <thead>
-                    <tr>
-                        <th>이름</th>
-                        <th>성별</th>
-                        <th>참여자 회중</th>
-                        <th>만 나이</th>
-                        <th>연락처</th>
-                        <th>결혼</th>
-                    </tr>
-                </thead>
-                <tbody id="participants-data">
-                    <!-- Participant data will be inserted here via JavaScript -->
-                </tbody>
-            </table>
-        </div>
+    <!-- 5월 달력 -->
+    <div class="calendar">
+      <div class="month-selector">
+        <h2>2025년 5월</h2>
+      </div>
+      <div class="calendar-grid">
+        <div class="day-header sunday">일</div>
+        <div class="day-header">월</div>
+        <div class="day-header">화</div>
+        <div class="day-header">수</div>
+        <div class="day-header">목</div>
+        <div class="day-header">금</div>
+        <div class="day-header saturday">토</div>
+      </div>
+      <div class="calendar-grid" id="may-calendar-days">
+        <!-- 5월 달력이 여기에 추가됩니다 -->
+      </div>
     </div>
-
-    <script>
-        // 참가자 데이터 - 날짜 형식을 MM/DD로 통일
-        const participantsData = [
-            {name: "김다현", gender: "자매", part_congregation: "광주월곡", birth_year: "2001", phone: "010-5152-7505", marriage: "미혼", dates: ["05/04", "05/05"]},
-            {name: "조아혜", gender: "자매", part_congregation: "광주신가", birth_year: "1991", phone: "010-2498-2397", marriage: "미혼", dates: ["05/04", "05/05"]},
-            {name: "김시빈", gender: "자매", part_congregation: "인천만수남부", birth_year: "1999", phone: "010-3396-3138", marriage: "미혼", dates: ["05/17", "05/18"]},
-            {name: "이하은", gender: "자매", part_congregation: "인천만수남부", birth_year: "1989", phone: "010-2344-8838", marriage: "미혼", dates: ["05/17", "05/18"]},
-            {name: "조예린", gender: "자매", part_congregation: "인천만수남부", birth_year: "2000", phone: "010-5493-0327", marriage: "미혼", dates: ["05/17", "05/18"]},
-            {name: "민경희(+자녀)", gender: "자매", part_congregation: "경기용인어정", birth_year: "1972", phone: "010-3516-0169", marriage: "기혼", dates: ["05/10", "05/14", "05/17"]},
-            {name: "조유민", gender: "자매", part_congregation: "경기용인어정", birth_year: "2009", phone: "010-3507-0169", marriage: "미혼", dates: ["05/10", "05/17"]},
-            {name: "민경체", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1988", phone: "010-5016-9934", marriage: "미혼", dates: ["05/18"]},
-            {name: "김정인", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1998", phone: "010-7279-1931", marriage: "미혼", dates: ["05/18"]},
-            {name: "나시린", gender: "형제", part_congregation: "충남아산둔포", birth_year: "1999", phone: "010-7724-2264", marriage: "미혼", dates: ["05/18"]},
-            {name: "최지혜", gender: "자매", part_congregation: "경남창원양덕", birth_year: "1988", phone: "010-4871-6457", marriage: "기혼", dates: ["05/04", "05/05"]},
-            {name: "윤예본", gender: "자매", part_congregation: "경기안성남부", birth_year: "2000", phone: "010-5582-6457", marriage: "미혼", dates: ["05/04", "05/05"]},
-            {name: "장재훈", gender: "형제", part_congregation: "전북군산삼학", birth_year: "1995", phone: "010-5590-1820", marriage: "기혼", dates: ["05/10", "05/11"]},
-            {name: "이예은", gender: "자매", part_congregation: "전북군산삼학", birth_year: "1998", phone: "010-3284-8079", marriage: "기혼", dates: ["05/10", "05/11"]},
-            {name: "박수연", gender: "자매", part_congregation: "경기양성공도서부", birth_year: "1988", phone: "010-6269-4232", marriage: "미혼", dates: ["05/10", "05/11"]},
-            {name: "문채영", gender: "자매", part_congregation: "경기양성공도서부", birth_year: "2001", phone: "010-5506-1935", marriage: "미혼", dates: ["05/10", "05/11"]},
-            {name: "김용민", gender: "형제", part_congregation: "충남천안백석", birth_year: "1996", phone: "010-6633-8121", marriage: "기혼", dates: ["05/10", "05/11"]},
-            {name: "한은주", gender: "자매", part_congregation: "충남천안백석", birth_year: "1997", phone: "010-8357-5716", marriage: "기혼", dates: ["05/10", "05/11"]},
-            {name: "최윤미", gender: "자매", part_congregation: "경기평택동삭", birth_year: "1979", phone: "010-9983-3273", marriage: "기혼", dates: ["04/26", "04/27"]},
-            {name: "박여원", gender: "자매", part_congregation: "경기평택동삭", birth_year: "2006", phone: "010-5647-3273", marriage: "미혼", dates: ["04/26", "04/27"]},
-            {name: "권락희", gender: "자매", part_congregation: "충북청주비하", birth_year: "1971", phone: "010-2572-3996", marriage: "기혼", dates: ["04/26", "04/27"]},
-            {name: "박선욱", gender: "자매", part_congregation: "전북군산중앙", birth_year: "1973", phone: "010-6631-0579", marriage: "기혼", dates: ["04/26", "04/27"]},
-            {name: "송낙원", gender: "형제", part_congregation: "경기고양행신서부", birth_year: "1994", phone: "010-6624-9395", marriage: "미혼", dates: ["04/23", "04/26", "04/27", "05/01", "05/16", "05/17"]},
-            {name: "우정인", gender: "자매", part_congregation: "강원강릉성덕", birth_year: "1999", phone: "010-7583-4664", marriage: "미혼", dates: ["04/26", "04/27", "05/13", "05/14"]}
-        ];
-
-        // 날짜 목록 (중복 제거)
-        const allDates = Array.from(new Set(participantsData.flatMap(p => p.dates)));
+  </div>
+  
+  <!-- 모달 팝업 -->
+  <div class="modal" id="participants-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="selected-date">날짜 선택됨</h2>
+        <button class="close-btn" id="close-modal">닫기</button>
+      </div>
+      <table class="participants-table">
+        <thead>
+          <tr>
+            <th>이름</th>
+            <th>성별</th>
+            <th>참여자 회중</th>
+            <th>만 나이</th>
+            <th>연락처</th>
+            <th>결혼</th>
+          </tr>
+        </thead>
+        <tbody id="participants-data">
+          <!-- JavaScript로 참가자 데이터 추가 -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    // 참가자 데이터 (날짜 형식은 MM/DD로 통일)
+    const participantsData = [
+      {name: "김다현", gender: "자매", part_congregation: "광주월곡", birth_year: "2001", phone: "010-5152-7505", marriage: "미혼", dates: ["05/04", "05/05"]},
+      {name: "조아혜", gender: "자매", part_congregation: "광주신가", birth_year: "1991", phone: "010-2498-2397", marriage: "미혼", dates: ["05/04", "05/05"]},
+      {name: "김시빈", gender: "자매", part_congregation: "인천만수남부", birth_year: "1999", phone: "010-3396-3138", marriage: "미혼", dates: ["05/17", "05/18"]},
+      {name: "이하은", gender: "자매", part_congregation: "인천만수남부", birth_year: "1989", phone: "010-2344-8838", marriage: "미혼", dates: ["05/17", "05/18"]},
+      {name: "조예린", gender: "자매", part_congregation: "인천만수남부", birth_year: "2000", phone: "010-5493-0327", marriage: "미혼", dates: ["05/17", "05/18"]},
+      {name: "민경희(+자녀)", gender: "자매", part_congregation: "경기용인어정", birth_year: "1972", phone: "010-3516-0169", marriage: "기혼", dates: ["05/10", "05/14", "05/17"]},
+      {name: "조유민", gender: "자매", part_congregation: "경기용인어정", birth_year: "2009", phone: "010-3507-0169", marriage: "미혼", dates: ["05/10", "05/17"]},
+      {name: "민경체", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1988", phone: "010-5016-9934", marriage: "미혼", dates: ["05/18"]},
+      {name: "김정인", gender: "형제", part_congregation: "경기화성동탄신리", birth_year: "1998", phone: "010-7279-1931", marriage: "미혼", dates: ["05/18"]},
+      {name: "나시린", gender: "형제", part_congregation: "충남아산둔포", birth_year: "1999", phone: "010-7724-2264", marriage: "미혼", dates: ["05/18"]},
+      {name: "최지혜", gender: "자매", part_congregation: "경남창원양덕", birth_year: "1988", phone: "010-4871-6457", marriage: "기혼", dates: ["05/04", "05/05"]},
+      {name: "윤예본", gender: "자매", part_congregation: "경기안성남부", birth_year: "2000", phone: "010-5582-6457", marriage: "미혼", dates: ["05/04", "05/05"]},
+      {name: "장재훈", gender: "형제", part_congregation: "전북군산삼학", birth_year: "1995", phone: "010-5590-1820", marriage: "기혼", dates: ["05/10", "05/11"]},
+      {name: "이예은", gender: "자매", part_congregation: "전북군산삼학", birth_year: "1998", phone: "010-3284-8079", marriage: "기혼", dates: ["05/10", "05/11"]},
+      {name: "박수연", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "1988", phone: "010-6269-4232", marriage: "미혼", dates: ["05/10", "05/11"]},
+      {name: "문채영", gender: "자매", part_congregation: "경기안성공도서부", birth_year: "2001", phone: "010-5506-1935", marriage: "미혼", dates: ["05/10", "05/11"]},
+      {name: "김용민", gender: "형제", part_congregation: "충남천안백석", birth_year: "1996", phone: "010-6633-8121", marriage: "기혼", dates: ["05/10", "05/11"]},
+      {name: "한은주", gender: "자매", part_congregation: "충남천안백석", birth_year: "1997", phone: "010-8357-5716", marriage: "기혼", dates: ["05/10", "05/11"]},
+      {name: "최윤미", gender: "자매", part_congregation: "경기평택동삭", birth_year: "1979", phone: "010-9983-3273", marriage: "기혼", dates: ["04/26", "04/27"]},
+      {name: "박여원", gender: "자매", part_congregation: "경기평택동삭", birth_year: "2006", phone: "010-5647-3273", marriage: "미혼", dates: ["04/26", "04/27"]},
+      {name: "권락희", gender: "자매", part_congregation: "충북청주비하", birth_year: "1971", phone: "010-2572-3996", marriage: "기혼", dates: ["04/26", "04/27"]},
+      {name: "박선욱", gender: "자매", part_congregation: "전북군산중앙", birth_year: "1973", phone: "010-6631-0579", marriage: "기혼", dates: ["04/26", "04/27"]},
+      {name: "송낙원", gender: "형제", part_congregation: "경기고양행신서부", birth_year: "1994", phone: "010-6624-9395", marriage: "미혼", dates: ["04/23", "04/26", "04/27", "05/01", "05/16", "05/17"]},
+      {name: "우정인", gender: "자매", part_congregation: "강원강릉성덕", birth_year: "1999", phone: "010-7583-4664", marriage: "미혼", dates: ["04/26", "04/27", "05/13", "05/14"]}
+    ];
+    
+    // 날짜 목록 (중복 제거)
+    const allDates = Array.from(new Set(participantsData.flatMap(p => p.dates)));
+    
+    // 공휴일 정보
+    const holidays = {
+      "05/01": "근로자의 날",
+      "05/05": "어린이날",
+      "05/06": "대체휴일"
+    };
+    
+    // 현재 연도 (2025년)
+    const currentYear = 2025;
+    
+    // 만 나이 계산 함수
+    function calculateKoreanAge(birthYear) {
+      return currentYear - parseInt(birthYear);
+    }
+    
+    // 날짜별 참가자 수 계산
+    function getParticipantCountByDate(date) {
+      return participantsData.filter(p => p.dates.includes(date)).length;
+    }
+    
+    // 날짜별 참가자 목록 가져오기
+    function getParticipantsByDate(date) {
+      return participantsData.filter(p => p.dates.includes(date));
+    }
+    
+    // 요일 계산 함수 (0: 일요일, 6: 토요일)
+    function getDayOfWeek(year, month, day) {
+      return new Date(year, month - 1, day).getDay();
+    }
+    
+    // 월별 달력 생성 함수
+    function generateMonthCalendar(year, month, containerId) {
+      const calendarDaysContainer = document.getElementById(containerId);
+      calendarDaysContainer.innerHTML = '';
+      
+      // 월의 첫 날의 요일 구하기 (0: 일요일, 1: 월요일, ..., 6: 토요일)
+      const firstDayOfMonth = new Date(year, month - 1, 1).getDay();
+      
+      // 월의 마지막 날짜 구하기
+      const lastDayOfMonth = new Date(year, month, 0).getDate();
+      
+      // 첫 날 이전의 빈 날짜 추가
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day empty-day';
+        calendarDaysContainer.appendChild(emptyDay);
+      }
+      
+      // 월의 날짜 추가
+      const monthStr = month < 10 ? `0${month}` : `${month}`;
+      
+      for (let day = 1; day <= lastDayOfMonth; day++) {
+        const dayStr = day < 10 ? `0${day}` : `${day}`;
+        const dateStr = `${monthStr}/${dayStr}`;
+        const hasParticipants = allDates.includes(dateStr);
+        const isHoliday = holidays[dateStr] !== undefined;
         
-        // 공휴일 정보 - 수정된 공휴일 정보
-        const holidays = {
-            "05/01": "근로자의 날",
-            "05/05": "어린이날",
-            "05/06": "대체휴일",
-        };
-
-        // 현재 연도 설정 (2025년)
-        const currentYear = 2025;
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
         
-        // 만 나이 계산 함수
-        function calculateKoreanAge(birthYear) {
-            return currentYear - parseInt(birthYear);
-        }
-
-        // 날짜별 참가자 수 계산
-        function getParticipantCountByDate(date) {
-            return participantsData.filter(p => p.dates.includes(date)).length;
-        }
-
-        // 날짜별 참가자 목록 가져오기
-        function getParticipantsByDate(date) {
-            return participantsData.filter(p => p.dates.includes(date));
-        }
-
-        // 요일 계산 함수 (0: 일요일, 6: 토요일)
-        function getDayOfWeek(year, month, day) {
-            return new Date(year, month - 1, day).getDay();
-        }
-
-        // 월별 달력 생성 함수
-        function generateMonthCalendar(year, month, containerId) {
-            const calendarDaysContainer = document.getElementById(containerId);
-            calendarDaysContainer.innerHTML = '';
-            
-            // 월의 첫 날의 요일 구하기 (0: 일요일, 1: 월요일, ..., 6: 토요일)
-            const firstDayOfMonth = new Date(year, month - 1, 1).getDay();
-            
-            // 월의 마지막 날짜 구하기
-            const lastDayOfMonth = new Date(year, month, 0).getDate();
-            
-            // 첫 날 이전의 빈 날짜 추가
-            for (let i = 0; i < firstDayOfMonth; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.className = 'calendar-day empty-day';
-                calendarDaysContainer.appendChild(emptyDay);
-            }
-            
-            // 월의 날짜 추가
-            const monthStr = month < 10 ? `0${month}` : `${month}`;
-            
-            for (let day = 1; day <= lastDayOfMonth; day++) {
-                const dayStr = day < 10 ? `0${day}` : `${day}`;
-                const dateStr = `${monthStr}/${dayStr}`;
-                const hasParticipants = allDates.includes(dateStr);
-                const isHoliday = holidays[dateStr] !== undefined;
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = 'calendar-day';
-                
-                // 요일 계산 (해당 날짜의 요일)
-                const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
-                
-                // 주말 및 공휴일 스타일 적용
-                if (dayOfWeek === 0) {
-                    dayElement.classList.add('sunday');
-                } else if (dayOfWeek === 6) {
-                    dayElement.classList.add('saturday');
-                }
-                
-                if (isHoliday) {
-                    dayElement.classList.add('holiday');
-                }
-                
-                if (hasParticipants) {
-                    dayElement.classList.add('has-participants');
-                }
-                
-                dayElement.innerHTML = `${day}`;
-                
-                // 공휴일 표시 추가
-                if (isHoliday) {
-                    const holidayLabel = document.createElement('div');
-                    holidayLabel.className = 'holiday-label';
-                    holidayLabel.textContent = holidays[dateStr];
-                    dayElement.appendChild(holidayLabel);
-                }
-                
-                // 참가자 수 표시
-                if (hasParticipants) {
-                    const count = getParticipantCountByDate(dateStr);
-                    const countElement = document.createElement('div');
-                    countElement.className = 'participant-count';
-                    countElement.textContent = `${count}명`;
-                    dayElement.appendChild(countElement);
-                    
-                    dayElement.addEventListener('click', () => showParticipants(dateStr));
-                }
-                
-                calendarDaysContainer.appendChild(dayElement);
-            }
-        }
-
-        // 참가자 정보 표시 (모달 방식)
-        function showParticipants(date) {
-            const participants = getParticipantsByDate(date);
-            const modal = document.getElementById('participants-modal');
-            const participantsTable = document.getElementById('participants-data');
-            const selectedDateElement = document.getElementById('selected-date');
-            
-            // 날짜 표시 (MM/DD 형식에서 월과 일을 추출)
-            const month = date.split('/')[0];
-            const day = date.split('/')[1];
-            
-            // 공휴일인 경우 표시
-            let dateTitle = `2025년 ${month}월 ${day}일`;
-            
-            // 5월 5일 특별 처리 (어린이날과 석가탄신일 둘 다)
-            if (date === "05/05") {
-                dateTitle += " (어린이날, 석가탄신일)";
-            } else if (holidays[date]) {
-                dateTitle += ` (${holidays[date]})`;
-            }
-            
-            selectedDateElement.textContent = `${dateTitle} 참여자 (${participants.length}명)`;
-            
-            // 테이블 데이터 비우기
-            participantsTable.innerHTML = '';
-            
-            // 참가자 데이터 추가 (출생연도 대신 만 나이 표시)
-            participants.forEach(participant => {
-                const age = calculateKoreanAge(participant.birth_year);
-                const row = document.createElement('tr');
-                
-                // 핸드폰 번호에 통화 및 문자 링크 추가
-                const phoneNumber = participant.phone.replace(/-/g, ''); // 하이픈 제거
-                const phoneLinks = `
-                    <a href="tel:${phoneNumber}" style="display:inline-block; margin-right:10px; color:#4285F4; text-decoration:none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;">
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>통화
-                    </a>
-                    <a href="sms:${phoneNumber}" style="display:inline-block; color:#34A853; text-decoration:none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>문자
-                    </a>
-                `;
-                
-                row.innerHTML = `
-                    <td>${participant.name}</td>
-                    <td>${participant.gender}</td>
-                    <td>${participant.part_congregation}</td>
-                    <td>${age}세</td>
-                    <td>${participant.phone}<br>${phoneLinks}</td>
-                    <td>${participant.marriage}</td>
-                `;
-                
-                participantsTable.appendChild(row);
-            });
-            
-            // 모달 표시
-            modal.style.display = 'flex';
-            
-            // 활성화된 날짜 선택 제거
-            const activeDays = document.querySelectorAll('.active-day');
-            activeDays.forEach(day => {
-                day.classList.remove('active-day');
-            });
-            
-            // 현재 선택된 날짜 요소 찾기
-            const monthCalendarId = month === '04' ? 'april-calendar-days' : 'may-calendar-days';
-            const monthCalendarDays = document.querySelectorAll(`#${monthCalendarId} .has-participants`);
-            const dayNum = parseInt(day);
-            
-            monthCalendarDays.forEach(dayElement => {
-                const dayText = parseInt(dayElement.textContent);
-                if (dayText === dayNum) {
-                    dayElement.classList.add('active-day');
-                }
-            });
-        }
-
-        // 모달 닫기
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('participants-modal').style.display = 'none';
-            
-            // 활성화된 날짜 선택 제거
-            const activeDays = document.querySelectorAll('.active-day');
-            activeDays.forEach(day => {
-                day.classList.remove('active-day');
-            });
-        });
-
-        // 모달 바깥 클릭 시 닫기
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('participants-modal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-                
-                // 활성화된 날짜 선택 제거
-                const activeDays = document.querySelectorAll('.active-day');
-                activeDays.forEach(day => {
-                    day.classList.remove('active-day');
-                });
-            }
-        });
-
-        // 초기화 - 페이지 로드 시 각 월별 달력 생성
-        document.addEventListener('DOMContentLoaded', function() {
-            generateMonthCalendar(2025, 4, 'april-calendar-days');
-            generateMonthCalendar(2025, 5, 'may-calendar-days');
-        });
+        // 요일 계산 (해당 날짜의 요일)
+        const dayOfWeek = (firstDayOfMonth + day - 1) % 7;
         
-        // 바로 실행하여 즉시 달력 표시
-        generateMonthCalendar(2025, 4, 'april-calendar-days');
-        generateMonthCalendar(2025, 5, 'may-calendar-days');
-    </script>
+        // 주말 및 공휴일 스타일 적용
+        if (dayOfWeek === 0) {
+          dayElement.classList.add('sunday');
+        } else if (dayOfWeek === 6) {
+          dayElement.classList.add('saturday');
+        }
+        
+        if (isHoliday) {
+          dayElement.classList.add('holiday');
+        }
+        
+        if (hasParticipants) {
+          dayElement.classList.add('has-participants');
+        }
+        
+        dayElement.innerHTML = `${day}`;
+        
+        // 공휴일 표시 추가
+        if (isHoliday) {
+          const holidayLabel = document.createElement('div');
+          holidayLabel.className = 'holiday-label';
+          holidayLabel.textContent = holidays[dateStr];
+          dayElement.appendChild(holidayLabel);
+        }
+        
+        // 참가자 수 표시
+        if (hasParticipants) {
+          const count = getParticipantCountByDate(dateStr);
+          const countElement = document.createElement('div');
+          countElement.className = 'participant-count';
+          countElement.textContent = `${count}명`;
+          dayElement.appendChild(countElement);
+          
+          dayElement.addEventListener('click', () => showParticipants(dateStr));
+        }
+        
+        calendarDaysContainer.appendChild(dayElement);
+      }
+    }
+    
+    // 참가자 정보 표시 (모달 방식)
+    function showParticipants(date) {
+      const participants = getParticipantsByDate(date);
+      const modal = document.getElementById('participants-modal');
+      const participantsTable = document.getElementById('participants-data');
+      const selectedDateElement = document.getElementById('selected-date');
+      
+      // 날짜 표시 (MM/DD 형식에서 월과 일을 추출)
+      const month = date.split('/')[0];
+      const day = date.split('/')[1];
+      
+      // 공휴일인 경우 표시
+      let dateTitle = `2025년 ${month}월 ${day}일`;
+      
+      // 5월 5일 특별 처리 (어린이날, 석가탄신일)
+      if (date === "05/05") {
+        dateTitle += " (어린이날, 석가탄신일)";
+      } else if (holidays[date]) {
+        dateTitle += ` (${holidays[date]})`;
+      }
+      
+      selectedDateElement.textContent = `${dateTitle} 참여자 (${participants.length}명)`;
+      
+      // 테이블 데이터 초기화
+      participantsTable.innerHTML = '';
+      
+      // 참가자 데이터 추가 (출생연도 대신 만 나이 표시)
+      participants.forEach(participant => {
+        const age = calculateKoreanAge(participant.birth_year);
+        const row = document.createElement('tr');
+        
+        // 핸드폰 번호에 통화 및 문자 링크 추가
+        const phoneNumber = participant.phone.replace(/-/g, '');
+        const phoneLinks = `
+          <a href="tel:${phoneNumber}" style="display:inline-block; margin-right:10px; color:#4285F4; text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>통화
+          </a>
+          <a href="sms:${phoneNumber}" style="display:inline-block; color:#34A853; text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>문자
+          </a>
+        `;
+        
+        row.innerHTML = `
+          <td>${participant.name}</td>
+          <td>${participant.gender}</td>
+          <td>${participant.part_congregation}</td>
+          <td>${age}세</td>
+          <td>${participant.phone}<br>${phoneLinks}</td>
+          <td>${participant.marriage}</td>
+        `;
+        
+        participantsTable.appendChild(row);
+      });
+      
+      // 모달 표시
+      modal.style.display = 'flex';
+      
+      // 활성화된 날짜 선택 제거
+      document.querySelectorAll('.active-day').forEach(day => day.classList.remove('active-day'));
+      
+      // 선택된 날짜 요소에 active-day 클래스 추가
+      const monthCalendarId = month === '04' ? 'april-calendar-days' : 'may-calendar-days';
+      document.querySelectorAll(`#${monthCalendarId} .has-participants`).forEach(dayElement => {
+        if (parseInt(dayElement.textContent) === parseInt(day)) {
+          dayElement.classList.add('active-day');
+        }
+      });
+    }
+    
+    // 모달 닫기 이벤트
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('participants-modal').style.display = 'none';
+      document.querySelectorAll('.active-day').forEach(day => day.classList.remove('active-day'));
+    });
+    
+    // 모달 바깥 클릭 시 닫기
+    window.addEventListener('click', event => {
+      const modal = document.getElementById('participants-modal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+        document.querySelectorAll('.active-day').forEach(day => day.classList.remove('active-day'));
+      }
+    });
+    
+    // 페이지 로드 시 달력 생성
+    document.addEventListener('DOMContentLoaded', () => {
+      generateMonthCalendar(2025, 4, 'april-calendar-days');
+      generateMonthCalendar(2025, 5, 'may-calendar-days');
+    });
+    
+    // 즉시 달력 표시
+    generateMonthCalendar(2025, 4, 'april-calendar-days');
+    generateMonthCalendar(2025, 5, 'may-calendar-days');
+  </script>
 </body>
 </html>
