@@ -103,14 +103,12 @@
   <div class="container">
     <h1>월간 생활비 관리</h1>
 
-    <!-- 년월 선택 드롭다운 -->
     <div class="month-selector">
       <label for="month-select">년월 선택:</label>
       <select id="month-select"></select>
     </div>
 
     <form id="expense-form">
-      <!-- 신한은행 섹션 -->
       <h2>신한은행</h2>
       <div class="field">
         <label for="shinhan-card">신한카드 사용 금액:</label>
@@ -137,7 +135,6 @@
         <span id="shinhan-total" class="result">0</span> 원
       </div>
 
-      <!-- 우리은행 섹션 -->
       <h2>우리은행</h2>
       <div class="field">
         <label for="samsung-card">삼성카드 사용 금액:</label>
@@ -152,7 +149,6 @@
         <span id="woori-total" class="result">0</span> 원
       </div>
 
-      <!-- 총 입금 필요액 및 잔액 -->
       <h2>총 입금 및 잔액</h2>
       <div class="field">
         <label>총 입금 필요액:</label>
@@ -168,20 +164,17 @@
       </div>
     </form>
 
-    <!-- 히스토리 섹션 -->
     <h2>히스토리</h2>
     <div id="history">
-      <!-- 저장된 기록들이 표시됩니다 -->
-    </div>
+      </div>
   </div>
 
-  <!-- Firebase SDK (compat 모드 사용) 및 스크립트 -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
     // Firebase 설정 (databaseURL만 지정)
     const firebaseConfig = {
-      databaseURL: "https://money-a58a8-default-rtdb.firebaseio.com"
+      databaseURL: "https://money-a58a8-default-rtdb.firebaseio.com" // 여기에 본인의 Firebase Realtime Database URL을 입력하세요.
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -260,6 +253,8 @@
     // 현재 폼 데이터를 Firebase에 저장 (선택된 년월 기준)
     function saveData() {
       const selectedMonth = monthSelect.value;
+      if (!selectedMonth) return; // 년월이 선택되지 않았으면 저장하지 않음
+
       const data = {
         shinhanCard: parseInput(shinhanCardInput.value),
         transportation: parseInput(transportationInput.value),
@@ -267,13 +262,24 @@
         interest2: parseInput(interest2Input.value),
         samsungCard: parseInput(samsungCardInput.value),
         monthlySalary: parseInput(monthlySalaryInput.value),
-        timestamp: Date.now()
+        timestamp: Date.now() // 정렬 및 최신 데이터 확인용 타임스탬프
       };
       firebase.database().ref('expenses/' + selectedMonth).set(data);
     }
 
     // 선택된 년월의 데이터를 Firebase에서 불러오기
     function loadData(monthKey) {
+        if (!monthKey) { // monthKey가 유효하지 않으면 입력 필드 초기화
+            shinhanCardInput.value = "";
+            transportationInput.value = "";
+            interest1Input.value = "";
+            interest2Input.value = "";
+            samsungCardInput.value = "";
+            monthlySalaryInput.value = "";
+            calculateTotals(); // 총계도 0으로 업데이트
+            return;
+        }
+
       firebase.database().ref('expenses/' + monthKey).get().then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
@@ -284,6 +290,7 @@
           samsungCardInput.value = data.samsungCard ? formatNumber(data.samsungCard) : "";
           monthlySalaryInput.value = data.monthlySalary ? formatNumber(data.monthlySalary) : "";
         } else {
+          // 해당 월 데이터가 없으면 입력 필드 초기화
           shinhanCardInput.value = "";
           transportationInput.value = "";
           interest1Input.value = "";
@@ -291,87 +298,154 @@
           samsungCardInput.value = "";
           monthlySalaryInput.value = "";
         }
-        calculateTotals();
+        calculateTotals(); // 데이터 로드 후 총계 다시 계산
       }).catch((error) => {
         console.error("데이터 불러오기 에러:", error);
+        // 에러 발생 시에도 필드 초기화
+        shinhanCardInput.value = "";
+        transportationInput.value = "";
+        interest1Input.value = "";
+        interest2Input.value = "";
+        samsungCardInput.value = "";
+        monthlySalaryInput.value = "";
+        calculateTotals();
       });
     }
 
+    // --- 수정된 populateMonthSelect 함수 ---
     // 드롭다운에 년월 옵션 생성 (현재 월 기준, 지난 12개월 ~ 다음 12개월 옵션)
     function populateMonthSelect() {
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-      // -11부터 +12까지 24개월 옵션 생성
-      for(let i = -11; i <= 12; i++){
-        const date = new Date(currentYear, currentMonth - 1 + i);
-        const year = date.getFullYear();
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const optionValue = `${year}-${month}`;
-        const option = document.createElement("option");
-        option.value = optionValue;
-        option.textContent = optionValue;
-        monthSelect.appendChild(option);
-      }
-      // 기본값: 현재 년월
-      const currentOption = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
-      monthSelect.value = currentOption;
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-11 범위의 현재 월
+
+        // 이전 달 계산 (현재 날짜에서 하루를 빼면 이전 달의 마지막 날이 됨)
+        const previousMonthDate = new Date(currentYear, currentMonth, 0); // 현재 월의 0번째 날 = 이전 달 마지막 날
+        const previousYear = previousMonthDate.getFullYear();
+        const previousMonth = (previousMonthDate.getMonth() + 1).toString().padStart(2, '0'); // getMonth()는 0부터 시작하므로 +1
+        const previousMonthOption = `${previousYear}-${previousMonth}`; // 이전 달 YYYY-MM 형식
+
+        monthSelect.innerHTML = ''; // 기존 옵션 초기화
+
+        // -11부터 +12까지 24개월 옵션 생성 (현재 월 기준)
+        for(let i = -11; i <= 12; i++){
+            const date = new Date(currentYear, currentMonth + i, 1); // 각 달의 1일 기준으로 계산
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const optionValue = `${year}-${month}`;
+            const option = document.createElement("option");
+            option.value = optionValue;
+            option.textContent = optionValue;
+            monthSelect.appendChild(option);
+        }
+
+        // 기본값: 이전 년월로 설정
+        monthSelect.value = previousMonthOption;
+
+        // 만약 계산된 이전 달이 옵션 목록에 없는 경우 (예: 범위 시작점보다 더 과거일 때), 현재 월로 설정
+        if (!monthSelect.querySelector(`option[value="${previousMonthOption}"]`)) {
+            const currentMonthPadded = (currentMonth + 1).toString().padStart(2, '0');
+            const currentOption = `${currentYear}-${currentMonthPadded}`;
+            // 현재 월이 옵션 목록에 있는지 다시 확인
+            if (monthSelect.querySelector(`option[value="${currentOption}"]`)) {
+                monthSelect.value = currentOption;
+            } else if (monthSelect.options.length > 0) {
+                // 그것도 없으면 그냥 첫번째 옵션을 선택
+                monthSelect.value = monthSelect.options[0].value;
+            }
+        }
     }
+    // --- 수정된 populateMonthSelect 함수 끝 ---
+
 
     // 히스토리 영역 업데이트: 저장된 모든 년월 데이터를 최신순(최근 자료 상단)으로 나열하고, 삭제 버튼 추가
     function updateHistory() {
       const historyDiv = document.getElementById("history");
-      firebase.database().ref('expenses').once('value').then((snapshot) => {
+      firebase.database().ref('expenses').orderByChild('timestamp').once('value').then((snapshot) => { // timestamp 기준으로 정렬하여 가져옴
         let items = [];
         snapshot.forEach((childSnapshot) => {
           let monthKey = childSnapshot.key;
           let data = childSnapshot.val();
-          items.push({ monthKey, data });
+          // 데이터 구조가 유효한지 간단히 확인 (예: 키가 YYYY-MM 형식인지)
+          if (/\d{4}-\d{2}/.test(monthKey) && data) {
+              items.push({ monthKey, data });
+          } else {
+              console.warn(`Invalid data found at key: ${monthKey}`, data);
+          }
         });
-        // timestamp 기준 내림차순 정렬 (최근 자료가 상단에 오도록)
+
+        // timestamp 기준 내림차순 정렬 (최신 자료가 상단에 오도록) - Firebase에서 이미 정렬했지만, 클라이언트 측에서 한번 더 보장
         items.sort((a, b) => (b.data.timestamp || 0) - (a.data.timestamp || 0));
-        historyDiv.innerHTML = "";
+
+        historyDiv.innerHTML = ""; // 히스토리 영역 초기화
         items.forEach(item => {
           const { monthKey, data } = item;
-          const shinhanTotal = (data.shinhanCard || 0) + (data.transportation || 0) + SAVINGS_FIXED + (data.interest1 || 0) + (data.interest2 || 0);
-          const wooriTotal = (data.samsungCard || 0) + WOORI_FIXED;
-          
+          // 데이터가 없을 경우 기본값 0으로 계산
+          const shinhanCard = data.shinhanCard || 0;
+          const transportation = data.transportation || 0;
+          const interest1 = data.interest1 || 0;
+          const interest2 = data.interest2 || 0;
+          const samsungCard = data.samsungCard || 0;
+
+          const shinhanTotal = shinhanCard + transportation + SAVINGS_FIXED + interest1 + interest2;
+          const wooriTotal = samsungCard + WOORI_FIXED;
+
           // 각 히스토리 항목 컨테이너 생성
           const itemDiv = document.createElement("div");
           itemDiv.className = "history-item";
-          
+          itemDiv.setAttribute('data-monthkey', monthKey); // 데이터 키 저장
+
           // 기록 내용
           const textSpan = document.createElement("span");
-          textSpan.textContent = `${monthKey} : 신한은행 입금액 ${formatNumber(shinhanTotal)}원, 우리은행 입금액 ${formatNumber(wooriTotal)}원`;
-          
+          textSpan.textContent = `${monthKey} : 신한은행 ${formatNumber(shinhanTotal)}원, 우리은행 ${formatNumber(wooriTotal)}원`;
+
           // 삭제 버튼 생성
           const delBtn = document.createElement("button");
           delBtn.className = "delete-btn";
           delBtn.textContent = "×";
           delBtn.title = "기록 삭제";
           delBtn.addEventListener("click", function(e) {
-            e.stopPropagation();  // 클릭 이벤트가 아이템 클릭으로 전달되지 않도록
+            e.stopPropagation(); // 클릭 이벤트가 아이템 클릭으로 전달되지 않도록
             if(confirm(`${monthKey} 기록을 삭제하시겠습니까?`)) {
               firebase.database().ref('expenses/' + monthKey).remove().then(() => {
-                updateHistory();
+                console.log(`${monthKey} 데이터 삭제 완료`);
+                // 만약 현재 선택된 월의 데이터를 삭제했다면, 폼 초기화
+                if (monthSelect.value === monthKey) {
+                    loadData(null); // 폼 클리어
+                }
+                updateHistory(); // 히스토리 목록 갱신
               }).catch((error) => {
                 console.error("삭제 에러:", error);
+                alert("데이터 삭제 중 오류가 발생했습니다.");
               });
             }
           });
-          
+
           // 기록 항목 클릭 시 해당 월 데이터 로드
           itemDiv.addEventListener("click", function() {
-            monthSelect.value = monthKey;
-            loadData(monthKey);
+            const keyToLoad = this.getAttribute('data-monthkey');
+            // 드롭다운에도 해당 월이 있는지 확인하고 값 변경
+            if (monthSelect.querySelector(`option[value="${keyToLoad}"]`)) {
+                monthSelect.value = keyToLoad;
+                loadData(keyToLoad);
+            } else {
+                // 만약 드롭다운에 없는 오래된 기록이라면? (현재 로직으로는 드롭다운 범위 내 기록만 표시됨)
+                // 필요하다면 여기에 옵션을 동적으로 추가하는 로직을 넣을 수 있음
+                console.log(`${keyToLoad} is not in the current dropdown options.`);
+                // 일단 데이터만 로드 시도
+                 loadData(keyToLoad);
+                 // 드롭다운 값은 변경하지 않거나, 별도 표시
+            }
+
           });
-          
+
           itemDiv.appendChild(textSpan);
           itemDiv.appendChild(delBtn);
           historyDiv.appendChild(itemDiv);
         });
       }).catch((error) => {
         console.error("히스토리 업데이트 에러:", error);
+        historyDiv.innerHTML = "<p>히스토리를 불러오는 중 오류가 발생했습니다.</p>";
       });
     }
 
@@ -380,11 +454,11 @@
       loadData(this.value);
     });
 
-    // 페이지 로드시 드롭다운 초기화 및 데이터 로드
+    // 페이지 로드시 드롭다운 초기화 및 데이터 로드, 히스토리 업데이트
     window.addEventListener("load", function() {
-      populateMonthSelect();
-      loadData(monthSelect.value);
-      updateHistory();
+      populateMonthSelect();       // 드롭다운 채우고 기본값(이전달) 설정
+      loadData(monthSelect.value); // 설정된 기본값(이전달) 데이터 로드
+      updateHistory();             // 전체 히스토리 표시
     });
   </script>
 </body>
