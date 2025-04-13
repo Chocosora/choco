@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>작업 주소 관리 및 내비게이션</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-database-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4263eb;
+            --primary-hover: #364fc7;
+            --secondary-color: #f8f9fa;
+            --border-color: #ced4da;
+            --text-color: #343a40;
+            --light-gray: #e9ecef;
+            --naver-color: #03C75A; /* 네이버 색상 */
+            --tmap-color: #ED1846; /* T맵 색상 */
+            --kakao-color: #FEE500; /* 카카오 색상 */
+            --kakao-text: #3C1E1E; /* 카카오 버튼 텍스트 색상 */
+            --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            max-width: 800px; margin: 0 auto; padding: 15px;
+            background-color: var(--secondary-color); color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header { text-align: center; margin-bottom: 25px; }
+        h1 { color: var(--text-color); margin-bottom: 8px; font-size: 26px; }
+        h2 { color: var(--text-color); margin-bottom: 15px; font-size: 20px; margin-top: 30px; }
+        .subtitle { color: #6c757d; font-size: 15px; }
+
+        .container { background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057; }
+        textarea, .input-group input[type="text"], .input-group input[type="date"] {
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
+            border-radius: 4px; font-size: 15px; transition: border-color 0.2s;
+            font-family: inherit; -webkit-appearance: none; appearance: none;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+        textarea:focus, .input-group input[type="text"]:focus, .input-group input[type="date"]:focus {
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.2);
+        }
+
+        .btn {
+            padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px;
+            cursor: pointer; transition: background-color 0.3s, transform 0.1s; display: inline-flex;
+            align-items: center; justify-content: center; font-weight: 500; line-height: 1.5; min-height: 40px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-secondary { background-color: var(--light-gray); color: var(--text-color); }
+        .btn-secondary:hover { background-color: #dee2e6; }
+        .button-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+
+        .saved-addresses { margin-top: 15px; }
+        .address-card {
+            background-color: white; border-radius: 8px; padding: 15px; margin-bottom: 12px;
+            box-shadow: var(--box-shadow); transition: transform 0.2s, box-shadow 0.2s;
+            position: relative; cursor: grab;
+        }
+        .address-card:active { cursor: grabbing; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
+
+        .address-info { margin-bottom: 8px; font-size: 13px; color: #495057; }
+        .address-info strong { color: var(--text-color); margin-right: 4px; }
+        .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
+        .day-of-week { color: #6c757d; font-size: 12px; margin-left: 2px; }
+
+        .address-text { margin-bottom: 12px; font-size: 15px; word-break: break-all; }
+
+        .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .nav-btn {
+            padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center;
+            text-decoration: none; font-weight: bold; transition: opacity 0.2s, transform 0.1s;
+            border: 1px solid transparent; min-height: 38px; display: flex; align-items: center; justify-content: center;
+        }
+        .nav-btn:hover { opacity: 0.85; }
+        .nav-btn:active { transform: scale(0.97); }
+        .naver-btn { background-color: var(--naver-color); color: white; }
+        .tmap-btn { background-color: var(--tmap-color); color: white; }
+        .kakao-btn { background-color: var(--kakao-color); color: var(--kakao-text); }
+
+        .action-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .action-btn {
+            flex: 1; padding: 8px 0; border: none; border-radius: 4px; font-size: 13px; cursor: pointer;
+            text-align: center; background-color: var(--light-gray); color: var(--text-color);
+            transition: background-color 0.2s; font-weight: 500; min-height: 36px;
+        }
+        .action-btn:hover { background-color: #dee2e6; }
+
+        .edit-mode .address-display { display: none; }
+        .address-edit { display: none; }
+        .edit-mode .address-edit { display: block; }
+        .edit-mode .address-card { cursor: default; }
+
+        .edit-input-group { margin-bottom: 10px; }
+        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px;}
+        .edit-input, .edit-site-name-input, .edit-work-date-input {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border-color);
+            border-radius: 4px; font-size: 14px; font-family: inherit;
+            -webkit-appearance: none; appearance: none;
+        }
+        .edit-input:focus, .edit-site-name-input:focus, .edit-work-date-input:focus {
+             outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
+        }
+
+        .notification {
+            position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px);
+            background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            z-index: 1000; font-size: 14px; text-align: center;
+        }
+        .notification.show { transform: translateY(0); opacity: 1; }
+        .notification.success { background-color: var(--success-color); }
+        .notification.warning { background-color: var(--warning-color); color: #333; }
+        .notification.error { background-color: var(--error-color); }
+
+        .empty-state { text-align: center; padding: 30px 0; color: #6c757d; }
+        .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
+
+        .sync-status { display: flex; align-items: center; height: 14px; margin-bottom: 15px; }
+        .sync-indicator { width: 10px; height: 10px; border-radius: 50%; }
+        .sync-indicator.online { background-color: var(--success-color); }
+        .sync-indicator.offline { background-color: var(--error-color); }
+
+        .device-id { font-size: 11px; color: #868e96; text-align: center; margin-top: 25px; padding-bottom: 10px; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 24px; } h2 { font-size: 18px; } .subtitle { font-size: 14px; }
+            .container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>작업 주소 관리</h1>
+        <p class="subtitle">주소, 현장, 작업일을 관리하고 내비게이션으로 연결</p>
+    </header>
+
+    <div class="container">
+        <div class="sync-status">
+            <div id="syncIndicator" class="sync-indicator offline"></div>
+            <span id="syncStatus"></span> </div>
+
+        <div class="input-group">
+             <label for="addressInput">주소</label>
+             <textarea id="addressInput" placeholder="예: 서울 양천구 목동 962 이스턴 5층"></textarea>
+        </div>
+        <div class="input-group">
+             <label for="siteNameInput">현장이름 (선택)</label>
+             <input type="text" id="siteNameInput" placeholder="예: 목동 아파트 현장">
+        </div>
+        <div class="input-group">
+             <label for="workDateInput">작업일자 (선택)</label>
+             <input type="date" id="workDateInput">
+        </div>
+        <div class="button-group">
+            <button id="saveButton" class="btn btn-primary">저장하기</button>
+        </div>
+    </div>
+
+    <h2>저장된 주소 (드래그하여 순서 변경)</h2>
+    <div id="savedAddresses" class="saved-addresses">
+        <div id="emptyState" class="empty-state">
+            <div class="empty-state-icon">📂</div>
+            <p>저장된 주소가 없습니다.</p>
+        </div>
+        <div id="addressCards"></div> </div>
+
+    <div class="device-id">기기 ID: <span id="deviceId">로딩 중...</span></div>
+
+    <div id="notification" class="notification">알림 메시지</div>
+
+    <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com" // 실제 URL로 변경하세요
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 디바이스 ID
+        let deviceId = localStorage.getItem('deviceId');
+        if (!deviceId) {
+            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('deviceId', deviceId);
+        }
+        document.getElementById('deviceId').textContent = deviceId.substring(0, 15) + "...";
+
+        // DOM 요소
+        const addressInput = document.getElementById('addressInput');
+        const siteNameInput = document.getElementById('siteNameInput');
+        const workDateInput = document.getElementById('workDateInput');
+        const saveButton = document.getElementById('saveButton');
+        const addressCardsContainer = document.getElementById('addressCards');
+        const emptyState = document.getElementById('emptyState');
+        const notification = document.getElementById('notification');
+        const syncIndicator = document.getElementById('syncIndicator');
+
+        let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+        let sortableInstance = null;
+
+        // --- Firebase 연결 상태 ---
+        const connectedRef = database.ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            if (snap.val() === true) {
+                syncIndicator.className = "sync-indicator online";
+            } else {
+                syncIndicator.className = "sync-indicator offline";
+            }
+        });
+
+        // --- 알림 ---
+        function showNotification(message, type = 'success') {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => { notification.classList.remove('show'); }, 2500);
+        }
+
+        // --- 주소 처리 ---
+        function extractAddress(text) { return text.trim(); }
+
+        // *** 개선된 주소 클리닝 함수 ***
+        function getCleanAddressForNavigation(fullAddress) {
+            let text = fullAddress.trim();
+            // 1. 접두사 제거
+            const prefixPattern = /^(주소|address|위치|location)\s*[:：]?\s*/i;
+            text = text.replace(prefixPattern, '').trim();
+
+            const parts = text.split(/\s+/);
+            let lastGoodAddressIndex = -1; // 좋은 문맥을 가진 마지막 주소 숫자/번지의 인덱스
+
+            // 2. 핵심 주소 탐색 (문맥 확인)
+            for (let i = 0; i < parts.length; i++) {
+                const currentPart = parts[i];
+                const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart);
+                const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart);
+
+                if (isAddressNumber || isAddressBunji) {
+                    // 이전 부분이 존재하고, 도로명/지역명 접미사로 끝나는지 확인
+                    if (i > 0 && /[로길가동리]$/.test(parts[i-1])) {
+                        lastGoodAddressIndex = i; // 조건을 만족하는 마지막 위치 저장
+                    }
+                }
+            }
+
+            // 3. 결과 반환
+            if (lastGoodAddressIndex !== -1) {
+                // 문맥에 맞는 숫자/번지를 찾았으면, 거기까지 잘라서 반환
+                return parts.slice(0, lastGoodAddressIndex + 1).join(' ');
+            } else {
+                // 적절한 숫자/번지를 찾지 못했거나, 숫자 자체가 없는 주소의 경우
+                // 접두사만 제거된 텍스트를 반환
+                return text;
+            }
+        }
+
+        // --- 내비 URL ---
+        function createNaverMapUrl(addr) { return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+        function createTmapUrl(addr) { return `https://search.tmap.co.kr/search/search.do?searchKeyword=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+        function createKakaoNaviUrl(addr) { return `https://map.kakao.com/?q=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+
+        // --- Firebase 백업/복원 ---
+        function backupToFirebase() {
+             if (!navigator.onLine || !firebase.app()) return;
+            const backupRef = database.ref('addresses/' + deviceId);
+            backupRef.set({
+                lastUpdated: new Date().toISOString(),
+                addresses: savedAddresses
+            }).then(() => console.log('Firebase 백업 성공'))
+              .catch((err) => { console.error("Firebase 백업 실패:", err); showNotification('백업 실패', 'error'); });
+        }
+
+        function restoreFromFirebase() {
+            const backupRef = database.ref('addresses/' + deviceId);
+            backupRef.once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data && data.addresses) {
+                    const localUpdated = localStorage.getItem('lastUpdated');
+                    if (!localUpdated || (data.lastUpdated && data.lastUpdated > localUpdated)) {
+                        savedAddresses = data.addresses;
+                        localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
+                        localStorage.setItem('lastUpdated', data.lastUpdated || new Date().toISOString());
+                        renderAddresses();
+                        console.log('Firebase에서 데이터 복원 완료');
+                        showNotification('데이터를 복원했습니다.', 'success');
+                    }
+                }
+            }).catch((err) => console.error("Firebase 복원 실패:", err));
+        }
+
+        // --- 주소 저장 ---
+        function saveAddress() {
+            const addressText = addressInput.value.trim();
+            const siteName = siteNameInput.value.trim();
+            const workDate = workDateInput.value;
+
+            if (!addressText) { showNotification('주소를 입력하세요.', 'warning'); addressInput.focus(); return; }
+            if (savedAddresses.some(addr => addr.text === addressText)) { showNotification('이미 저장된 주소입니다.', 'warning'); return; }
+
+            const addressObj = {
+                id: Date.now(), text: addressText, siteName: siteName,
+                workDate: workDate, createdAt: new Date().toISOString()
+            };
+            savedAddresses.unshift(addressObj);
+            updateLocalStorageAndBackup();
+            renderAddresses();
+            addressInput.value = ''; siteNameInput.value = ''; workDateInput.value = '';
+            showNotification('주소가 저장되었습니다.');
+        }
+
+        // --- 주소 삭제 ---
+        function deleteAddress(id) {
+            if (confirm('이 주소를 삭제하시겠습니까?')) {
+                savedAddresses = savedAddresses.filter(addr => addr.id !== id);
+                updateLocalStorageAndBackup();
+                renderAddresses();
+                showNotification('주소가 삭제되었습니다.');
+            }
+        }
+
+        // --- 편집 모드 ---
+        function enableEditMode(card, address) {
+            card.classList.add('edit-mode');
+            card.querySelector('.edit-input').value = address.text;
+            card.querySelector('.edit-site-name-input').value = address.siteName || '';
+            card.querySelector('.edit-work-date-input').value = address.workDate || '';
+            card.querySelector('.edit-input').focus();
+            if(sortableInstance) sortableInstance.option("disabled", true);
+        }
+        function cancelEditMode(card) {
+            card.classList.remove('edit-mode');
+            if(sortableInstance) sortableInstance.option("disabled", false);
+        }
+
+        // --- 편집 저장 ---
+        function saveEdit(id) {
+            const card = addressCardsContainer.querySelector(`.address-card[data-id="${id}"]`);
+            if (!card) return;
+            const newText = card.querySelector('.edit-input').value.trim();
+            const newSiteName = card.querySelector('.edit-site-name-input').value.trim();
+            const newWorkDate = card.querySelector('.edit-work-date-input').value;
+
+            if (!newText) { showNotification('주소를 비울 수 없습니다.', 'warning'); return; }
+            const addressIndex = savedAddresses.findIndex(addr => addr.id === id);
+            if (addressIndex !== -1) {
+                savedAddresses[addressIndex].text = newText;
+                savedAddresses[addressIndex].siteName = newSiteName;
+                savedAddresses[addressIndex].workDate = newWorkDate;
+                updateLocalStorageAndBackup();
+                renderAddresses();
+                showNotification('주소가 수정되었습니다.');
+            }
+        }
+
+        // --- 로컬 저장 및 백업 통합 ---
+        function updateLocalStorageAndBackup() {
+            localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
+            localStorage.setItem('lastUpdated', new Date().toISOString());
+            backupToFirebase();
+        }
+
+        // --- 주소 렌더링 ---
+        function renderAddresses() {
+            addressCardsContainer.innerHTML = '';
+            if (savedAddresses.length === 0) {
+                emptyState.style.display = 'block';
+                if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            savedAddresses.forEach((address) => {
+                const card = document.createElement('div');
+                card.className = 'address-card'; card.dataset.id = address.id;
+
+                // Display Area
+                const addressDisplay = document.createElement('div');
+                addressDisplay.className = 'address-display';
+                const addressInfo = document.createElement('div');
+                addressInfo.className = 'address-info';
+                let infoHtml = '';
+                if (address.siteName) { infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`; }
+                if (address.workDate) {
+                    let dateStr = address.workDate; let dayOfWeek = '';
+                    try {
+                        const dateParts = dateStr.split('-');
+                        if (dateParts.length === 3) {
+                            const year = parseInt(dateParts[0], 10), month = parseInt(dateParts[1], 10) - 1, day = parseInt(dateParts[2], 10);
+                            const dateObj = new Date(Date.UTC(year, month, day));
+                            if (!isNaN(dateObj)) { dayOfWeek = dateObj.toLocaleDateString('ko-KR', { weekday: 'short', timeZone: 'Asia/Seoul' }); }
+                        }
+                    } catch (e) { console.error("날짜 파싱 오류:", e); }
+                    infoHtml += `<span><strong>작업일:</strong> ${dateStr} <span class="day-of-week">(${dayOfWeek || '요일?'})</span></span>`;
+                }
+                addressInfo.innerHTML = infoHtml;
+
+                const addressText = document.createElement('div');
+                addressText.className = 'address-text'; addressText.textContent = address.text;
+
+                const navButtons = document.createElement('div');
+                navButtons.className = 'nav-buttons';
+                navButtons.innerHTML = `
+                    <a href="${createNaverMapUrl(address.text)}" target="_blank" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
+                    <a href="${createTmapUrl(address.text)}" target="_blank" class="nav-btn tmap-btn" title="T맵으로 열기">T맵</a>
+                    <a href="${createKakaoNaviUrl(address.text)}" target="_blank" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>`;
+
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'action-buttons';
+                actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
+                actionButtons.querySelector('.edit-btn').onclick = () => enableEditMode(card, address);
+                actionButtons.querySelector('.delete-btn').onclick = () => deleteAddress(address.id);
+
+                if (infoHtml) { addressDisplay.appendChild(addressInfo); }
+                addressDisplay.appendChild(addressText); addressDisplay.appendChild(navButtons); addressDisplay.appendChild(actionButtons);
+
+                // Edit Area
+                const addressEdit = document.createElement('div');
+                addressEdit.className = 'address-edit';
+                addressEdit.innerHTML = `
+                    <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
+                    <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
+                    <div class="edit-input-group"><label>작업일자</label><input type="date" class="edit-work-date-input"></div>
+                    <div class="button-group">
+                        <button class="btn btn-primary save-edit-btn">저장</button>
+                        <button class="btn btn-secondary cancel-edit-btn">취소</button>
+                    </div>`;
+                addressEdit.querySelector('.save-edit-btn').onclick = () => saveEdit(address.id);
+                addressEdit.querySelector('.cancel-edit-btn').onclick = () => cancelEditMode(card);
+
+                card.appendChild(addressDisplay); card.appendChild(addressEdit);
+                addressCardsContainer.appendChild(card);
+            });
+
+            // SortableJS 초기화/업데이트
+            if (!sortableInstance && savedAddresses.length > 0) { initializeSortable(); }
+            else if (sortableInstance) { sortableInstance.option("disabled", false); }
+        }
+
+        // --- SortableJS 초기화 ---
+        function initializeSortable() {
+             if (sortableInstance) sortableInstance.destroy();
+             sortableInstance = new Sortable(addressCardsContainer, {
+                animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', disabled: false,
+                onEnd: function (evt) {
+                    const orderedIds = Array.from(addressCardsContainer.children).map(card => parseInt(card.dataset.id, 10));
+                    savedAddresses = orderedIds.map(id => savedAddresses.find(addr => addr.id === id)).filter(Boolean);
+                    updateLocalStorageAndBackup();
+                    console.log('주소 순서 업데이트됨');
+                },
+            });
+        }
+
+        // --- Event Listeners ---
+        saveButton.addEventListener('click', saveAddress);
+        addressInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveAddress(); } });
+
+        // --- Initial Load ---
+        restoreFromFirebase(); // Firebase에서 복원 시도
+        renderAddresses();     // 로컬 데이터로 초기 렌더링 (복원 시 덮어쓰여짐)
+
+    </script>
+</body>
+</html>
