@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>작업 주소 관리 및 내비게이션</title>
+    <title>작업 주소 관리</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-database-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -24,23 +24,18 @@
             --warning-color: #ff9800;
             --error-color: #f44336;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
             max-width: 800px; margin: 0 auto; padding: 15px;
             background-color: var(--secondary-color); color: var(--text-color);
             line-height: 1.6;
         }
-
         header { text-align: center; margin-bottom: 25px; }
         h1 { color: var(--text-color); margin-bottom: 8px; font-size: 26px; }
         h2 { color: var(--text-color); margin-bottom: 15px; font-size: 20px; margin-top: 30px; }
         .subtitle { color: #6c757d; font-size: 15px; }
-
         .container { background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
-
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057; }
         textarea, .input-group input[type="text"], .input-group input[type="date"] {
@@ -52,7 +47,6 @@
         textarea:focus, .input-group input[type="text"]:focus, .input-group input[type="date"]:focus {
             outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.2);
         }
-
         .btn {
             padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px;
             cursor: pointer; transition: background-color 0.3s, transform 0.1s; display: inline-flex;
@@ -64,7 +58,6 @@
         .btn-secondary { background-color: var(--light-gray); color: var(--text-color); }
         .btn-secondary:hover { background-color: #dee2e6; }
         .button-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
-
         .saved-addresses { margin-top: 15px; }
         .address-card {
             background-color: white; border-radius: 8px; padding: 15px; margin-bottom: 12px;
@@ -73,14 +66,11 @@
         }
         .address-card:active { cursor: grabbing; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
-
         .address-info { margin-bottom: 8px; font-size: 13px; color: #495057; }
         .address-info strong { color: var(--text-color); margin-right: 4px; }
         .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
         .day-of-week { color: #6c757d; font-size: 12px; margin-left: 2px; }
-
         .address-text { margin-bottom: 12px; font-size: 15px; word-break: break-all; }
-
         .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
         .nav-btn {
             padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center;
@@ -92,7 +82,6 @@
         .naver-btn { background-color: var(--naver-color); color: white; }
         .tmap-btn { background-color: var(--tmap-color); color: white; }
         .kakao-btn { background-color: var(--kakao-color); color: var(--kakao-text); }
-
         .action-buttons { display: flex; gap: 10px; margin-top: 10px; }
         .action-btn {
             flex: 1; padding: 8px 0; border: none; border-radius: 4px; font-size: 13px; cursor: pointer;
@@ -100,12 +89,10 @@
             transition: background-color 0.2s; font-weight: 500; min-height: 36px;
         }
         .action-btn:hover { background-color: #dee2e6; }
-
         .edit-mode .address-display { display: none; }
         .address-edit { display: none; }
         .edit-mode .address-edit { display: block; }
         .edit-mode .address-card { cursor: default; }
-
         .edit-input-group { margin-bottom: 10px; }
         .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px;}
         .edit-input, .edit-site-name-input, .edit-work-date-input {
@@ -116,7 +103,6 @@
         .edit-input:focus, .edit-site-name-input:focus, .edit-work-date-input:focus {
              outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
         }
-
         .notification {
             position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px);
             background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px;
@@ -127,17 +113,13 @@
         .notification.success { background-color: var(--success-color); }
         .notification.warning { background-color: var(--warning-color); color: #333; }
         .notification.error { background-color: var(--error-color); }
-
         .empty-state { text-align: center; padding: 30px 0; color: #6c757d; }
         .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
-
         .sync-status { display: flex; align-items: center; height: 14px; margin-bottom: 15px; }
         .sync-indicator { width: 10px; height: 10px; border-radius: 50%; }
         .sync-indicator.online { background-color: var(--success-color); }
         .sync-indicator.offline { background-color: var(--error-color); }
-
-        .device-id { font-size: 11px; color: #868e96; text-align: center; margin-top: 25px; padding-bottom: 10px; }
-
+        /* Device ID 스타일 제거됨 */
         @media (max-width: 600px) {
             h1 { font-size: 24px; } h2 { font-size: 18px; } .subtitle { font-size: 14px; }
             .container { padding: 15px; }
@@ -180,25 +162,22 @@
         </div>
         <div id="addressCards"></div> </div>
 
-    <div class="device-id">기기 ID: <span id="deviceId">로딩 중...</span></div>
-
     <div id="notification" class="notification">알림 메시지</div>
 
     <script>
         // Firebase 초기화
         const firebaseConfig = {
-            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com" // 실제 URL로 변경하세요
+            // 중요: 본인의 Firebase 프로젝트 설정으로 변경하세요.
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com"
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 디바이스 ID
-        let deviceId = localStorage.getItem('deviceId');
-        if (!deviceId) {
-            deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('deviceId', deviceId);
-        }
-        document.getElementById('deviceId').textContent = deviceId.substring(0, 15) + "...";
+        // --- 고정 식별자 정의 ---
+        // 이 값을 기준으로 Firebase에 데이터가 저장/로드됩니다.
+        // 모든 기기에서 이 코드를 사용하면 동일한 데이터에 접근합니다.
+        const sharedDataKey = "my-secret-addr-key-april2025"; // 임의로 설정된 값
+        // ------------------------
 
         // DOM 요소
         const addressInput = document.getElementById('addressInput');
@@ -210,17 +189,13 @@
         const notification = document.getElementById('notification');
         const syncIndicator = document.getElementById('syncIndicator');
 
-        let savedAddresses = JSON.parse(localStorage.getItem('savedAddresses')) || [];
+        let savedAddresses = []; // 데이터는 항상 Firebase에서 로드
         let sortableInstance = null;
 
         // --- Firebase 연결 상태 ---
         const connectedRef = database.ref(".info/connected");
         connectedRef.on("value", (snap) => {
-            if (snap.val() === true) {
-                syncIndicator.className = "sync-indicator online";
-            } else {
-                syncIndicator.className = "sync-indicator offline";
-            }
+            syncIndicator.className = snap.val() ? "sync-indicator online" : "sync-indicator offline";
         });
 
         // --- 알림 ---
@@ -232,40 +207,21 @@
 
         // --- 주소 처리 ---
         function extractAddress(text) { return text.trim(); }
-
-        // *** 개선된 주소 클리닝 함수 ***
         function getCleanAddressForNavigation(fullAddress) {
             let text = fullAddress.trim();
-            // 1. 접두사 제거
             const prefixPattern = /^(주소|address|위치|location)\s*[:：]?\s*/i;
             text = text.replace(prefixPattern, '').trim();
-
             const parts = text.split(/\s+/);
-            let lastGoodAddressIndex = -1; // 좋은 문맥을 가진 마지막 주소 숫자/번지의 인덱스
-
-            // 2. 핵심 주소 탐색 (문맥 확인)
+            let lastGoodAddressIndex = -1;
             for (let i = 0; i < parts.length; i++) {
                 const currentPart = parts[i];
                 const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart);
                 const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart);
-
-                if (isAddressNumber || isAddressBunji) {
-                    // 이전 부분이 존재하고, 도로명/지역명 접미사로 끝나는지 확인
-                    if (i > 0 && /[로길가동리]$/.test(parts[i-1])) {
-                        lastGoodAddressIndex = i; // 조건을 만족하는 마지막 위치 저장
-                    }
+                if ((isAddressNumber || isAddressBunji) && i > 0 && /[로길가동리]$/.test(parts[i-1])) {
+                    lastGoodAddressIndex = i;
                 }
             }
-
-            // 3. 결과 반환
-            if (lastGoodAddressIndex !== -1) {
-                // 문맥에 맞는 숫자/번지를 찾았으면, 거기까지 잘라서 반환
-                return parts.slice(0, lastGoodAddressIndex + 1).join(' ');
-            } else {
-                // 적절한 숫자/번지를 찾지 못했거나, 숫자 자체가 없는 주소의 경우
-                // 접두사만 제거된 텍스트를 반환
-                return text;
-            }
+            return lastGoodAddressIndex !== -1 ? parts.slice(0, lastGoodAddressIndex + 1).join(' ') : text;
         }
 
         // --- 내비 URL ---
@@ -273,33 +229,45 @@
         function createTmapUrl(addr) { return `https://search.tmap.co.kr/search/search.do?searchKeyword=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
         function createKakaoNaviUrl(addr) { return `https://map.kakao.com/?q=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
 
-        // --- Firebase 백업/복원 ---
+        // --- Firebase 데이터 경로 참조 ---
+        // 이제 sharedDataKey를 사용하여 고정된 경로를 참조합니다.
+        const firebaseDataPath = 'addresses/' + sharedDataKey;
+
+        // --- Firebase 데이터 쓰기 (백업) ---
         function backupToFirebase() {
-             if (!navigator.onLine || !firebase.app()) return;
-            const backupRef = database.ref('addresses/' + deviceId);
-            backupRef.set({
-                lastUpdated: new Date().toISOString(),
-                addresses: savedAddresses
-            }).then(() => console.log('Firebase 백업 성공'))
-              .catch((err) => { console.error("Firebase 백업 실패:", err); showNotification('백업 실패', 'error'); });
+             if (!navigator.onLine || !firebase.app()) {
+                 console.warn("오프라인 상태 또는 Firebase 연결 안됨. 백업 건너뜀.");
+                 return;
+             }
+            const backupRef = database.ref(firebaseDataPath);
+            // savedAddresses 배열 자체를 해당 경로에 저장합니다.
+            backupRef.set(savedAddresses)
+            .then(() => console.log('Firebase 저장 성공'))
+            .catch((err) => { console.error("Firebase 저장 실패:", err); showNotification('저장 실패', 'error'); });
         }
 
+        // --- Firebase 데이터 읽기 (복원) ---
         function restoreFromFirebase() {
-            const backupRef = database.ref('addresses/' + deviceId);
-            backupRef.once('value').then((snapshot) => {
+            console.log("Firebase에서 데이터 로딩 시도:", firebaseDataPath);
+            const dataRef = database.ref(firebaseDataPath);
+            dataRef.once('value').then((snapshot) => {
                 const data = snapshot.val();
-                if (data && data.addresses) {
-                    const localUpdated = localStorage.getItem('lastUpdated');
-                    if (!localUpdated || (data.lastUpdated && data.lastUpdated > localUpdated)) {
-                        savedAddresses = data.addresses;
-                        localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
-                        localStorage.setItem('lastUpdated', data.lastUpdated || new Date().toISOString());
-                        renderAddresses();
-                        console.log('Firebase에서 데이터 복원 완료');
-                        showNotification('데이터를 복원했습니다.', 'success');
-                    }
+                // 데이터가 존재하고 배열 형태인지 확인합니다.
+                if (data && Array.isArray(data)) {
+                    savedAddresses = data;
+                    console.log(`Firebase에서 ${savedAddresses.length}개 데이터 로드 완료`);
+                } else {
+                    savedAddresses = []; // 데이터 없거나 형식 안맞으면 초기화
+                    console.log('Firebase에 데이터 없음 또는 배열 형식이 아님.');
+                    // 만약 처음 사용하는 경우, 빈 목록이 정상입니다.
                 }
-            }).catch((err) => console.error("Firebase 복원 실패:", err));
+                renderAddresses(); // 로드 후 화면 렌더링
+            }).catch((err) => {
+                console.error("Firebase 데이터 로딩 실패:", err);
+                showNotification('데이터 로딩 실패', 'error');
+                savedAddresses = []; // 오류 시 초기화
+                renderAddresses();
+            });
         }
 
         // --- 주소 저장 ---
@@ -309,15 +277,18 @@
             const workDate = workDateInput.value;
 
             if (!addressText) { showNotification('주소를 입력하세요.', 'warning'); addressInput.focus(); return; }
-            if (savedAddresses.some(addr => addr.text === addressText)) { showNotification('이미 저장된 주소입니다.', 'warning'); return; }
+            if (savedAddresses.some(addr => addr.text === addressText)) {
+                showNotification('이미 저장된 주소입니다.', 'warning'); return;
+            }
 
             const addressObj = {
                 id: Date.now(), text: addressText, siteName: siteName,
                 workDate: workDate, createdAt: new Date().toISOString()
             };
-            savedAddresses.unshift(addressObj);
-            updateLocalStorageAndBackup();
-            renderAddresses();
+            savedAddresses.unshift(addressObj); // 메모리에 추가
+            backupToFirebase(); // Firebase에 즉시 저장
+            renderAddresses(); // 화면 갱신
+
             addressInput.value = ''; siteNameInput.value = ''; workDateInput.value = '';
             showNotification('주소가 저장되었습니다.');
         }
@@ -326,7 +297,7 @@
         function deleteAddress(id) {
             if (confirm('이 주소를 삭제하시겠습니까?')) {
                 savedAddresses = savedAddresses.filter(addr => addr.id !== id);
-                updateLocalStorageAndBackup();
+                backupToFirebase(); // Firebase에 즉시 저장
                 renderAddresses();
                 showNotification('주소가 삭제되었습니다.');
             }
@@ -360,17 +331,10 @@
                 savedAddresses[addressIndex].text = newText;
                 savedAddresses[addressIndex].siteName = newSiteName;
                 savedAddresses[addressIndex].workDate = newWorkDate;
-                updateLocalStorageAndBackup();
+                backupToFirebase(); // Firebase에 즉시 저장
                 renderAddresses();
                 showNotification('주소가 수정되었습니다.');
             }
-        }
-
-        // --- 로컬 저장 및 백업 통합 ---
-        function updateLocalStorageAndBackup() {
-            localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
-            localStorage.setItem('lastUpdated', new Date().toISOString());
-            backupToFirebase();
         }
 
         // --- 주소 렌더링 ---
@@ -456,9 +420,10 @@
              sortableInstance = new Sortable(addressCardsContainer, {
                 animation: 150, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', disabled: false,
                 onEnd: function (evt) {
+                    // DOM 요소 순서를 기반으로 메모리의 savedAddresses 배열 순서 업데이트
                     const orderedIds = Array.from(addressCardsContainer.children).map(card => parseInt(card.dataset.id, 10));
                     savedAddresses = orderedIds.map(id => savedAddresses.find(addr => addr.id === id)).filter(Boolean);
-                    updateLocalStorageAndBackup();
+                    backupToFirebase(); // 순서 변경 후 Firebase에 즉시 저장
                     console.log('주소 순서 업데이트됨');
                 },
             });
@@ -469,8 +434,9 @@
         addressInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveAddress(); } });
 
         // --- Initial Load ---
-        restoreFromFirebase(); // Firebase에서 복원 시도
-        renderAddresses();     // 로컬 데이터로 초기 렌더링 (복원 시 덮어쓰여짐)
+        // 페이지 로드 시 Firebase에서 데이터를 불러옵니다.
+        restoreFromFirebase();
+        // renderAddresses(); // restoreFromFirebase가 데이터를 로드한 후 내부에서 호출합니다.
 
     </script>
 </body>
