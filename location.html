@@ -19,32 +19,58 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-            max-width: 800px; margin: 0 auto; padding: 15px; background-color: var(--secondary-color);
-            color: var(--text-color); line-height: 1.6;
+            max-width: 800px; margin: 0 auto; padding: 15px;
+            background-color: var(--secondary-color); color: var(--text-color);
+            line-height: 1.6;
         }
         header { text-align: center; margin-bottom: 25px; }
         h1 { font-size: 26px; margin-bottom: 8px; }
         h2 { font-size: 20px; margin: 30px 0 15px; }
         .subtitle { color: #6c757d; font-size: 15px; }
-        .container, .address-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057; }
-        textarea, input[type="text"], input[type="date"], #searchInput {
-            width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 15px;
+        .container, .address-card {
+            background: #fff; border-radius: 8px; padding: 20px;
+            margin-bottom: 25px; box-shadow: var(--box-shadow);
         }
-        .button-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; min-height: 40px; }
+        .address-card { position: relative; }
+        .drag-handle {
+            position: absolute; right: 10px; top: 10px;
+            cursor: grab; font-size: 18px; color: #adb5bd;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px;
+            font-weight: bold; font-size: 14px; color: #495057;
+        }
+        textarea, input[type="text"], input[type="date"], #searchInput {
+            width: 100%; padding: 10px;
+            border: 1px solid var(--border-color); border-radius: 4px;
+            font-size: 15px;
+        }
+        .button-group { display: flex; justify-content: flex-end;
+            gap: 10px; margin-top: 15px;
+        }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px;
+            font-size: 15px; cursor: pointer; min-height: 40px;
+        }
         .btn-primary { background: var(--primary-color); color: #fff; }
         .btn-secondary { background: var(--light-gray); color: var(--text-color); }
         .nav-buttons, .action-buttons { display: flex; gap: 8px; margin-top: 10px; }
-        .nav-btn, .action-btn { flex: 1; padding: 8px; text-align: center; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .nav-btn, .action-btn {
+            flex: 1; padding: 8px; text-align: center;
+            border-radius: 4px; font-size: 13px; cursor: pointer;
+            font-weight: 500; text-decoration: none;
+        }
         .naver-btn { background: var(--naver-color); color: #fff; }
-        .tmap-btn { background: var(--tmap-color); color: #fff; }
+        .tmap-btn  { background: var(--tmap-color); color: #fff; }
         .kakao-btn { background: var(--kakao-color); color: var(--kakao-text); }
         .address-info { font-size: 13px; color: #495057; margin-bottom: 8px; }
         .address-text { font-size: 15px; word-break: break-all; }
-        .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(0,0,0,0.75); color: #fff;
-            padding: 10px 15px; border-radius: 6px; text-align: center; opacity: 0; transition: transform .3s, opacity .3s;
+        .notification {
+            position: fixed; bottom: 15px; left: 15px; right: 15px;
+            background: rgba(0,0,0,0.75); color: #fff;
+            padding: 10px 15px; border-radius: 6px;
+            text-align: center; opacity: 0;
+            transition: transform .3s, opacity .3s;
             transform: translateY(120px); z-index: 1000;
         }
         .notification.show { transform: translateY(0); opacity: 1; }
@@ -109,8 +135,6 @@
         const emptyState = document.getElementById('emptyState');
         const noSearchResultMsg = document.getElementById('noSearchResult');
         const notification = document.getElementById('notification');
-        const syncIndicator = null; // 생략
-        
         let savedAddresses = [];
         let sortableInstance = null;
 
@@ -123,7 +147,8 @@
 
         // 주소 정제
         function getCleanAddressForNavigation(fullAddress) {
-            let text = fullAddress.trim().replace(/^(주소|address|위치|location)\s*[:：]?/i, '').trim();
+            let text = fullAddress.trim()
+                .replace(/^(주소|address|위치|location)\s*[:：]?/i, '').trim();
             const parts = text.split(/\s+/);
             let idx = -1;
             for (let i=0; i<parts.length; i++) {
@@ -133,32 +158,17 @@
         }
 
         // 네이버/T맵 URL
-        function createNaverMapUrl(addr) { return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
-        function createTmapUrl(addr)  { return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
-
-        // 카카오내비 연동 (REST API 사용)
-        async function geocodeAndNavigate(addr) {
-            const query = encodeURIComponent(getCleanAddressForNavigation(addr));
-            try {
-                const res = await fetch(
-                    `https://dapi.kakao.com/v2/local/search/address.json?query=${query}`,
-                    { headers: { Authorization: 'KakaoAK YOUR_REST_API_KEY' } }
-                );
-                const data = await res.json();
-                if (!data.documents.length) { showNotification('주소를 찾을 수 없습니다.', 'warning'); return; }
-                const { x, y } = data.documents[0];
-                const kakaoUrl = `kakaonavi://route?dname=${query}&dlat=${y}&dlng=${x}`;
-                window.open(kakaoUrl, '_blank', 'noopener');
-            } catch (e) {
-                console.error(e);
-                showNotification('길찾기 호출 중 오류 발생', 'error');
-            }
+        function createNaverMapUrl(addr) { 
+            return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; 
+        }
+        function createTmapUrl(addr) {  
+            return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; 
         }
 
         // Firebase 저장/로드
         function backupToFirebase() {
             if (!navigator.onLine) return;
-            database.ref(firebaseDataPath).set(savedAddresses).catch(e => console.error(e));
+            database.ref(firebaseDataPath).set(savedAddresses).catch(console.error);
         }
         function restoreFromFirebase() {
             database.ref(firebaseDataPath).once('value')
@@ -171,65 +181,97 @@
 
         // 주소 저장
         function saveAddress() {
-            const text = addressInput.value.trim(); if (!text) return showNotification('주소를 입력하세요.', 'warning');
+            const text = addressInput.value.trim();
+            if (!text) return showNotification('주소를 입력하세요.', 'warning');
             if (savedAddresses.some(a => a.text===text && a.siteName===siteNameInput.value && a.workDate===workDateInput.value))
                 return showNotification('이미 저장된 주소입니다.', 'warning');
             savedAddresses.unshift({ id:Date.now(), text, siteName:siteNameInput.value, workDate:workDateInput.value });
-            addressInput.value=''; siteNameInput.value=''; workDateInput.value='';
+            addressInput.value = siteNameInput.value = workDateInput.value = '';
             backupToFirebase(); renderAddresses(); showNotification('주소가 저장되었습니다.');
         }
         function deleteAddress(id) {
             if (!confirm('삭제하시겠습니까?')) return;
-            savedAddresses = savedAddresses.filter(a=>a.id!==id);
+            savedAddresses = savedAddresses.filter(a => a.id !== id);
             backupToFirebase(); renderAddresses(); showNotification('주소가 삭제되었습니다.');
         }
 
         // 렌더링 및 Sortable
         function renderAddresses() {
             const term = searchInput.value.trim().toLowerCase();
-            addressCardsContainer.innerHTML='';
-            const list = savedAddresses.filter(a=>{
+            addressCardsContainer.innerHTML = '';
+            const list = savedAddresses.filter(a => {
                 if (!term) return true;
                 return a.text.toLowerCase().includes(term) || (a.siteName||'').toLowerCase().includes(term);
             });
             if (!list.length) {
-                emptyState.style.display='block';
-                noSearchResultMsg.style.display = term ? 'block':'none';
-                if (sortableInstance) { sortableInstance.destroy(); sortableInstance=null; }
+                emptyState.style.display = 'block';
+                noSearchResultMsg.style.display = term ? 'block' : 'none';
+                if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
                 return;
             }
-            emptyState.style.display='none';
-            list.forEach(a=>{
-                const card = document.createElement('div'); card.className='address-card'; card.dataset.id=a.id;
-                const info = document.createElement('div'); info.className='address-info';
-                if (a.siteName) info.innerHTML+=`<span><strong>현장:</strong> ${a.siteName}</span> `;
-                if (a.workDate) info.innerHTML+=`<span><strong>작업일:</strong> ${a.workDate}</span>`;
+            emptyState.style.display = 'none';
+            list.forEach(a => {
+                const card = document.createElement('div');
+                card.className = 'address-card';
+                card.dataset.id = a.id;
+
+                // 드래그 핸들
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.innerHTML = '&#9776;';
+                card.appendChild(dragHandle);
+
+                // 주소/정보
+                const info = document.createElement('div');
+                info.className = 'address-info';
+                if (a.siteName) info.innerHTML += `<span><strong>현장:</strong> ${a.siteName}</span> `;
+                if (a.workDate) info.innerHTML += `<span><strong>작업일:</strong> ${a.workDate}</span>`;
                 card.appendChild(info);
-                const text = document.createElement('div'); text.className='address-text'; text.textContent=a.text;
+
+                const text = document.createElement('div');
+                text.className = 'address-text';
+                text.textContent = a.text;
                 card.appendChild(text);
-                const navs = document.createElement('div'); navs.className='nav-buttons';
+
+                // 내비게이션 버튼
+                const navs = document.createElement('div');
+                navs.className = 'nav-buttons';
                 navs.innerHTML = `
                     <a href="${createNaverMapUrl(a.text)}" target="_blank" class="nav-btn naver-btn">네이버 지도</a>
                     <a href="${createTmapUrl(a.text)}" target="_blank" class="nav-btn tmap-btn">T맵</a>
-                    <button type="button" class="nav-btn kakao-btn" onclick="geocodeAndNavigate('${a.text.replace(/'/g, "\\'")}')">카카오내비</button>
+                    <a href="https://map.kakao.com/link/search/${encodeURIComponent(getCleanAddressForNavigation(a.text))}" target="_blank" class="nav-btn kakao-btn">카카오맵</a>
                 `;
                 card.appendChild(navs);
-                const actions = document.createElement('div'); actions.className='action-buttons';
-                actions.innerHTML = `<button class="action-btn delete-btn">삭제</button>`;
-                actions.querySelector('.delete-btn').onclick = ()=> deleteAddress(a.id);
+
+                // 삭제 버튼
+                const actions = document.createElement('div');
+                actions.className = 'action-buttons';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'action-btn delete-btn';
+                delBtn.textContent = '삭제';
+                delBtn.onclick = () => deleteAddress(a.id);
+                actions.appendChild(delBtn);
                 card.appendChild(actions);
+
                 addressCardsContainer.appendChild(card);
             });
+
+            // Sortable 설정
             if (!sortableInstance) {
                 sortableInstance = new Sortable(addressCardsContainer, {
-                    handle: null, animation:150,onEnd:()=>backupToFirebase()
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: () => { backupToFirebase(); }
                 });
             }
         }
 
+        // 이벤트 등록
         saveButton.addEventListener('click', saveAddress);
-        addressInput.addEventListener('keydown', e=>{ if(e.key==='Enter'&& !e.shiftKey){ e.preventDefault(); saveAddress(); }});
+        addressInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveAddress(); }});
         searchInput.addEventListener('input', renderAddresses);
+
+        // 초기 로드
         restoreFromFirebase();
     </script>
 </body>
