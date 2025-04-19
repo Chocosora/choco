@@ -18,104 +18,36 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 800px;
-            margin: 0 auto; padding: 15px; background-color: var(--secondary-color);
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            max-width: 800px; margin: 0 auto; padding: 15px; background-color: var(--secondary-color);
             color: var(--text-color); line-height: 1.6;
         }
         header { text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--text-color); margin-bottom: 8px; font-size: 26px; }
-        h2 { color: var(--text-color); margin-bottom: 15px; font-size: 20px; margin-top: 30px; }
+        h1 { font-size: 26px; margin-bottom: 8px; }
+        h2 { font-size: 20px; margin: 30px 0 15px; }
         .subtitle { color: #6c757d; font-size: 15px; }
-        .container { background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
-
-        /* --- Input & Buttons --- */
+        .container, .address-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057; }
-        textarea, .input-group input[type="text"], .input-group input[type="date"], #searchInput {
-            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
-            border-radius: 4px; font-size: 15px; transition: border-color 0.2s;
-            font-family: inherit; -webkit-appearance: none; appearance: none;
+        textarea, input[type="text"], input[type="date"], #searchInput {
+            width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 15px;
         }
-        textarea { resize: vertical; min-height: 80px; }
-        textarea:focus, .input-group input[type="text"]:focus, .input-group input[type="date"]:focus, #searchInput:focus {
-            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.2);
+        .button-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; min-height: 40px; }
+        .btn-primary { background: var(--primary-color); color: #fff; }
+        .btn-secondary { background: var(--light-gray); color: var(--text-color); }
+        .nav-buttons, .action-buttons { display: flex; gap: 8px; margin-top: 10px; }
+        .nav-btn, .action-btn { flex: 1; padding: 8px; text-align: center; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .naver-btn { background: var(--naver-color); color: #fff; }
+        .tmap-btn { background: var(--tmap-color); color: #fff; }
+        .kakao-btn { background: var(--kakao-color); color: var(--kakao-text); }
+        .address-info { font-size: 13px; color: #495057; margin-bottom: 8px; }
+        .address-text { font-size: 15px; word-break: break-all; }
+        .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(0,0,0,0.75); color: #fff;
+            padding: 10px 15px; border-radius: 6px; text-align: center; opacity: 0; transition: transform .3s, opacity .3s;
+            transform: translateY(120px); z-index: 1000;
         }
-        .btn { padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; font-weight: 500; line-height: 1.5; min-height: 40px; }
-        .btn:active { transform: scale(0.98); }
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        .btn-secondary { background-color: var(--light-gray); color: var(--text-color); }
-        .btn-secondary:hover { background-color: #dee2e6; }
-        .button-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
-
-        /* --- Search --- */
-        .search-container { margin-bottom: 20px; }
-
-        /* --- Address List & Cards --- */
-        .saved-addresses { margin-top: 15px; }
-        .address-card {
-            background-color: white; border-radius: 8px; padding: 15px;
-            margin-bottom: 12px; box-shadow: var(--box-shadow);
-            transition: transform 0.2s, box-shadow 0.2s; position: relative;
-        }
-        .address-card:active {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
-        .sortable-chosen { /* Optional: Style for the item being dragged */ }
-
-        /* --- Drag Handle --- */
-        .drag-handle {
-            position: absolute; top: 10px; right: 10px;
-            cursor: grab; color: #adb5bd; font-size: 20px;
-            padding: 5px; line-height: 1; z-index: 10;
-            touch-action: none;
-        }
-        .drag-handle:active { cursor: grabbing; }
-        .edit-mode .drag-handle { display: none; }
-
-        /* --- Card Content --- */
-        .address-info { margin-bottom: 8px; font-size: 13px; color: #495057; }
-        .address-info strong { color: var(--text-color); margin-right: 4px; }
-        .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
-        .day-of-week { color: #6c757d; font-size: 12px; margin-left: 2px; }
-        .address-text { margin-bottom: 12px; font-size: 15px; word-break: break-all; }
-
-        /* --- Navigation & Action Buttons --- */
-        .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
-        .nav-btn { padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; text-decoration: none; font-weight: bold; transition: opacity 0.2s, transform 0.1s; border: 1px solid transparent; min-height: 38px; display: flex; align-items: center; justify-content: center; }
-        .nav-btn:hover { opacity: 0.85; }
-        .nav-btn:active { transform: scale(0.97); }
-        .naver-btn { background-color: var(--naver-color); color: white; }
-        .tmap-btn { background-color: var(--tmap-color); color: white; }
-        .kakao-btn { background-color: var(--kakao-color); color: var(--kakao-text); }
-        .action-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .action-btn { flex: 1; padding: 8px 0; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; background-color: var(--light-gray); color: var(--text-color); transition: background-color 0.2s; font-weight: 500; min-height: 36px; }
-        .action-btn:hover { background-color: #dee2e6; }
-
-        /* --- Edit Mode --- */
-        .edit-mode .address-display { display: none; }
-        .address-edit { display: none; }
-        .edit-mode .address-edit { display: block; }
-        .edit-mode .address-card { cursor: default; }
-        .edit-input-group { margin-bottom: 10px; }
-        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px;}
-        .edit-input, .edit-site-name-input, .edit-work-date-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none; }
-        .edit-input:focus, .edit-site-name-input:focus, .edit-work-date-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15); }
-
-        /* --- Etc --- */
-        .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px); background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out; z-index: 1000; font-size: 14px; text-align: center; }
         .notification.show { transform: translateY(0); opacity: 1; }
-        .notification.success { background-color: var(--success-color); }
-        .notification.warning { background-color: var(--warning-color); color: #333; }
-        .notification.error { background-color: var(--error-color); }
-        .empty-state { text-align: center; padding: 30px 0; color: #6c757d; }
-        .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
-        .sync-status { display: flex; align-items: center; height: 14px; margin-bottom: 15px; }
-        .sync-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-        .sync-indicator.online { background-color: var(--success-color); }
-        .sync-indicator.offline { background-color: var(--error-color); }
-        @media (max-width: 600px) { h1 { font-size: 24px; } h2 { font-size: 18px; } .subtitle { font-size: 14px; } .container { padding: 15px; } }
     </style>
 </head>
 <body>
@@ -125,11 +57,6 @@
     </header>
 
     <div class="container">
-        <div class="sync-status">
-            <div id="syncIndicator" class="sync-indicator offline"></div>
-            <span id="syncStatusText">연결 상태 확인 중...</span>
-        </div>
-
         <div class="input-group">
             <label for="addressInput">주소</label>
             <textarea id="addressInput" placeholder="예: 서울 양천구 목동 962 이스턴 5층"></textarea>
@@ -147,38 +74,32 @@
         </div>
     </div>
 
-    <div class="search-container">
-        <label for="searchInput" style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057;">주소 검색</label>
+    <div class="input-group">
+        <label for="searchInput">주소 검색</label>
         <input type="search" id="searchInput" placeholder="주소 또는 현장이름으로 검색...">
     </div>
 
     <h2>저장된 주소 (핸들 드래그하여 순서 변경)</h2>
-    <div id="savedAddresses" class="saved-addresses">
-        <div id="emptyState" class="empty-state">
-            <div class="empty-state-icon">📂</div>
+    <div id="savedAddresses" class="container">
+        <div id="emptyState" style="text-align:center; padding:30px 0; color:#6c757d;">
+            <div style="font-size:40px;">📂</div>
             <p>저장된 주소가 없습니다.</p>
-            <p style="font-size: 13px; color: #868e96; display: none;" id="noSearchResult">검색 결과가 없습니다.</p>
+            <p id="noSearchResult" style="font-size:13px;color:#868e96;display:none;">검색 결과가 없습니다.</p>
         </div>
         <div id="addressCards"></div>
     </div>
 
-    <div id="notification" class="notification">Notification message</div>
+    <div id="notification" class="notification"></div>
 
     <script>
-        // --- Firebase Configuration ---
-        const firebaseConfig = {
-            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/" // 여기에 본인의 Firebase Realtime Database URL을 넣으세요.
-        };
+        // Firebase 설정
+        const firebaseConfig = { databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
-        // --- Constants ---
-        // !! 주의: 이 키는 데이터를 식별하는 용도로, 보안이 중요한 데이터에는 적합하지 않습니다.
-        // !! 여러 사용자가 공유해야 한다면, 인증 시스템 도입을 고려해야 합니다.
         const sharedDataKey = "my-secret-addr-key-april2025";
         const firebaseDataPath = 'addresses/' + sharedDataKey;
 
-        // --- DOM Elements ---
+        // DOM 엘리먼트
         const addressInput = document.getElementById('addressInput');
         const siteNameInput = document.getElementById('siteNameInput');
         const workDateInput = document.getElementById('workDateInput');
@@ -186,426 +107,130 @@
         const searchInput = document.getElementById('searchInput');
         const addressCardsContainer = document.getElementById('addressCards');
         const emptyState = document.getElementById('emptyState');
-        const emptyStateMsg = emptyState.querySelector('p:first-of-type');
         const noSearchResultMsg = document.getElementById('noSearchResult');
         const notification = document.getElementById('notification');
-        const syncIndicator = document.getElementById('syncIndicator');
-        const syncStatusText = document.getElementById('syncStatusText');
-
-        // --- Global State ---
+        const syncIndicator = null; // 생략
+        
         let savedAddresses = [];
         let sortableInstance = null;
 
-        // --- Firebase Connection Status ---
-        const connectedRef = database.ref(".info/connected");
-        connectedRef.on("value", (snap) => {
-            const isOnline = snap.val();
-            syncIndicator.className = isOnline ? "sync-indicator online" : "sync-indicator offline";
-            syncStatusText.textContent = isOnline ? "온라인 (자동 동기화)" : "오프라인";
-            syncStatusText.style.color = isOnline ? 'var(--success-color)' : 'var(--error-color)';
-        });
-
-        // --- Notifications ---
-        function showNotification(message, type = 'success') {
-            notification.textContent = message;
+        // 알림 함수
+        function showNotification(msg, type='success') {
+            notification.textContent = msg;
             notification.className = `notification ${type} show`;
-            setTimeout(() => { notification.classList.remove('show'); }, 2500);
+            setTimeout(() => notification.classList.remove('show'), 2500);
         }
 
-        // --- Address Processing ---
+        // 주소 정제
         function getCleanAddressForNavigation(fullAddress) {
-            let text = fullAddress.trim();
-            // "주소:", "address:" 등 접두사 제거
-            const prefixPattern = /^(주소|address|위치|location)\s*[:：]?\s*/i;
-            text = text.replace(prefixPattern, '').trim();
-
-            // 주소 뒷부분의 부가 정보(층, 호수 등)를 분리 시도 (내비 앱이 더 잘 인식하도록)
+            let text = fullAddress.trim().replace(/^(주소|address|위치|location)\s*[:：]?/i, '').trim();
             const parts = text.split(/\s+/);
-            let lastGoodAddressIndex = -1;
-            for (let i = 0; i < parts.length; i++) {
-                const currentPart = parts[i];
-                // 숫자 또는 숫자-숫자 (번지, 도로명 번호 등)
-                const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart);
-                // '번지' 포함
-                const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart);
-                // 숫자 앞에 도로명/동/리 등이 오는지 확인
-                if ((isAddressNumber || isAddressBunji) && i > 0 && /[로길가동리]$/.test(parts[i-1])) {
-                    lastGoodAddressIndex = i;
-                }
-                // '층', '호' 등이 나오면 그 앞까지만 주소로 간주하는 로직 추가 (선택적)
-                // 예: if (/(층|호|동)$/.test(currentPart)) { break; }
+            let idx = -1;
+            for (let i=0; i<parts.length; i++) {
+                if (/^\d+([-]\d+)?$/.test(parts[i]) && i>0 && /[로길가동리]$/.test(parts[i-1])) idx = i;
             }
-            // 유효한 주소 끝부분을 찾았다면 거기까지만 사용, 아니면 전체 텍스트 사용
-            return lastGoodAddressIndex !== -1 ? parts.slice(0, lastGoodAddressIndex + 1).join(' ') : text;
+            return idx !== -1 ? parts.slice(0, idx+1).join(' ') : text;
         }
 
-        // --- Navigation URLs ---
+        // 네이버/T맵 URL
         function createNaverMapUrl(addr) { return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
-        function createTmapUrl(addr) { return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+        function createTmapUrl(addr)  { return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
 
-        // <<< 카카오내비 URL 스킴 수정: search 대신 navigate 사용 >>>
-        // 이 방식은 앱에게 목적지 이름/주소를 전달하여 길안내를 시도합니다.
-        // 카카오내비 앱이 해당 문자열을 장소로 인식해야 합니다.
-        // 카카오내비 앱 설치는 필수입니다.
-        function createKakaoNaviUrl(addr) {
-            const cleanAddr = getCleanAddressForNavigation(addr); // 주소 정리 로직은 유지
-            // 'navigate' 스킴을 사용하여 목적지(destination)로 주소 전달
-            return `kakaonavi://navigate?destination=${encodeURIComponent(cleanAddr)}`;
-        }
-
-        // --- Firebase Data Operations ---
-        function backupToFirebase() {
-            if (!navigator.onLine || !firebase.app()?.options?.databaseURL) {
-                console.warn("Offline or Firebase not properly initialized. Skipping backup.");
-                return;
-            }
-            // Firebase 경로가 유효한지 확인
-            if (!firebaseDataPath || firebaseDataPath.includes('undefined') || firebaseDataPath.includes('[object Object]')) {
-                console.error("Invalid Firebase path:", firebaseDataPath);
-                showNotification('Firebase 경로 오류', 'error');
-                return;
-            }
-            database.ref(firebaseDataPath).set(savedAddresses)
-                .then(() => console.log('Firebase save successful'))
-                .catch((err) => {
-                    console.error("Firebase save failed:", err);
-                    showNotification('데이터 저장 실패', 'error');
-                });
-        }
-
-        function restoreFromFirebase() {
-            console.log("Attempting to load data from Firebase:", firebaseDataPath);
-             if (!firebase.app()?.options?.databaseURL) {
-                  console.error("Firebase not properly initialized. Cannot restore data.");
-                  showNotification('Firebase 연결 오류', 'error');
-                  savedAddresses = []; // Initialize as empty if Firebase fails
-                  renderAddresses(); // Render the empty state
-                  return;
-             }
-            // Firebase 경로 유효성 검사
-            if (!firebaseDataPath || firebaseDataPath.includes('undefined') || firebaseDataPath.includes('[object Object]')) {
-                console.error("Invalid Firebase path:", firebaseDataPath);
-                showNotification('Firebase 경로 오류', 'error');
-                savedAddresses = [];
-                renderAddresses();
-                return;
-            }
-            database.ref(firebaseDataPath).once('value')
-                .then((snapshot) => {
-                    const data = snapshot.val();
-                    savedAddresses = (data && Array.isArray(data)) ? data : [];
-                    console.log(`Firebase load complete: ${savedAddresses.length} items`);
-                    renderAddresses(); // 데이터 로드 후 UI 렌더링
-                })
-                .catch((err) => {
-                    console.error("Firebase load failed:", err);
-                    showNotification('데이터 로딩 실패', 'error');
-                    savedAddresses = []; // 로드 실패 시 빈 배열로 초기화
-                    renderAddresses(); // 오류 발생 시에도 UI 렌더링 (빈 상태 표시)
-                });
-        }
-
-        // --- Address Management ---
-        function saveAddress() {
-            const addressText = addressInput.value.trim();
-            const siteName = siteNameInput.value.trim();
-            const workDate = workDateInput.value;
-
-            if (!addressText) { showNotification('주소를 입력하세요.', 'warning'); addressInput.focus(); return; }
-            // 중복 검사: 텍스트, 현장명, 작업일이 모두 같은 경우를 중복으로 간주 (선택적 강화)
-            if (savedAddresses.some(addr => addr.text === addressText && addr.siteName === siteName && addr.workDate === workDate)) {
-                showNotification('이미 동일한 내용으로 저장된 주소입니다.', 'warning');
-                return;
-            }
-            // 단순 주소 텍스트만으로 중복 검사 시
-            /*
-            if (savedAddresses.some(addr => addr.text === addressText)) {
-                showNotification('이미 저장된 주소입니다.', 'warning');
-                return;
-            }
-            */
-
-            const newAddress = {
-                id: Date.now(), // 고유 ID 생성
-                text: addressText,
-                siteName: siteName,
-                workDate: workDate,
-                createdAt: new Date().toISOString() // 생성 시각 기록
-            };
-            savedAddresses.unshift(newAddress); // 새 주소를 배열 맨 앞에 추가
-            backupToFirebase(); // Firebase에 저장
-            searchInput.value = ''; // 검색창 초기화
-            renderAddresses(); // 목록 다시 렌더링
-            addressInput.value = ''; siteNameInput.value = ''; workDateInput.value = ''; // 입력 필드 초기화
-            showNotification('주소가 저장되었습니다.');
-        }
-
-        function deleteAddress(id) {
-            // 사용자 확인
-            if (confirm('이 주소를 삭제하시겠습니까?')) {
-                savedAddresses = savedAddresses.filter(addr => addr.id !== id); // 해당 ID를 제외한 새 배열 생성
-                backupToFirebase(); // 변경사항 Firebase에 저장
-                renderAddresses(); // 목록 다시 렌더링
-                showNotification('주소가 삭제되었습니다.');
-            }
-        }
-
-        // --- Edit Mode ---
-        function enableEditMode(cardElement, addressData) {
-            cardElement.classList.add('edit-mode');
-            // 기존 데이터로 입력 필드 채우기
-            cardElement.querySelector('.edit-input').value = addressData.text;
-            cardElement.querySelector('.edit-site-name-input').value = addressData.siteName || '';
-            cardElement.querySelector('.edit-work-date-input').value = addressData.workDate || '';
-            cardElement.querySelector('.edit-input').focus(); // 주소 필드에 포커스
-            if (sortableInstance) sortableInstance.option("disabled", true); // 수정 중에는 드래그 비활성화
-        }
-
-        function cancelEditMode(cardElement) {
-            cardElement.classList.remove('edit-mode');
-            const isSearchActive = searchInput.value.trim().length > 0;
-            // 검색 중이 아닐 때만 드래그 활성화
-            if (sortableInstance && !isSearchActive) {
-                sortableInstance.option("disabled", false);
-            }
-        }
-
-        function saveEdit(id) {
-            const card = addressCardsContainer.querySelector(`.address-card[data-id="${id}"]`);
-            if (!card) return;
-
-            const newText = card.querySelector('.edit-input').value.trim();
-            const newSiteName = card.querySelector('.edit-site-name-input').value.trim();
-            const newWorkDate = card.querySelector('.edit-work-date-input').value;
-
-            if (!newText) { showNotification('주소를 비울 수 없습니다.', 'warning'); return; }
-
-            const addressIndex = savedAddresses.findIndex(addr => addr.id === id);
-            if (addressIndex !== -1) {
-                // 데이터 업데이트
-                savedAddresses[addressIndex].text = newText;
-                savedAddresses[addressIndex].siteName = newSiteName;
-                savedAddresses[addressIndex].workDate = newWorkDate;
-                backupToFirebase(); // Firebase에 저장
-                renderAddresses(); // 목록 다시 렌더링 (변경사항 반영)
-                showNotification('주소가 수정되었습니다.');
-                // 수정 모드 종료는 renderAddresses가 다시 호출되면서 자연스럽게 처리됨
-            } else {
-                showNotification('주소 수정 중 오류 발생', 'error');
-                // 오류 발생 시에도 수정 모드를 종료할 수 있도록 처리
-                cancelEditMode(card);
-            }
-        }
-
-        // --- Date Helper ---
-        function parseWorkDate(dateString) {
-            if (!dateString) return null;
+        // 카카오내비 연동 (REST API 사용)
+        async function geocodeAndNavigate(addr) {
+            const query = encodeURIComponent(getCleanAddressForNavigation(addr));
             try {
-                // YYYY-MM-DD 형식 확인
-                const parts = dateString.split('-');
-                if (parts.length === 3) {
-                    const year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, day = parseInt(parts[2], 10);
-                    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                        // Date 객체 생성 (UTC 기준 - 시간대 문제 방지)
-                        const dateObj = new Date(Date.UTC(year, month, day));
-                        // 생성된 Date 객체의 년/월/일이 입력과 일치하는지 재확인 (예: 2023-02-30 같은 잘못된 날짜 방지)
-                        if (dateObj.getUTCFullYear() === year && dateObj.getUTCMonth() === month && dateObj.getUTCDate() === day) {
-                            return dateObj;
-                        }
-                    }
-                }
+                const res = await fetch(
+                    `https://dapi.kakao.com/v2/local/search/address.json?query=${query}`,
+                    { headers: { Authorization: 'KakaoAK YOUR_REST_API_KEY' } }
+                );
+                const data = await res.json();
+                if (!data.documents.length) { showNotification('주소를 찾을 수 없습니다.', 'warning'); return; }
+                const { x, y } = data.documents[0];
+                const kakaoUrl = `kakaonavi://route?dname=${query}&dlat=${y}&dlng=${x}`;
+                window.open(kakaoUrl, '_blank', 'noopener');
             } catch (e) {
-                console.error("Date parsing error:", dateString, e);
+                console.error(e);
+                showNotification('길찾기 호출 중 오류 발생', 'error');
             }
-            return null; // 유효하지 않은 형식이거나 오류 발생 시 null 반환
         }
 
-        // --- Render Address List ---
+        // Firebase 저장/로드
+        function backupToFirebase() {
+            if (!navigator.onLine) return;
+            database.ref(firebaseDataPath).set(savedAddresses).catch(e => console.error(e));
+        }
+        function restoreFromFirebase() {
+            database.ref(firebaseDataPath).once('value')
+                .then(snap => {
+                    savedAddresses = Array.isArray(snap.val()) ? snap.val() : [];
+                    renderAddresses();
+                })
+                .catch(e => { console.error(e); savedAddresses = []; renderAddresses(); });
+        }
+
+        // 주소 저장
+        function saveAddress() {
+            const text = addressInput.value.trim(); if (!text) return showNotification('주소를 입력하세요.', 'warning');
+            if (savedAddresses.some(a => a.text===text && a.siteName===siteNameInput.value && a.workDate===workDateInput.value))
+                return showNotification('이미 저장된 주소입니다.', 'warning');
+            savedAddresses.unshift({ id:Date.now(), text, siteName:siteNameInput.value, workDate:workDateInput.value });
+            addressInput.value=''; siteNameInput.value=''; workDateInput.value='';
+            backupToFirebase(); renderAddresses(); showNotification('주소가 저장되었습니다.');
+        }
+        function deleteAddress(id) {
+            if (!confirm('삭제하시겠습니까?')) return;
+            savedAddresses = savedAddresses.filter(a=>a.id!==id);
+            backupToFirebase(); renderAddresses(); showNotification('주소가 삭제되었습니다.');
+        }
+
+        // 렌더링 및 Sortable
         function renderAddresses() {
-            const currentSearchTerm = searchInput.value.trim().toLowerCase();
-            addressCardsContainer.innerHTML = ''; // 기존 카드 모두 제거
-
-            // 1. 정렬 로직 적용 (옵션: 작업일 기준으로 정렬)
-            // 주의: SortableJS로 순서 변경 후 저장된 순서를 우선할지, 아니면 항상 재정렬할지 결정 필요
-            // 현재 코드는 Firebase에서 불러온 순서 또는 SortableJS로 변경된 순서(savedAddresses 배열 순서)를 따름
-            // 아래는 작업일자 기준 정렬 예시 (SortableJS 순서 변경과 충돌 가능)
-            /*
-            const today = new Date(); today.setUTCHours(0, 0, 0, 0);
-            const sortedAddresses = [...savedAddresses].sort((a, b) => {
-                const dateA = parseWorkDate(a.workDate), dateB = parseWorkDate(b.workDate);
-                // ... (정렬 로직) ...
-                return (a.id - b.id); // 기본 정렬: ID 순서 (최신순)
+            const term = searchInput.value.trim().toLowerCase();
+            addressCardsContainer.innerHTML='';
+            const list = savedAddresses.filter(a=>{
+                if (!term) return true;
+                return a.text.toLowerCase().includes(term) || (a.siteName||'').toLowerCase().includes(term);
             });
-            */
-           const addressesToRender = [...savedAddresses]; // 현재 savedAddresses 순서 사용
-
-            // 2. 검색어 필터링
-            const filteredAddresses = addressesToRender.filter(address => {
-                if (!currentSearchTerm) return true; // 검색어 없으면 모두 표시
-                const textMatch = (address.text || '').toLowerCase().includes(currentSearchTerm);
-                const siteMatch = (address.siteName || '').toLowerCase().includes(currentSearchTerm);
-                return textMatch || siteMatch; // 주소 또는 현장 이름에 검색어 포함 시 true
+            if (!list.length) {
+                emptyState.style.display='block';
+                noSearchResultMsg.style.display = term ? 'block':'none';
+                if (sortableInstance) { sortableInstance.destroy(); sortableInstance=null; }
+                return;
+            }
+            emptyState.style.display='none';
+            list.forEach(a=>{
+                const card = document.createElement('div'); card.className='address-card'; card.dataset.id=a.id;
+                const info = document.createElement('div'); info.className='address-info';
+                if (a.siteName) info.innerHTML+=`<span><strong>현장:</strong> ${a.siteName}</span> `;
+                if (a.workDate) info.innerHTML+=`<span><strong>작업일:</strong> ${a.workDate}</span>`;
+                card.appendChild(info);
+                const text = document.createElement('div'); text.className='address-text'; text.textContent=a.text;
+                card.appendChild(text);
+                const navs = document.createElement('div'); navs.className='nav-buttons';
+                navs.innerHTML = `
+                    <a href="${createNaverMapUrl(a.text)}" target="_blank" class="nav-btn naver-btn">네이버 지도</a>
+                    <a href="${createTmapUrl(a.text)}" target="_blank" class="nav-btn tmap-btn">T맵</a>
+                    <button type="button" class="nav-btn kakao-btn" onclick="geocodeAndNavigate('${a.text.replace(/'/g, "\\'")}')">카카오내비</button>
+                `;
+                card.appendChild(navs);
+                const actions = document.createElement('div'); actions.className='action-buttons';
+                actions.innerHTML = `<button class="action-btn delete-btn">삭제</button>`;
+                actions.querySelector('.delete-btn').onclick = ()=> deleteAddress(a.id);
+                card.appendChild(actions);
+                addressCardsContainer.appendChild(card);
             });
-
-            // 3. 결과 렌더링 또는 빈 상태 표시
-            if (filteredAddresses.length === 0) {
-                emptyState.style.display = 'block'; // 빈 상태 메시지 표시
-                const isSearching = currentSearchTerm.length > 0;
-                emptyStateMsg.style.display = isSearching ? 'none' : 'block'; // 저장된 주소가 없을 때 메시지
-                noSearchResultMsg.style.display = isSearching ? 'block' : 'none'; // 검색 결과 없을 때 메시지
-                if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; } // 목록 없으면 Sortable 파괴
-            } else {
-                emptyState.style.display = 'none'; // 빈 상태 메시지 숨김
-                filteredAddresses.forEach((address) => {
-                    const card = document.createElement('div');
-                    card.className = 'address-card';
-                    card.dataset.id = address.id; // 데이터 ID 저장
-
-                    // 드래그 핸들 (수정 모드가 아닐 때만 표시됨)
-                    const dragHandle = document.createElement('span');
-                    dragHandle.className = 'drag-handle';
-                    dragHandle.innerHTML = '&#9776;'; // 햄버거 아이콘
-                    dragHandle.title = '드래그하여 순서 변경';
-                    card.appendChild(dragHandle);
-
-                    // 주소 표시 영역 (기본 뷰)
-                    const addressDisplay = document.createElement('div');
-                    addressDisplay.className = 'address-display';
-
-                    let infoHtml = '';
-                    if (address.siteName) infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
-                    if (address.workDate) {
-                        let dateStr = address.workDate, dayOfWeek = '?';
-                        const parsedDate = parseWorkDate(dateStr);
-                        if (parsedDate) {
-                            try {
-                                // 요일 계산 (한국 시간 기준)
-                                dayOfWeek = parsedDate.toLocaleDateString('ko-KR', { weekday: 'short', timeZone: 'UTC' }); // UTC로 파싱했으므로 UTC 기준 요일
-                            } catch (e) { console.error("Day of week formatting error:", e); }
-                        }
-                        infoHtml += `<span><strong>작업일:</strong> ${dateStr} <span class="day-of-week">(${dayOfWeek})</span></span>`;
-                    }
-
-                    // 현장 또는 작업일 정보가 있을 경우 표시
-                    if (infoHtml) {
-                        const addressInfo = document.createElement('div');
-                        addressInfo.className = 'address-info';
-                        addressInfo.innerHTML = infoHtml;
-                        addressDisplay.appendChild(addressInfo);
-                    }
-
-                    // 주소 텍스트 표시
-                    const addressText = document.createElement('div');
-                    addressText.className = 'address-text';
-                    addressText.textContent = address.text;
-                    addressDisplay.appendChild(addressText);
-
-                    // 내비게이션 버튼들
-                    const navButtons = document.createElement('div');
-                    navButtons.className = 'nav-buttons';
-                    navButtons.innerHTML = `
-                        <a href="${createNaverMapUrl(address.text)}" target="_blank" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
-                        <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 설치 필요)">T맵</a>
-                        <a href="${createKakaoNaviUrl(address.text)}" target="_self" class="nav-btn kakao-btn" title="카카오내비로 길안내 (앱 설치 필수)">카카오내비</a>`;
-                    addressDisplay.appendChild(navButtons);
-
-                    // 수정/삭제 버튼
-                    const actionButtons = document.createElement('div');
-                    actionButtons.className = 'action-buttons';
-                    actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
-                    actionButtons.querySelector('.edit-btn').onclick = () => enableEditMode(card, address);
-                    actionButtons.querySelector('.delete-btn').onclick = () => deleteAddress(address.id);
-                    addressDisplay.appendChild(actionButtons);
-
-                    card.appendChild(addressDisplay); // 기본 뷰 카드에 추가
-
-                    // 수정 모드 영역 (숨겨진 상태)
-                    const addressEdit = document.createElement('div');
-                    addressEdit.className = 'address-edit';
-                    addressEdit.innerHTML = `
-                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
-                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
-                        <div class="edit-input-group"><label>작업일자</label><input type="date" class="edit-work-date-input"></div>
-                        <div class="button-group">
-                            <button class="btn btn-primary save-edit-btn">저장</button>
-                            <button class="btn btn-secondary cancel-edit-btn">취소</button>
-                        </div>`;
-                    addressEdit.querySelector('.save-edit-btn').onclick = () => saveEdit(address.id);
-                    addressEdit.querySelector('.cancel-edit-btn').onclick = () => cancelEditMode(card);
-                    card.appendChild(addressEdit); // 수정 뷰 카드에 추가
-
-                    addressCardsContainer.appendChild(card); // 완성된 카드를 목록에 추가
+            if (!sortableInstance) {
+                sortableInstance = new Sortable(addressCardsContainer, {
+                    handle: null, animation:150,onEnd:()=>backupToFirebase()
                 });
-
-                // 4. SortableJS 초기화/업데이트
-                const isSearchActive = currentSearchTerm.length > 0;
-                if (!sortableInstance && !isSearchActive) { // 검색 중이 아닐 때만 Sortable 초기화
-                    initializeSortable();
-                }
-                if (sortableInstance) {
-                    // 검색 중이면 드래그 비활성화, 아니면 활성화
-                    sortableInstance.option("disabled", isSearchActive);
-                }
             }
         }
 
-        // --- Initialize SortableJS ---
-        function initializeSortable() {
-            if (sortableInstance) sortableInstance.destroy(); // 기존 인스턴스 파괴
-            sortableInstance = new Sortable(addressCardsContainer, {
-                handle: '.drag-handle', // 드래그 핸들 지정
-                animation: 150, // 애니메이션 속도
-                ghostClass: 'sortable-ghost', // 드래그 중인 요소 스타일
-                chosenClass: 'sortable-chosen', // 선택된 요소 스타일
-                delay: 150, // 터치 시작 후 드래그 시작까지 딜레이 (모바일 오작동 방지)
-                delayOnTouchOnly: true, // 터치 환경에서만 딜레이 적용
-                disabled: false, // 기본적으로 활성화
-                onEnd: function (evt) { // 드래그 종료 시 이벤트
-                    if (evt.oldIndex === evt.newIndex) return; // 위치 변경 없으면 무시
-
-                    // DOM 요소 순서를 기반으로 ID 배열 생성
-                    const orderedIds = Array.from(addressCardsContainer.children)
-                                            .filter(card => card.classList.contains('address-card') && card.dataset.id) // 유효한 카드만 필터링
-                                            .map(card => parseInt(card.dataset.id, 10)); // ID 추출
-
-                    // 현재 savedAddresses 배열을 Map으로 변환 (빠른 조회를 위해)
-                    const addressMap = new Map(savedAddresses.map(addr => [addr.id, addr]));
-
-                    // 새 순서에 맞게 savedAddresses 배열 재구성
-                    const newOrderedAddresses = orderedIds
-                                                .map(id => addressMap.get(id)) // ID에 해당하는 주소 객체 가져오기
-                                                .filter(Boolean); // 혹시 모를 누락된 ID 처리
-
-                    // 혹시 orderedIds에 포함되지 않은 주소가 있다면 (이론상 발생하면 안됨) 맨 뒤에 추가
-                    savedAddresses.forEach(addr => {
-                        if (!newOrderedAddresses.some(orderedAddr => orderedAddr.id === addr.id)) {
-                            newOrderedAddresses.push(addr);
-                        }
-                    });
-
-                    savedAddresses = newOrderedAddresses; // 전역 상태 업데이트
-                    backupToFirebase(); // 변경된 순서 Firebase에 저장
-                    console.log('Address order updated');
-                    // renderAddresses()를 여기서 호출할 필요는 없음 (DOM 순서는 이미 변경됨)
-                },
-            });
-        }
-
-        // --- Event Listeners ---
         saveButton.addEventListener('click', saveAddress);
-        addressInput.addEventListener('keydown', (e) => {
-            // Enter 키 입력 시 저장 (Shift+Enter는 줄바꿈 허용)
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // 기본 동작(줄바꿈) 방지
-                saveAddress();
-            }
-        });
-        searchInput.addEventListener('input', renderAddresses); // 검색어 입력 시 실시간으로 목록 필터링
-
-        // --- Initial Load ---
-        // 페이지 로드 시 Firebase에서 데이터 복원
+        addressInput.addEventListener('keydown', e=>{ if(e.key==='Enter'&& !e.shiftKey){ e.preventDefault(); saveAddress(); }});
+        searchInput.addEventListener('input', renderAddresses);
         restoreFromFirebase();
-
     </script>
 </body>
 </html>
