@@ -254,7 +254,21 @@
         }
         function createKakaoMapUrl(addr) {
             const cleanAddr = getCleanAddressForNavigation(addr);
-            return `https://map.kakao.com/link/search/${encodeURIComponent(cleanAddr)}`;
+            const encodedAddr = encodeURIComponent(cleanAddr).replace(/%20/g, '+'); // iOS Safari 호환성: 공백을 '+'로 변환
+            console.log("Generated KakaoMap URL:", `https://map.kakao.com/?q=${encodedAddr}`);
+            return `https://map.kakao.com/?q=${encodedAddr}`;
+        }
+
+        // --- Handle KakaoMap Link Click ---
+        function handleKakaoMapClick(event, url) {
+            event.preventDefault();
+            console.log("Attempting to open KakaoMap URL:", url);
+            try {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            } catch (err) {
+                console.error("Failed to open KakaoMap URL:", err);
+                showNotification("카카오맵을 열 수 없습니다. 브라우저 설정을 확인하세요.", "error");
+            }
         }
 
         // --- Firebase Data Operations ---
@@ -444,25 +458,22 @@
                 const dateA = parseWorkDate(a.workDate);
                 const dateB = parseWorkDate(b.workDate);
 
-                // 날짜가 없는 경우
                 if (!dateA && !dateB) {
-                    return new Date(b.createdAt) - new Date(a.createdAt); // 최신 생성 순
+                    return new Date(b.createdAt) - new Date(a.createdAt);
                 }
-                if (!dateA) return 1; // 날짜 없는 주소는 맨 뒤
+                if (!dateA) return 1;
                 if (!dateB) return -1;
 
-                // 미래 또는 오늘인 경우
                 const isAFutureOrToday = dateA >= today;
                 const isBFutureOrToday = dateB >= today;
 
                 if (isAFutureOrToday && isBFutureOrToday) {
-                    return dateA - dateB; // 가까운 날짜 우선
+                    return dateA - dateB;
                 }
-                if (isAFutureOrToday) return -1; // 미래/오늘 우선
+                if (isAFutureOrToday) return -1;
                 if (isBFutureOrToday) return 1;
 
-                // 과거 날짜
-                return dateB - dateA; // 최신 날짜 우선
+                return dateB - dateA;
             });
         }
 
@@ -471,7 +482,6 @@
             const currentSearchTerm = searchInput.value.trim().toLowerCase();
             addressCardsContainer.innerHTML = "";
 
-            // 정렬된 주소 목록
             const sortedAddresses = sortAddresses([...savedAddresses]);
 
             const filteredAddresses = sortedAddresses.filter(address => {
@@ -537,9 +547,9 @@
                     const navButtons = document.createElement("div");
                     navButtons.className = "nav-buttons";
                     navButtons.innerHTML = `
-                        <a href="${createNaverMapUrl(address.text)}" target="_blank" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
+                        <a href="${createNaverMapUrl(address.text)}" target="_blank" rel="noopener noreferrer" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
                         <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 설치 필요)">T맵</a>
-                        <a href="${createKakaoMapUrl(address.text)}" target="_blank" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>
+                        <a href="#" onclick="handleKakaoMapClick(event, '${createKakaoMapUrl(address.text)}')" rel="noopener noreferrer" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>
                     `;
                     addressDisplay.appendChild(navButtons);
 
