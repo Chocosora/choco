@@ -255,19 +255,130 @@
         function createKakaoMapUrl(addr) {
             const cleanAddr = getCleanAddressForNavigation(addr);
             const encodedAddr = encodeURIComponent(cleanAddr).replace(/%20/g, '+'); // iOS Safari 호환성: 공백을 '+'로 변환
-            console.log("Generated KakaoMap URL:", `https://map.kakao.com/?q=${encodedAddr}`);
-            return `https://map.kakao.com/?q=${encodedAddr}`;
+            const kakaoMapUrl = `https://m.map.kakao.com/scheme/index.do?searchName=${encodedAddr}`;
+            console.log("Generated KakaoMap URL:", kakaoMapUrl);
+            return kakaoMapUrl;
         }
 
-        // --- Handle KakaoMap Link Click ---
-        function handleKakaoMapClick(event, url) {
-            event.preventDefault();
-            console.log("Attempting to open KakaoMap URL:", url);
-            try {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            } catch (err) {
-                console.error("Failed to open KakaoMap URL:", err);
-                showNotification("카카오맵을 열 수 없습니다. 브라우저 설정을 확인하세요.", "error");
+        // --- Check Safari Settings ---
+        function checkSafariSettings() {
+            if (!navigator.geolocation) {
+                showNotification("위치 서비스가 비활성화되었습니다. Safari 설정에서 위치 서비스를 활성화하세요.", "warning");
+            }
+            if (!navigator.onLine) {
+                showNotification("인터넷 연결이 없습니다. 네트워크를 확인하세요.", "error");
+            }
+        }
+
+        // --- Render Address List ---
+        function renderAddresses() {
+            const currentSearchTerm = searchInput.value.trim().toLowerCase();
+            addressCardsContainer.innerHTML = "";
+
+            const sortedAddresses = sortAddresses([...savedAddresses]);
+
+            const filteredAddresses = sortedAddresses.filter(address => {
+                if (!currentSearchTerm) return true;
+                const textMatch = (address.text || "").toLowerCase().includes(currentSearchTerm);
+                const siteMatch = (address.siteName || "").toLowerCase().includes(currentSearchTerm);
+                return textMatch || siteMatch;
+            });
+
+            if (filteredAddresses.length === 0) {
+                emptyState.style.display = "block";
+                emptyStateMsg.style.display = currentSearchTerm ? "none" : "block";
+                noSearchResultMsg.style.display = currentSearchTerm ? "block" : "none";
+                if (sortableInstance) {
+                    sortableInstance.destroy();
+                    sortableInstance = null;
+                }
+            } else {
+                emptyState.style.display = "none";
+                filteredAddresses.forEach((address) => {
+                    const card = document.createElement("div");
+                    card.className = "address-card";
+                    card.dataset.id = address.id;
+
+                    const dragHandle = document.createElement("span");
+                    dragHandle.className = "drag-handle";
+                    dragHandle.innerHTML = "☰";
+                    dragHandle.title = "드래그하여 순서 변경";
+                    card.appendChild(dragHandle);
+
+                    const addressDisplay = document.createElement("div");
+                    addressDisplay.className = "address-display";
+
+                    let infoHtml = "";
+                    if (address.siteName) {
+                        infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
+                    }
+                    if (address.workDate) {
+                        let dateStr = address.workDate, dayOfWeek = "?";
+                        const parsedDate = parseWorkDate(dateStr);
+                        if (parsedDate) {
+                            try {
+                                dayOfWeek = parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "UTC" });
+                            } catch (e) {
+                                console.error("Day of week formatting error:", e);
+                            }
+                        }
+                        infoHtml += `<span><strong>작업일:</strong> ${dateStr} <span class="day-of-week">(${dayOfWeek})</span></span>`;
+                    }
+
+                    if (infoHtml) {
+                        const addressInfo = document.createElement("div");
+                        addressInfo.className = "address-info";
+                        addressInfo.innerHTML = infoHtml;
+                        addressDisplay.appendChild(addressInfo);
+                    }
+
+                    const addressText = document.createElement("div");
+                    addressText.className = "address-text";
+                    addressText.textContent = address.text;
+                    addressDisplay.appendChild(addressText);
+
+                    const navButtons = document.createElement("div");
+                    navButtons.className = "nav-buttons";
+                    navButtons.innerHTML = `
+                        <a href="${createNaverMapUrl(address.text)}" target="_blank" rel="noopener noreferrer" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
+                        <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 설치 필요)">T맵</a>
+                        <a href="${createKakaoMapUrl(address.text)}" target="_blank" rel="noopener noreferrer" class="nav-btn kakao-btn" title="카카오맵으로 열기" onclick="checkSafariSettings()">카카오맵</a>
+                    `;
+                    addressDisplay.appendChild(navButtons);
+
+                    const actionButtons = document.createElement("div");
+                    actionButtons.className = "action-buttons";
+                    actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
+                    actionButtons.querySelector(".edit-btn").onclick = () => enableEditMode(card, address);
+                    actionButtons.querySelector(".delete-btn").onclick = () => deleteAddress(address.id);
+                    addressDisplay.appendChild(actionButtons);
+
+                    card.appendChild(addressDisplay);
+
+                    const addressEdit = document.createElement("div");
+                    addressEdit.className = "address-edit";
+                    addressEdit.innerHTML = `
+                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
+                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
+                        <div class="edit-input-group"><label>작업일자</label><input type="date" class="edit-work-date-input"></div>
+                        <div class="button-group">
+                            <button class="btn btn-primary save-edit-btn">저장</button>
+                            <button class="btn btn-secondary cancel-edit-btn">취소</button>
+                        </div>
+                    `;
+                    addressEdit.querySelector(".save-edit-btn").onclick = () => saveEdit(address.id);
+                    addressEdit.querySelector(".cancel-edit-btn").onclick = () => cancelEditMode(card);
+                    card.appendChild(addressEdit);
+
+                    addressCardsContainer.appendChild(card);
+                });
+
+                const isSearchActive = currentSearchTerm.length > 0;
+                if (sortableInstance) {
+                    sortableInstance.option("disabled", isSearchActive);
+                } else if (!isSearchActive && filteredAddresses.length > 0) {
+                    initializeSortable();
+                }
             }
         }
 
@@ -475,118 +586,6 @@
 
                 return dateB - dateA;
             });
-        }
-
-        // --- Render Address List ---
-        function renderAddresses() {
-            const currentSearchTerm = searchInput.value.trim().toLowerCase();
-            addressCardsContainer.innerHTML = "";
-
-            const sortedAddresses = sortAddresses([...savedAddresses]);
-
-            const filteredAddresses = sortedAddresses.filter(address => {
-                if (!currentSearchTerm) return true;
-                const textMatch = (address.text || "").toLowerCase().includes(currentSearchTerm);
-                const siteMatch = (address.siteName || "").toLowerCase().includes(currentSearchTerm);
-                return textMatch || siteMatch;
-            });
-
-            if (filteredAddresses.length === 0) {
-                emptyState.style.display = "block";
-                emptyStateMsg.style.display = currentSearchTerm ? "none" : "block";
-                noSearchResultMsg.style.display = currentSearchTerm ? "block" : "none";
-                if (sortableInstance) {
-                    sortableInstance.destroy();
-                    sortableInstance = null;
-                }
-            } else {
-                emptyState.style.display = "none";
-                filteredAddresses.forEach((address) => {
-                    const card = document.createElement("div");
-                    card.className = "address-card";
-                    card.dataset.id = address.id;
-
-                    const dragHandle = document.createElement("span");
-                    dragHandle.className = "drag-handle";
-                    dragHandle.innerHTML = "☰";
-                    dragHandle.title = "드래그하여 순서 변경";
-                    card.appendChild(dragHandle);
-
-                    const addressDisplay = document.createElement("div");
-                    addressDisplay.className = "address-display";
-
-                    let infoHtml = "";
-                    if (address.siteName) {
-                        infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
-                    }
-                    if (address.workDate) {
-                        let dateStr = address.workDate, dayOfWeek = "?";
-                        const parsedDate = parseWorkDate(dateStr);
-                        if (parsedDate) {
-                            try {
-                                dayOfWeek = parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "UTC" });
-                            } catch (e) {
-                                console.error("Day of week formatting error:", e);
-                            }
-                        }
-                        infoHtml += `<span><strong>작업일:</strong> ${dateStr} <span class="day-of-week">(${dayOfWeek})</span></span>`;
-                    }
-
-                    if (infoHtml) {
-                        const addressInfo = document.createElement("div");
-                        addressInfo.className = "address-info";
-                        addressInfo.innerHTML = infoHtml;
-                        addressDisplay.appendChild(addressInfo);
-                    }
-
-                    const addressText = document.createElement("div");
-                    addressText.className = "address-text";
-                    addressText.textContent = address.text;
-                    addressDisplay.appendChild(addressText);
-
-                    const navButtons = document.createElement("div");
-                    navButtons.className = "nav-buttons";
-                    navButtons.innerHTML = `
-                        <a href="${createNaverMapUrl(address.text)}" target="_blank" rel="noopener noreferrer" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
-                        <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 설치 필요)">T맵</a>
-                        <a href="#" onclick="handleKakaoMapClick(event, '${createKakaoMapUrl(address.text)}')" rel="noopener noreferrer" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>
-                    `;
-                    addressDisplay.appendChild(navButtons);
-
-                    const actionButtons = document.createElement("div");
-                    actionButtons.className = "action-buttons";
-                    actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
-                    actionButtons.querySelector(".edit-btn").onclick = () => enableEditMode(card, address);
-                    actionButtons.querySelector(".delete-btn").onclick = () => deleteAddress(address.id);
-                    addressDisplay.appendChild(actionButtons);
-
-                    card.appendChild(addressDisplay);
-
-                    const addressEdit = document.createElement("div");
-                    addressEdit.className = "address-edit";
-                    addressEdit.innerHTML = `
-                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
-                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
-                        <div class="edit-input-group"><label>작업일자</label><input type="date" class="edit-work-date-input"></div>
-                        <div class="button-group">
-                            <button class="btn btn-primary save-edit-btn">저장</button>
-                            <button class="btn btn-secondary cancel-edit-btn">취소</button>
-                        </div>
-                    `;
-                    addressEdit.querySelector(".save-edit-btn").onclick = () => saveEdit(address.id);
-                    addressEdit.querySelector(".cancel-edit-btn").onclick = () => cancelEditMode(card);
-                    card.appendChild(addressEdit);
-
-                    addressCardsContainer.appendChild(card);
-                });
-
-                const isSearchActive = currentSearchTerm.length > 0;
-                if (sortableInstance) {
-                    sortableInstance.option("disabled", isSearchActive);
-                } else if (!isSearchActive && filteredAddresses.length > 0) {
-                    initializeSortable();
-                }
-            }
         }
 
         // --- Initialize SortableJS ---
