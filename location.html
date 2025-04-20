@@ -12,18 +12,20 @@
         :root {
             --primary-color: #4263eb; --primary-hover: #364fc7; --secondary-color: #f8f9fa;
             --border-color: #ced4da; --text-color: #343a40; --light-gray: #e9ecef;
-            --naver-color: #03C75A; --tmap-color: #ED1846; --kakao-color: #FEE500;
-            --kakao-text: #3C1E1E; --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            --success-color: #4caf50; --warning-color: #ff9800; --error-color: #f44336;
+            --success-color: #40c057; --error-color: #fa5252; --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 800px;
-            margin: 0 auto; padding: 15px; background-color: var(--secondary-color);
-            color: var(--text-color); line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 60px;
         }
-        header { text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--text-color); margin-bottom: 8px; font-size: 26px; }
+        h1 { font-size: 26px; margin-bottom: 5px; color: var(--text-color); }
         h2 { color: var(--text-color); margin-bottom: 15px; font-size: 20px; margin-top: 30px; }
         .subtitle { color: #6c757d; font-size: 15px; }
         .container { background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
@@ -41,7 +43,6 @@
             outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.2);
         }
         .btn { padding: 10px 15px; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; display: inline-flex; align-items: center; justify-content: center; font-weight: 500; line-height: 1.5; min-height: 40px; }
-        .btn:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { background-color: var(--primary-hover); }
         .btn-secondary { background-color: var(--light-gray); color: var(--text-color); }
@@ -85,10 +86,9 @@
         .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
         .nav-btn { padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; text-decoration: none; font-weight: bold; transition: opacity 0.2s, transform 0.1s; border: 1px solid transparent; min-height: 38px; display: flex; align-items: center; justify-content: center; }
         .nav-btn:hover { opacity: 0.85; }
-        .nav-btn:active { transform: scale(0.97); }
-        .naver-btn { background-color: var(--naver-color); color: white; }
-        .tmap-btn { background-color: var(--tmap-color); color: white; }
-        .kakao-btn { background-color: var(--kakao-color); color: var(--kakao-text); }
+        .naver-btn { background-color: #03c75a; color: white; }
+        .tmap-btn { background-color: #ff4b18; color: white; }
+        .kakao-btn { background-color: #fee500; color: #3b1e1e; }
         .action-buttons { display: flex; gap: 10px; margin-top: 10px; }
         .action-btn { flex: 1; padding: 8px 0; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; background-color: var(--light-gray); color: var(--text-color); transition: background-color 0.2s; font-weight: 500; min-height: 36px; }
         .action-btn:hover { background-color: #dee2e6; }
@@ -97,7 +97,6 @@
         .edit-mode .address-display { display: none; }
         .address-edit { display: none; }
         .edit-mode .address-edit { display: block; }
-        .edit-mode .address-card { cursor: default; }
         .edit-input-group { margin-bottom: 10px; }
         .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px;}
         .edit-input, .edit-site-name-input, .edit-work-date-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none; }
@@ -107,7 +106,7 @@
         .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px); background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out; z-index: 1000; font-size: 14px; text-align: center; }
         .notification.show { transform: translateY(0); opacity: 1; }
         .notification.success { background-color: var(--success-color); }
-        .notification.warning { background-color: var(--warning-color); color: #333; }
+        .notification.warning { background-color: #fd7e14; }
         .notification.error { background-color: var(--error-color); }
         .empty-state { text-align: center; padding: 30px 0; color: #6c757d; }
         .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
@@ -119,10 +118,8 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>작업 주소 관리</h1>
-        <p class="subtitle">주소, 현장, 작업일을 관리하고 내비게이션으로 연결</p>
-    </header>
+    <h1>작업 주소 관리</h1>
+    <p class="subtitle">작업할 현장의 주소와 정보를 저장하고 관리할 수 있습니다</p>
 
     <div class="container">
         <div class="sync-status">
@@ -167,14 +164,16 @@
     <script>
         // --- Firebase Configuration ---
         const firebaseConfig = {
-            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/" // 여기에 본인의 Firebase Realtime Database URL을 넣으세요.
+            // <<< 여기가 수정된 부분입니다 >>>
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/"
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         // --- Constants ---
+        // This key determines the data set users will see. Change if needed.
         const sharedDataKey = "my-secret-addr-key-april2025";
-        const firebaseDataPath = 'addresses/' + sharedDataKey;
+        const firebaseDataPath = 'addresses/' + sharedDataKey; // Path in Firebase
 
         // --- DOM Elements ---
         const addressInput = document.getElementById('addressInput');
@@ -191,14 +190,14 @@
         const syncStatusText = document.getElementById('syncStatusText');
 
         // --- Global State ---
-        let savedAddresses = [];
-        let sortableInstance = null;
+        let savedAddresses = []; // In-memory list of all addresses
+        let sortableInstance = null; // SortableJS instance
 
         // --- Firebase Connection Status ---
         const connectedRef = database.ref(".info/connected");
         connectedRef.on("value", (snap) => {
             const isOnline = snap.val();
-            syncIndicator.className = `sync-indicator ${isOnline ? 'online' : 'offline'}`;
+            syncIndicator.className = isOnline ? "sync-indicator online" : "sync-indicator offline";
             syncStatusText.textContent = isOnline ? "온라인 (자동 동기화)" : "오프라인";
             syncStatusText.style.color = isOnline ? 'var(--success-color)' : 'var(--error-color)';
         });
@@ -211,44 +210,39 @@
         }
 
         // --- Address Processing ---
+        // Cleans the address string for better recognition by navigation apps (heuristic)
         function getCleanAddressForNavigation(fullAddress) {
             let text = fullAddress.trim();
             const prefixPattern = /^(주소|address|위치|location)\s*[:：]?\s*/i;
             text = text.replace(prefixPattern, '').trim();
+
             const parts = text.split(/\s+/);
             let lastGoodAddressIndex = -1;
             for (let i = 0; i < parts.length; i++) {
-                const currentPart = parts[i];
-                const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart);
-                const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart);
-                if ((isAddressNumber || isAddressBunji) && i > 0 && /[로길가동리]$/.test(parts[i-1])) {
+                const part = parts[i].trim().toLowerCase();
+                if (part.includes('동') || part.includes('호') || 
+                    part.includes('층') || part.includes('번') || 
+                    part.includes('가') || part.includes('로')) {
                     lastGoodAddressIndex = i;
+                } else if (part.includes('#') || part.includes('(') || 
+                           part.includes('연락처') || part.includes('tel')) {
+                    break;
                 }
             }
             return lastGoodAddressIndex !== -1 ? parts.slice(0, lastGoodAddressIndex + 1).join(' ') : text;
         }
 
         // --- Navigation URLs ---
-        function createNaverMapUrl(addr) { 
-            return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; 
-        }
-        function createTmapUrl(addr) { 
-            return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; 
-        }
-        function createKakaoMapUrl(addr) {
-            const cleanAddr = getCleanAddressForNavigation(addr);
-            return `https://map.kakao.com/link/search/${encodeURIComponent(cleanAddr)}`;
-        }
+        function createNaverMapUrl(addr) { return `https://map.naver.com/v5/search/${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+        // T Map App URL Scheme (Requires app installation)
+        function createTmapUrl(addr) { return `tmap://search?name=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
+        // 카카오내비를 카카오맵으로 수정
+        function createKakaoNaviUrl(addr) { return `https://map.kakao.com/?q=${encodeURIComponent(getCleanAddressForNavigation(addr))}`; }
 
         // --- Firebase Data Operations ---
         function backupToFirebase() {
-            if (!navigator.onLine || !firebase.app()?.options?.databaseURL) {
+            if (!navigator.onLine || !firebase.app()?.options?.databaseURL) { // Check if Firebase is initialized properly
                 console.warn("Offline or Firebase not properly initialized. Skipping backup.");
-                return;
-            }
-            if (!firebaseDataPath || firebaseDataPath.includes('undefined') || firebaseDataPath.includes('[object Object]')) {
-                console.error("Invalid Firebase path:", firebaseDataPath);
-                showNotification('Firebase 경로 오류', 'error');
                 return;
             }
             database.ref(firebaseDataPath).set(savedAddresses)
@@ -261,19 +255,12 @@
 
         function restoreFromFirebase() {
             console.log("Attempting to load data from Firebase:", firebaseDataPath);
-            if (!firebase.app()?.options?.databaseURL) {
-                console.error("Firebase not properly initialized. Cannot restore data.");
-                showNotification('Firebase 연결 오류', 'error');
-                savedAddresses = [];
-                renderAddresses();
-                return;
-            }
-            if (!firebaseDataPath || firebaseDataPath.includes('undefined') || firebaseDataPath.includes('[object Object]')) {
-                console.error("Invalid Firebase path:", firebaseDataPath);
-                showNotification('Firebase 경로 오류', 'error');
-                savedAddresses = [];
-                renderAddresses();
-                return;
+             if (!firebase.app()?.options?.databaseURL) {
+                 console.error("Firebase not properly initialized. Cannot restore data.");
+                 showNotification('Firebase 연결 오류', 'error');
+                 savedAddresses = [];
+                 renderAddresses();
+                 return;
             }
             database.ref(firebaseDataPath).once('value')
                 .then((snapshot) => {
@@ -296,13 +283,13 @@
             const siteName = siteNameInput.value.trim();
             const workDate = workDateInput.value;
 
-            if (!addressText) { 
-                showNotification('주소를 입력하세요.', 'warning'); 
-                addressInput.focus(); 
-                return; 
+            if (!addressText) {
+                showNotification('주소를 입력하세요.', 'warning');
+                addressInput.focus();
+                return;
             }
-            if (savedAddresses.some(addr => addr.text === addressText && addr.siteName === siteName && addr.workDate === workDate)) {
-                showNotification('이미 동일한 내용으로 저장된 주소입니다.', 'warning');
+            if (savedAddresses.some(addr => addr.text === addressText)) {
+                showNotification('이미 저장된 주소입니다.', 'warning');
                 return;
             }
 
@@ -313,13 +300,11 @@
                 workDate: workDate,
                 createdAt: new Date().toISOString()
             };
-            savedAddresses.unshift(newAddress);
+            savedAddresses.unshift(newAddress); // Add to the beginning of the array
             backupToFirebase();
-            searchInput.value = '';
-            renderAddresses();
-            addressInput.value = ''; 
-            siteNameInput.value = ''; 
-            workDateInput.value = '';
+            searchInput.value = ''; // Clear search
+            renderAddresses(); // Refresh list
+            addressInput.value = ''; siteNameInput.value = ''; workDateInput.value = ''; // Clear inputs
             showNotification('주소가 저장되었습니다.');
         }
 
@@ -339,12 +324,13 @@
             cardElement.querySelector('.edit-site-name-input').value = addressData.siteName || '';
             cardElement.querySelector('.edit-work-date-input').value = addressData.workDate || '';
             cardElement.querySelector('.edit-input').focus();
-            if (sortableInstance) sortableInstance.option("disabled", true);
+            if (sortableInstance) sortableInstance.option("disabled", true); // Disable drag while editing
         }
 
         function cancelEditMode(cardElement) {
             cardElement.classList.remove('edit-mode');
             const isSearchActive = searchInput.value.trim().length > 0;
+            // Re-enable drag only if not searching
             if (sortableInstance && !isSearchActive) {
                 sortableInstance.option("disabled", false);
             }
@@ -358,10 +344,7 @@
             const newSiteName = card.querySelector('.edit-site-name-input').value.trim();
             const newWorkDate = card.querySelector('.edit-work-date-input').value;
 
-            if (!newText) { 
-                showNotification('주소를 비울 수 없습니다.', 'warning'); 
-                return; 
-            }
+            if (!newText) { showNotification('주소를 비울 수 없습니다.', 'warning'); return; }
 
             const addressIndex = savedAddresses.findIndex(addr => addr.id === id);
             if (addressIndex !== -1) {
@@ -369,11 +352,10 @@
                 savedAddresses[addressIndex].siteName = newSiteName;
                 savedAddresses[addressIndex].workDate = newWorkDate;
                 backupToFirebase();
-                renderAddresses();
+                renderAddresses(); // Refresh list to show changes and re-sort
                 showNotification('주소가 수정되었습니다.');
             } else {
                 showNotification('주소 수정 중 오류 발생', 'error');
-                cancelEditMode(card);
             }
         }
 
@@ -385,57 +367,41 @@
                 if (parts.length === 3) {
                     const year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, day = parseInt(parts[2], 10);
                     if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                        const dateObj = new Date(Date.UTC(year, month, day));
+                        const dateObj = new Date(Date.UTC(year, month, day)); // Use UTC to compare dates only
                         if (dateObj.getUTCFullYear() === year && dateObj.getUTCMonth() === month && dateObj.getUTCDate() === day) {
                             return dateObj;
                         }
                     }
                 }
-            } catch (e) {
-                console.error("Date parsing error:", dateString, e);
-            }
+            } catch (e) { console.error("Date parsing error:", dateString, e); }
             return null;
         }
 
         // --- Render Address List ---
         function renderAddresses() {
             const currentSearchTerm = searchInput.value.trim().toLowerCase();
-            addressCardsContainer.innerHTML = '';
+            addressCardsContainer.innerHTML = ''; // Clear existing cards
 
-            // 1. Sort addresses
-            const today = new Date();
-            today.setUTCHours(0, 0, 0, 0);
-            
+            // 1. Sort data (Today/future first, then by date, rest by newest)
+            const today = new Date(); today.setUTCHours(0, 0, 0, 0);
             const sortedAddresses = [...savedAddresses].sort((a, b) => {
-                const dateA = parseWorkDate(a.workDate);
-                const dateB = parseWorkDate(b.workDate);
+                const dateA = parseWorkDate(a.workDate), dateB = parseWorkDate(b.workDate);
+                const isFutureOrTodayA = (dateA && dateA.getTime() >= today.getTime());
+                const isFutureOrTodayB = (dateB && dateB.getTime() >= today.getTime());
 
-                // Case 1: Both have no dates
-                if (!dateA && !dateB) return a.id - b.id; // Sort by ID (newest first)
-                
-                // Case 2: A has no date, B has date
-                if (!dateA) return 1; // No date goes to bottom
-                // Case 3: B has no date, A has date
-                if (!dateB) return -1; // No date goes to bottom
+                const categoryA = isFutureOrTodayA ? 1 : 2; // 1: Future/Today, 2: Past/No Date
+                const categoryB = isFutureOrTodayB ? 1 : 2;
 
-                // Case 4: Both have dates
-                const diffA = Math.abs(dateA - today);
-                const diffB = Math.abs(dateB - today);
-                
-                // If both are past dates
-                if (dateA < today && dateB < today) {
-                    return dateB - dateA; // Newer past date comes first
+                if (categoryA !== categoryB) return categoryA - categoryB; // Future/Today comes first
+
+                if (categoryA === 1) { // Both are Future/Today: sort by date ascending
+                    return (dateA.getTime() === dateB.getTime()) ? b.id - a.id : dateA.getTime() - dateB.getTime();
+                } else { // Both are Past/No Date: sort by creation descending (newest first)
+                    return b.id - a.id;
                 }
-                
-                // If one is past and one is future/today
-                if (dateA < today) return 1; // Past dates go after current/future
-                if (dateB < today) return -1;
-
-                // Both are current/future dates
-                return diffA - diffB; // Closer to today comes first
             });
 
-            // 2. Apply search filter
+            // 2. Filter by search term
             const filteredAddresses = sortedAddresses.filter(address => {
                 if (!currentSearchTerm) return true;
                 const textMatch = (address.text || '').toLowerCase().includes(currentSearchTerm);
@@ -449,10 +415,7 @@
                 const isSearching = currentSearchTerm.length > 0;
                 emptyStateMsg.style.display = isSearching ? 'none' : 'block';
                 noSearchResultMsg.style.display = isSearching ? 'block' : 'none';
-                if (sortableInstance) { 
-                    sortableInstance.destroy(); 
-                    sortableInstance = null; 
-                }
+                if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
             } else {
                 emptyState.style.display = 'none';
                 filteredAddresses.forEach((address) => {
@@ -460,30 +423,26 @@
                     card.className = 'address-card';
                     card.dataset.id = address.id;
 
+                    // --- Drag Handle ---
                     const dragHandle = document.createElement('span');
                     dragHandle.className = 'drag-handle';
-                    dragHandle.innerHTML = '☰';
+                    dragHandle.innerHTML = '&#9776;'; // Hamburger icon
                     dragHandle.title = '드래그하여 순서 변경';
                     card.appendChild(dragHandle);
 
+                    // --- Address Display Area ---
                     const addressDisplay = document.createElement('div');
                     addressDisplay.className = 'address-display';
 
-                    let infoHtml = '';
-                    if (address.siteName) 
-                        infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
+                    let infoHtml = ''; // Site Name, Work Date
+                    if (address.siteName) infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
                     if (address.workDate) {
                         let dateStr = address.workDate, dayOfWeek = '?';
                         const parsedDate = parseWorkDate(dateStr);
                         if (parsedDate) {
                             try {
-                                dayOfWeek = parsedDate.toLocaleDateString('ko-KR', { 
-                                    weekday: 'short', 
-                                    timeZone: 'UTC' 
-                                });
-                            } catch (e) { 
-                                console.error("Day of week formatting error:", e); 
-                            }
+                                dayOfWeek = parsedDate.toLocaleDateString('ko-KR', { weekday: 'short', timeZone: 'UTC' });
+                            } catch (e) { console.error("Day of week formatting error:", e); }
                         }
                         infoHtml += `<span><strong>작업일:</strong> ${dateStr} <span class="day-of-week">(${dayOfWeek})</span></span>`;
                     }
@@ -500,15 +459,16 @@
                     addressText.textContent = address.text;
                     addressDisplay.appendChild(addressText);
 
+                    // --- Navigation Buttons ---
                     const navButtons = document.createElement('div');
                     navButtons.className = 'nav-buttons';
                     navButtons.innerHTML = `
                         <a href="${createNaverMapUrl(address.text)}" target="_blank" class="nav-btn naver-btn" title="네이버 지도로 열기">네이버 지도</a>
-                        <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 설치 필요)">T맵</a>
-                        <a href="${createKakaoMapUrl(address.text)}" target="_blank" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>
-                    `;
+                        <a href="${createTmapUrl(address.text)}" target="_self" class="nav-btn tmap-btn" title="T맵으로 길찾기 (앱 필요)">T맵</a>
+                        <a href="${createKakaoNaviUrl(address.text)}" target="_blank" class="nav-btn kakao-btn" title="카카오맵으로 열기">카카오맵</a>`;
                     addressDisplay.appendChild(navButtons);
 
+                    // --- Action Buttons (Edit/Delete) ---
                     const actionButtons = document.createElement('div');
                     actionButtons.className = 'action-buttons';
                     actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
@@ -516,27 +476,28 @@
                     actionButtons.querySelector('.delete-btn').onclick = () => deleteAddress(address.id);
                     addressDisplay.appendChild(actionButtons);
 
-                    card.append Cidad: 1
-                    Child: 1
-                    Path: /html/body/div[4]
-                    Tag: div
-                    Classes: notification
-                    Attributes: id="notification"
-                    Content: Notification message
-
                     card.appendChild(addressDisplay);
 
+                    // --- Edit Mode Area ---
                     const addressEdit = document.createElement('div');
                     addressEdit.className = 'address-edit';
                     addressEdit.innerHTML = `
-                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
-                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
-                        <div class="edit-input-group"><label>작업일자</label><input type="date" class="edit-work-date-input"></div>
-                        <div class="button-group">
-                            <button class="btn btn-primary save-edit-btn">저장</button>
-                            <button class="btn btn-secondary cancel-edit-btn">취소</button>
+                        <div class="edit-input-group">
+                            <label for="edit-input-${address.id}">주소:</label>
+                            <textarea class="edit-input" id="edit-input-${address.id}" rows="3"></textarea>
                         </div>
-                    `;
+                        <div class="edit-input-group">
+                            <label for="edit-site-name-${address.id}">현장이름:</label>
+                            <input type="text" class="edit-site-name-input" id="edit-site-name-${address.id}">
+                        </div>
+                        <div class="edit-input-group">
+                            <label for="edit-work-date-${address.id}">작업일자:</label>
+                            <input type="date" class="edit-work-date-input" id="edit-work-date-${address.id}">
+                        </div>
+                        <div class="action-buttons">
+                            <button class="action-btn save-edit-btn">저장</button>
+                            <button class="action-btn cancel-edit-btn">취소</button>
+                        </div>`;
                     addressEdit.querySelector('.save-edit-btn').onclick = () => saveEdit(address.id);
                     addressEdit.querySelector('.cancel-edit-btn').onclick = () => cancelEditMode(card);
                     card.appendChild(addressEdit);
@@ -544,64 +505,10 @@
                     addressCardsContainer.appendChild(card);
                 });
 
+                // 4. Initialize/Update SortableJS
                 const isSearchActive = currentSearchTerm.length > 0;
-                if (!sortableInstance && !isSearchActive) {
-                    initializeSortable();
+                if (!sortableInstance) {
+                    initializeSortable(); // Create instance if it doesn't exist
                 }
                 if (sortableInstance) {
-                    sortableInstance.option("disabled", isSearchActive);
-                }
-            }
-        }
-
-        // --- Initialize SortableJS ---
-        function initializeSortable() {
-            if (sortableInstance) sortableInstance.destroy();
-            sortableInstance = new Sortable(addressCardsContainer, {
-                handle: '.drag-handle',
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                delay: 150,
-                delayOnTouchOnly: true,
-                disabled: false,
-                onEnd: function (evt) {
-                    if (evt.oldIndex === evt.newIndex) return;
-
-                    const orderedIds = Array.from(addressCardsContainer.children)
-                        .filter(card => card.classList.contains('address-card') && card.dataset.id)
-                        .map(card => parseInt(card.dataset.id, 10));
-
-                    const addressMap = new Map(savedAddresses.map(addr => [addr.id, addr]));
-                    const newOrderedAddresses = orderedIds
-                        .map(id => addressMap.get(id))
-                        .filter(Boolean);
-
-                    savedAddresses.forEach(addr => {
-                        if (!newOrderedAddresses.some(orderedAddr => orderedAddr.id === addr.id)) {
-                            newOrderedAddresses.push(addr);
-                        }
-                    });
-
-                    savedAddresses = newOrderedAddresses;
-                    backupToFirebase();
-                    console.log('Address order updated');
-                },
-            });
-        }
-
-        // --- Event Listeners ---
-        saveButton.addEventListener('click', saveAddress);
-        addressInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                saveAddress();
-            }
-        });
-        searchInput.addEventListener('input', renderAddresses);
-
-        // --- Initial Load ---
-        restoreFromFirebase();
-    </script>
-</body>
-</html>
+                    sortableInstance.
