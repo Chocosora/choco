@@ -7,8 +7,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-database-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Flatpickr 추가 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
-        /* --- Base Styles & Variables --- */
         :root {
             --primary-color: #4263eb; --primary-hover: #364fc7; --secondary-color: #f8f9fa;
             --border-color: #ced4da; --text-color: #343a40; --light-gray: #e9ecef;
@@ -23,23 +25,19 @@
             color: var(--text-color); line-height: 1.6;
         }
         header { text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--text-color); margin-bottom: 8px; font-size: 26px; }
-        h2 { color: var(--text-color); margin-bottom: 15px; font-size: 20px; margin-top: 30px; }
+        h1 { color: var(--text-color); font-size: 26px; margin-bottom: 8px; }
+        h2 { color: var(--text-color); font-size: 20px; margin: 30px 0 15px; }
         .subtitle { color: #6c757d; font-size: 15px; }
         .container { background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: var(--box-shadow); }
-
-        /* --- Input & Buttons --- */
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057; }
-        textarea, .input-group input[type="text"], .input-group input[type="date"], #searchInput, .edit-input, .edit-site-name-input, .edit-work-dates-input {
+        textarea, .input-group input[type="text"], #searchInput {
             width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
             border-radius: 4px; font-size: 15px; transition: border-color 0.2s;
             font-family: inherit; -webkit-appearance: none; appearance: none;
         }
         textarea { resize: vertical; min-height: 80px; }
-         .edit-work-dates-input { min-height: 50px; } /* Adjust height for dates textarea */
-
-        textarea:focus, .input-group input[type="text"]:focus, .input-group input[type="date"]:focus, #searchInput:focus, .edit-input:focus, .edit-site-name-input:focus, .edit-work-dates-input:focus {
+        textarea:focus, .input-group input[type="text"]:focus, #searchInput:focus {
             outline: 2px solid var(--primary-color); border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(66, 99, 235, 0.2);
         }
@@ -50,44 +48,27 @@
         .btn-secondary { background-color: var(--light-gray); color: var(--text-color); }
         .btn-secondary:hover { background-color: #dee2e6; }
         .button-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
-
-        /* --- Search --- */
         .search-container { margin-bottom: 20px; }
-
-        /* --- Address List & Cards --- */
         .saved-addresses { margin-top: 15px; }
         .address-card {
             background-color: white; border-radius: 8px; padding: 15px;
             margin-bottom: 12px; box-shadow: var(--box-shadow);
             transition: transform 0.2s, box-shadow 0.2s; position: relative;
         }
-        .address-card:active {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
+        .address-card:active { box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
-        .sortable-chosen { /* Optional: Style for the item being dragged */ }
-
-        /* --- Drag Handle --- */
         .drag-handle {
-            position: absolute; top: 10px; right: 10px;
-            cursor: grab; color: #adb5bd; font-size: 20px;
-            padding: 5px; line-height: 1; z-index: 10;
-            touch-action: none;
+            position: absolute; top: 10px; right: 10px; cursor: grab; color: #adb5bd;
+            font-size: 20px; padding: 5px; line-height: 1; z-index: 10; touch-action: none;
         }
         .drag-handle:active { cursor: grabbing; }
-        .edit-mode .drag-handle { display: none; }
+        .edit-mode .drag-handle { display: none;оту
 
-        /* --- Card Content --- */
         .address-info { margin-bottom: 8px; font-size: 13px; color: #495057; }
         .address-info strong { color: var(--text-color); margin-right: 4px; }
         .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
-        .work-dates-list { display: inline; } /* Allow dates to flow */
-        .work-dates-list span { display: inline-block; margin-right: 5px; } /* Individual date display */
-         .work-dates-list span:not(:last-child):after { content: ","; margin-right: 5px; } /* Add comma after date */
         .day-of-week { color: #6c757d; font-size: 12px; margin-left: 2px; }
         .address-text { margin-bottom: 12px; font-size: 15px; word-break: break-all; }
-
-        /* --- Navigation & Action Buttons --- */
         .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
         .nav-btn { padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; text-decoration: none; font-weight: bold; transition: opacity 0.2s, transform 0.1s; border: 1px solid transparent; min-height: 38px; display: flex; align-items: center; justify-content: center; min-width: 80px; touch-action: manipulation; }
         .nav-btn:hover { opacity: 0.85; }
@@ -98,21 +79,20 @@
         .action-buttons { display: flex; gap: 10px; margin-top: 10px; }
         .action-btn { flex: 1; padding: 8px 0; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; background-color: var(--light-gray); color: var(--text-color); transition: background-color 0.2s; font-weight: 500; min-height: 36px; min-width: 80px; touch-action: manipulation; }
         .action-btn:hover { background-color: #dee2e6; }
-
-        /* --- Edit Mode --- */
         .edit-mode .address-display { display: none; }
         .address-edit { display: none; }
         .edit-mode .address-edit { display: block; }
         .edit-mode .address-card { cursor: default; }
         .edit-input-group { margin-bottom: 10px; }
-        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px; display: block;} /* Ensure label is block */
+        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px; }
         .edit-input, .edit-site-name-input, .edit-work-dates-input {
-             width: 100%; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none;
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border-color);
+            border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none;
         }
-        .edit-input:focus, .edit-site-name-input:focus, .edit-work-dates-input:focus { outline: 2px solid var(--primary-color); border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15); }
-
-
-        /* --- Etc --- */
+        .edit-input:focus, .edit-site-name-input:focus, .edit-work-dates-input:focus {
+            outline: 2px solid var(--primary-color); border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
+        }
         .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px); background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out; z-index: 1000; font-size: 14px; text-align: center; }
         .notification.show { transform: translateY(0); opacity: 1; }
         .notification.success { background-color: var(--success-color); }
@@ -124,6 +104,7 @@
         .sync-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
         .sync-indicator.online { background-color: var(--success-color); }
         .sync-indicator.offline { background-color: var(--error-color); }
+        .flatpickr-calendar { z-index: 1000; }
         @media (max-width: 600px) {
             h1 { font-size: 24px; } h2 { font-size: 18px; } .subtitle { font-size: 14px; }
             .container { padding: 15px; }
@@ -152,8 +133,8 @@
             <input type="text" id="siteNameInput" placeholder="예: 목동 아파트 현장">
         </div>
         <div class="input-group">
-            <label for="workDatesInput">작업일자 (선택, 여러 날짜는 쉼표로 구분)</label>
-            <textarea id="workDatesInput" placeholder="예: 2023-10-26, 2023-11-15"></textarea>
+            <label for="workDatesInput">작업일자 (선택, 복수 선택 가능)</label>
+            <input type="text" id="workDatesInput" placeholder="날짜를 선택하세요">
         </div>
         <div class="button-group">
             <button id="saveButton" class="btn btn-primary">저장하기</button>
@@ -162,15 +143,15 @@
 
     <div class="search-container">
         <label for="searchInput" style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057;">주소 검색</label>
-        <input type="search" id="searchInput" placeholder="주소, 현장이름 또는 작업일자로 검색...">
+        <input type="search" id="searchInput" placeholder="주소 또는 현장이름으로 검색...">
     </div>
 
     <h2>저장된 주소 (핸들 드래그하여 순서 변경)</h2>
     <div id="savedAddresses" class="saved-addresses">
         <div id="emptyState" class="empty-state">
             <div class="empty-state-icon">📂</div>
-            <p id="emptyStateMsg">저장된 주소가 없습니다.</p>
-            <p style="font-size: 13px; color: #868e96; display: none;" id="noSearchResultMsg">검색 결과가 없습니다.</p>
+            <p>저장된 주소가 없습니다.</p>
+            <p style="font-size: 13px; color: #868e96; display: none;" id="noSearchResult">검색 결과가 없습니다.</p>
         </div>
         <div id="addressCards"></div>
     </div>
@@ -180,45 +161,37 @@
     <script>
         // --- Firebase Configuration ---
         const firebaseConfig = {
-            apiKey: "your-api-key", // Replace with your Firebase API Key
-            authDomain: "chocosora-ad4df.firebaseapp.com", // Replace with your Auth Domain
-            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/", // Replace with your Database URL
-            projectId: "chocosora-ad4df", // Replace with your Project ID
-            storageBucket: "chocosora-ad4df.appspot.com", // Replace with your Storage Bucket
-            messagingSenderId: "your-messaging-sender-id", // Replace with your Messaging Sender ID
-            appId: "your-app-id" // Replace with your App ID
+            apiKey: "your-api-key",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com/",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.appspot.com",
+            messagingSenderId: "your-messaging-sender-id",
+            appId: "your-app-id"
         };
 
-        // Check if Firebase is already initialized (e.g., in a multi-page app or hot reload)
-        let firebaseApp;
-        if (!firebase.apps.length) {
-             try {
-                firebaseApp = firebase.initializeApp(firebaseConfig);
-                console.log("Firebase initialized with databaseURL:", firebaseConfig.databaseURL);
-            } catch (err) {
-                console.error("Firebase initialization failed:", err);
-                showNotification("Firebase 초기화 실패: " + err.message, "error");
-            }
-        } else {
-            firebaseApp = firebase.app();
-            console.log("Firebase already initialized.");
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized with databaseURL:", firebaseConfig.databaseURL);
+        } catch (err) {
+            console.error("Firebase initialization failed:", err);
+            showNotification("Firebase 초기화 실패: " + err.message, "error");
         }
 
-
-        const database = firebaseApp ? firebaseApp.database() : null;
+        const database = firebase.database();
         const sharedDataKey = "my-secret-addr-key-april2025";
         const firebaseDataPath = `addresses/${sharedDataKey}`;
 
         // --- DOM Elements ---
         const addressInput = document.getElementById("addressInput");
         const siteNameInput = document.getElementById("siteNameInput");
-        const workDatesInput = document.getElementById("workDatesInput"); // Changed to workDatesInput
+        const workDatesInput = document.getElementById("workDatesInput");
         const saveButton = document.getElementById("saveButton");
         const searchInput = document.getElementById("searchInput");
         const addressCardsContainer = document.getElementById("addressCards");
         const emptyState = document.getElementById("emptyState");
-        const emptyStateMsg = document.getElementById("emptyStateMsg"); // Updated ID
-        const noSearchResultMsg = document.getElementById("noSearchResultMsg"); // Updated ID
+        const emptyStateMsg = emptyState.querySelector("p:first-of-type");
+        const noSearchResultMsg = document.getElementById("noSearchResult");
         const notification = document.getElementById("notification");
         const syncIndicator = document.getElementById("syncIndicator");
         const syncStatusText = document.getElementById("syncStatusText");
@@ -227,21 +200,34 @@
         let savedAddresses = [];
         let sortableInstance = null;
 
-        // --- Firebase Connection Status ---
-        if (database) {
-             const connectedRef = database.ref(".info/connected");
-             connectedRef.on("value", (snap) => {
-                 const isOnline = snap.val();
-                 syncIndicator.className = `sync-indicator ${isOnline ? "online" : "offline"}`;
-                 syncStatusText.textContent = isOnline ? "온라인 (자동 동기화)" : "오프라인";
-                 syncStatusText.style.color = isOnline ? "var(--success-color)" : "var(--error-color)";
-             });
-        } else {
-            syncIndicator.className = 'sync-indicator offline';
-            syncStatusText.textContent = 'Firebase 연결 실패';
-            syncStatusText.style.color = 'var(--error-color)';
-        }
+        // --- Initialize Flatpickr ---
+        flatpickr(workDatesInput, {
+            mode: "multiple",
+            dateFormat: "Y-m-d",
+            locale: {
+                firstDayOfWeek: 1,
+                weekdays: {
+                    shorthand: ["일", "월", "화", "수", "목", "금", "토"],
+                    longhand: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
+                },
+                months: {
+                    shorthand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
+                    longhand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
+                }
+            },
+            onChange: function(selectedDates) {
+                workDatesInput.value = selectedDates.map(date => date.toISOString().split("T")[0]).join(", ");
+            }
+        });
 
+        // --- Firebase Connection Status ---
+        const connectedRef = database.ref(".info/connected");
+        connectedRef.on("value", (snap) => {
+            const isOnline = snap.val();
+            syncIndicator.className = `sync-indicator ${isOnline ? "online" : "offline"}`;
+            syncStatusText.textContent = isOnline ? "온라인 (자동 동기화)" : "오프라인";
+            syncStatusText.style.color = isOnline ? "var(--success-color)" : "var(--error-color)";
+        });
 
         // --- Notifications ---
         function showNotification(message, type = "success") {
@@ -259,51 +245,14 @@
             let lastGoodAddressIndex = -1;
             for (let i = 0; i < parts.length; i++) {
                 const currentPart = parts[i];
-                // Check for common address endings followed by numbers
-                const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart); // e.g., 962 or 962-1
-                const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart); // e.g., 962번지 or 962-1번지
-                 // Also consider road numbers like 123호, 5층
-                 const isUnitNumber = /^\d+(층|호)$/.test(currentPart);
-                if ((isAddressNumber || isAddressBunji || isUnitNumber) && i > 0 && /[로길가동리]$/.test(parts[i-1])) {
+                const isAddressNumber = /^\d+([-]\d+)?$/.test(currentPart);
+                const isAddressBunji = /^\d+([-]?\d*)번지$/.test(currentPart);
+                if ((isAddressNumber || isAddressBunji) && i > 0 && /[로길가동리]$/.test(parts[i-1])) {
                     lastGoodAddressIndex = i;
                 }
             }
-             // If a specific number/unit was found after a street/town name, truncate there.
-             // Otherwise, return the whole text. This is a heuristic and might not be perfect.
-             return lastGoodAddressIndex !== -1 ? parts.slice(0, lastGoodAddressIndex + 1).join(" ") : text;
+            return lastGoodAddressIndex !== -1 ? parts.slice(0, lastGoodAddressIndex + 1).join(" ") : text;
         }
-
-         // --- Date Parsing ---
-         function parseDateString(dateString) {
-             if (!dateString || typeof dateString !== 'string') return null;
-             const parts = dateString.trim().split('-');
-             if (parts.length === 3) {
-                 const year = parseInt(parts[0], 10);
-                 const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-                 const day = parseInt(parts[2], 10);
-
-                 if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                     // Use UTC to avoid timezone issues with dates
-                     const dateObj = new Date(Date.UTC(year, month, day));
-                     // Check if the created date components match the input components
-                     if (dateObj.getUTCFullYear() === year && dateObj.getUTCMonth() === month && dateObj.getUTCDate() === day) {
-                         return dateObj;
-                     }
-                 }
-             }
-             return null;
-         }
-
-         function formatWorkDate(dateObj) {
-              if (!dateObj) return '';
-              const year = dateObj.getUTCFullYear();
-              const month = (dateObj.getUTCMonth() + 1).toString().padStart(2, '0');
-              const day = dateObj.getUTCDate().toString().padStart(2, '0');
-              const daysOfWeek = ["일", "월", "화", "수", "목", "금", "토"];
-              const dayOfWeek = daysOfWeek[dateObj.getUTCDay()];
-              return `${year}-${month}-${day} (${dayOfWeek})`;
-         }
-
 
         // --- Navigation URLs ---
         function createNaverMapUrl(addr) {
@@ -314,23 +263,17 @@
         }
         function createKakaoMapUrl(addr) {
             const cleanAddr = getCleanAddressForNavigation(addr);
-            // KakaoMap scheme requires search query parameters to be double-encoded and spaces as '+'
             const encodedAddr = encodeURIComponent(cleanAddr).replace(/%20/g, '+');
-             const kakaoMapUrl = `https://map.kakao.com/?q=${encodedAddr}`; // Use search query parameter
+            const kakaoMapUrl = `https://m.map.kakao.com/scheme/index.do?searchName=${encodedAddr}`;
             console.log("Generated KakaoMap URL:", kakaoMapUrl);
             return kakaoMapUrl;
         }
 
         // --- Check Safari Settings ---
         function checkSafariSettings() {
-            // This check might not be strictly necessary for just opening map links,
-            // but keeping it as it was in the original code. Location services are more
-            // relevant if embedding maps or getting current location.
-             /*
             if (!navigator.geolocation) {
                 showNotification("위치 서비스가 비활성화되었습니다. Safari 설정에서 위치 서비스를 활성화하세요.", "warning");
             }
-            */
             if (!navigator.onLine) {
                 showNotification("인터넷 연결이 없습니다. 네트워크를 확인하세요.", "error");
             }
@@ -341,15 +284,13 @@
             const currentSearchTerm = searchInput.value.trim().toLowerCase();
             addressCardsContainer.innerHTML = "";
 
-            // Use the savedAddresses array directly for rendering order
-            const addressesToRender = [...savedAddresses]; // Create a copy to filter
+            const sortedAddresses = sortAddresses([...savedAddresses]);
 
-            const filteredAddresses = addressesToRender.filter(address => {
+            const filteredAddresses = sortedAddresses.filter(address => {
                 if (!currentSearchTerm) return true;
                 const textMatch = (address.text || "").toLowerCase().includes(currentSearchTerm);
                 const siteMatch = (address.siteName || "").toLowerCase().includes(currentSearchTerm);
-                 const datesMatch = (address.workDates || []).some(dateStr => dateStr.includes(currentSearchTerm)); // Search within dates array
-                return textMatch || siteMatch || datesMatch;
+                return textMatch || siteMatch;
             });
 
             if (filteredAddresses.length === 0) {
@@ -357,17 +298,15 @@
                 emptyStateMsg.style.display = currentSearchTerm ? "none" : "block";
                 noSearchResultMsg.style.display = currentSearchTerm ? "block" : "none";
                 if (sortableInstance) {
-                    sortableInstance.option("disabled", true); // Disable sorting when empty or filtered to none
+                    sortableInstance.destroy();
+                    sortableInstance = null;
                 }
             } else {
                 emptyState.style.display = "none";
-                emptyStateMsg.style.display = "none";
-                noSearchResultMsg.style.display = "none";
-
                 filteredAddresses.forEach((address) => {
                     const card = document.createElement("div");
                     card.className = "address-card";
-                    card.dataset.id = address.id; // Use data-id for SortableJS and editing
+                    card.dataset.id = address.id;
 
                     const dragHandle = document.createElement("span");
                     dragHandle.className = "drag-handle";
@@ -378,27 +317,32 @@
                     const addressDisplay = document.createElement("div");
                     addressDisplay.className = "address-display";
 
-                    let infoHtmlParts = [];
+                    let infoHtml = "";
                     if (address.siteName) {
-                        infoHtmlParts.push(`<span><strong>현장:</strong> ${address.siteName}</span>`);
+                        infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
                     }
                     if (address.workDates && address.workDates.length > 0) {
-                         const dateSpans = address.workDates.map(dateStr => {
-                              const parsedDate = parseDateString(dateStr);
-                              const dayOfWeek = parsedDate ? parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "UTC" }) : '?';
-                              return `<span>${dateStr} <span class="day-of-week">(${dayOfWeek})</span></span>`;
-                         }).join(''); // Join with empty string, comma added via CSS
-
-                         infoHtmlParts.push(`<span><strong>작업일:</strong> <span class="work-dates-list">${dateSpans}</span></span>`);
+                        const dateStrings = address.workDates.map(dateStr => {
+                            const parsedDate = parseWorkDate(dateStr);
+                            let dayOfWeek = "?";
+                            if (parsedDate) {
+                                try {
+                                    dayOfWeek = parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "UTC" });
+                                } catch (e) {
+                                    console.error("Day of week formatting error:", e);
+                                }
+                            }
+                            return `${dateStr} <span class="day-of-week">(${dayOfWeek})</span>`;
+                        }).join(", ");
+                        infoHtml += `<span><strong>작업일:</strong> ${dateStrings}</span>`;
                     }
 
-                    if (infoHtmlParts.length > 0) {
+                    if (infoHtml) {
                         const addressInfo = document.createElement("div");
                         addressInfo.className = "address-info";
-                        addressInfo.innerHTML = infoHtmlParts.join('<span>|</span>'); // Join with | between sections
+                        addressInfo.innerHTML = infoHtml;
                         addressDisplay.appendChild(addressInfo);
                     }
-
 
                     const addressText = document.createElement("div");
                     addressText.className = "address-text";
@@ -423,16 +367,36 @@
 
                     card.appendChild(addressDisplay);
 
-                    // Edit mode HTML
                     const addressEdit = document.createElement("div");
                     addressEdit.className = "address-edit";
                     addressEdit.innerHTML = `
-                        <div class="edit-input-group"><label>주소</label><textarea class="edit-input"></textarea></div> <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
-                        <div class="edit-input-group"><label>작업일자 (쉼표로 구분)</label><textarea class="edit-work-dates-input" placeholder="예: 2023-10-26, 2023-11-15"></textarea></div> <div class="button-group">
+                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
+                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
+                        <div class="edit-input-group"><label>작업일자 (복수 선택 가능)</label><input type="text" class="edit-work-dates-input"></div>
+                        <div class="button-group">
                             <button class="btn btn-primary save-edit-btn">저장</button>
                             <button class="btn btn-secondary cancel-edit-btn">취소</button>
                         </div>
                     `;
+                    const editDatesInput = addressEdit.querySelector(".edit-work-dates-input");
+                    flatpickr(editDatesInput, {
+                        mode: "multiple",
+                        dateFormat: "Y-m-d",
+                        locale: {
+                            firstDayOfWeek: 1,
+                            weekdays: {
+                                shorthand: ["일", "월", "화", "수", "목", "금", "토"],
+                                longhand: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
+                            },
+                            months: {
+                                shorthand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
+                                longhand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
+                            }
+                        },
+                        onChange: function(selectedDates) {
+                            editDatesInput.value = selectedDates.map(date => date.toISOString().split("T")[0]).join(", ");
+                        }
+                    });
                     addressEdit.querySelector(".save-edit-btn").onclick = () => saveEdit(address.id);
                     addressEdit.querySelector(".cancel-edit-btn").onclick = () => cancelEditMode(card);
                     card.appendChild(addressEdit);
@@ -440,36 +404,30 @@
                     addressCardsContainer.appendChild(card);
                 });
 
-                 const isSearchActive = currentSearchTerm.length > 0;
-                 if (sortableInstance) {
-                      // Disable sorting if search is active
-                      sortableInstance.option("disabled", isSearchActive);
-                 } else if (!isSearchActive && filteredAddresses.length > 0) {
-                      // Initialize sortable only if no search is active and there are items
-                      initializeSortable();
-                 } else if (isSearchActive && sortableInstance) {
-                     // If search becomes active while sortable is initialized
-                      sortableInstance.option("disabled", true);
-                 }
+                const isSearchActive = currentSearchTerm.length > 0;
+                if (sortableInstance) {
+                    sortableInstance.option("disabled", isSearchActive);
+                } else if (!isSearchActive && filteredAddresses.length > 0) {
+                    initializeSortable();
+                }
             }
         }
 
         // --- Firebase Data Operations ---
         function backupToFirebase() {
-            if (!database) {
-                 console.error("Firebase database is not initialized.");
-                 showNotification("데이터 저장 실패: Firebase 연결 오류", "error");
-                 return;
-            }
             if (!navigator.onLine) {
                 showNotification("오프라인 상태입니다. 네트워크를 확인하세요.", "warning");
+                return;
+            }
+            if (!firebase.app()?.options?.databaseURL) {
+                showNotification("Firebase가 초기화되지 않았습니다.", "error");
                 return;
             }
             console.log("Saving to Firebase at path:", firebaseDataPath);
             database.ref(firebaseDataPath).set(savedAddresses)
                 .then(() => {
                     console.log("Firebase save successful");
-                    // showNotification("데이터가 저장되었습니다."); // Avoid spamming notifications on sync
+                    showNotification("데이터가 저장되었습니다.");
                 })
                 .catch((err) => {
                     console.error("Firebase save failed:", err);
@@ -478,22 +436,25 @@
         }
 
         function restoreFromFirebase() {
-             if (!database) {
-                  console.error("Firebase database is not initialized.");
-                  savedAddresses = [];
-                  renderAddresses();
-                  return;
-             }
             console.log("Loading data from Firebase at path:", firebaseDataPath);
+            if (!firebase.app()?.options?.databaseURL) {
+                console.error("Firebase not initialized.");
+                showNotification("Firebase 연결 오류", "error");
+                savedAddresses = [];
+                renderAddresses();
+                return;
+            }
             database.ref(firebaseDataPath).once("value")
                 .then((snapshot) => {
                     const data = snapshot.val();
                     if (data && Array.isArray(data)) {
-                        // Ensure loaded data has the workDates array, even if empty
-                        savedAddresses = data.map(item => ({
-                             ...item,
-                             workDates: Array.isArray(item.workDates) ? item.workDates : (item.workDate ? [item.workDate] : []) // Handle old single workDate
-                         }));
+                        // 기존 단일 workDate를 배열로 변환하여 호환성 유지
+                        savedAddresses = data.map(addr => ({
+                            ...addr,
+                            workDates: addr.workDate
+                                ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
+                                : addr.workDates || []
+                        }));
                         console.log(`Firebase load complete: ${savedAddresses.length} items`);
                         showNotification("데이터를 성공적으로 로드했습니다.");
                     } else {
@@ -501,8 +462,6 @@
                         savedAddresses = [];
                         showNotification("저장된 데이터가 없습니다.", "warning");
                     }
-                     // Apply initial sort order before rendering the first time
-                     sortAddressesBasedOnDate();
                     renderAddresses();
                 })
                 .catch((err) => {
@@ -514,171 +473,62 @@
         }
 
         function initializeRealtimeSync() {
-             if (!database) {
-                 console.error("Firebase database is not initialized.");
-                 return;
-             }
             console.log("Initializing realtime sync for path:", firebaseDataPath);
             database.ref(firebaseDataPath).on("value", (snapshot) => {
                 const data = snapshot.val();
-                let updatedAddresses = [];
                 if (data && Array.isArray(data)) {
-                     updatedAddresses = data.map(item => ({
-                          ...item,
-                          workDates: Array.isArray(item.workDates) ? item.workDates : (item.workDate ? [item.workDate] : []) // Handle old single workDate
-                      }));
-                    console.log(`Realtime update: ${updatedAddresses.length} items`);
-                     // Only update and render if the data has actually changed
-                     if (JSON.stringify(savedAddresses) !== JSON.stringify(updatedAddresses)) {
-                         savedAddresses = updatedAddresses;
-                          // Realtime updates should preserve the order from Firebase
-                          // sortAddressesBasedOnDate(); // Don't auto-sort on every realtime update, rely on Firebase order
-                         renderAddresses();
-                         console.log("Realtime update rendered.");
-                     } else {
-                         console.log("Realtime update received but data is unchanged.");
-                     }
+                    savedAddresses = data.map(addr => ({
+                        ...addr,
+                        workDates: addr.workDate
+                            ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
+                            : addr.workDates || []
+                    }));
+                    console.log(`Realtime update: ${savedAddresses.length} items`);
                 } else {
-                    if (savedAddresses.length > 0) { // If we previously had data but now Firebase is empty/invalid
-                         console.warn("Realtime data is not an array or is empty:", data);
-                         savedAddresses = []; // Clear local data if Firebase data is invalid
-                         renderAddresses();
-                         showNotification("저장된 데이터가 초기화되었습니다.", "warning");
-                    } else {
-                         console.log("Realtime update received, but no data in Firebase.");
-                    }
+                    savedAddresses = [];
+                    console.warn("Realtime data is not an array:", data);
                 }
-
+                renderAddresses();
             }, (err) => {
                 console.error("Realtime sync error:", err);
                 showNotification(`실시간 동기화 오류: ${err.message}`, "error");
             });
         }
 
-         // --- Date String Parsing for Array Input ---
-         function parseWorkDatesInput(inputText) {
-              if (!inputText) return [];
-              return inputText.split(',')
-                  .map(dateStr => dateStr.trim())
-                  .filter(dateStr => dateStr.length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)); // Basic YYYY-MM-DD format check
-         }
-
-         // --- Sorting Logic Helper ---
-         function getPrimarySortDate(workDates) {
-              if (!workDates || workDates.length === 0) return null;
-
-              const today = new Date();
-              today.setUTCHours(0, 0, 0, 0);
-
-              let earliestUpcomingOrToday = null;
-              let latestPastDate = null;
-
-              workDates.forEach(dateStr => {
-                  const dateObj = parseDateString(dateStr);
-                  if (dateObj) {
-                      if (dateObj >= today) {
-                          if (!earliestUpcomingOrToday || dateObj < earliestUpcomingOrToday) {
-                              earliestUpcomingOrToday = dateObj;
-                          }
-                      } else {
-                          if (!latestPastDate || dateObj > latestPastDate) {
-                              latestPastDate = dateObj;
-                          }
-                      }
-                  }
-              });
-
-              // Prioritize upcoming/today dates
-              return earliestUpcomingOrToday || latestPastDate;
-         }
-
-         // --- Sort the savedAddresses array based on date logic ---
-         function sortAddressesBasedOnDate() {
-              const today = new Date();
-              today.setUTCHours(0, 0, 0, 0); // Use UTC midnight for consistent date comparisons
-
-              savedAddresses.sort((a, b) => {
-                  const dateA = getPrimarySortDate(a.workDates);
-                  const dateB = getPrimarySortDate(b.workDates);
-
-                  // Case 1: Both have no valid dates or are null
-                  if (!dateA && !dateB) {
-                      // Sort by creation date (newest first)
-                      return new Date(b.createdAt) - new Date(a.createdAt);
-                  }
-                  // Case 2: Only A has dates, A comes first
-                  if (dateA && !dateB) return -1;
-                  // Case 3: Only B has dates, B comes first
-                  if (!dateA && dateB) return 1;
-
-                  // Case 4: Both have dates - compare the primary sort dates
-                  const isAFutureOrToday = dateA >= today;
-                  const isBFutureOrToday = dateB >= today;
-
-                  if (isAFutureOrToday && isBFutureOrToday) {
-                      // Both upcoming/today: sort earliest first
-                      return dateA - dateB;
-                  }
-                  if (isAFutureOrToday) {
-                      // A is upcoming/today, B is past: A comes first
-                      return -1;
-                  }
-                  if (isBFutureOrToday) {
-                       // B is upcoming/today, A is past: B comes first
-                      return 1;
-                  }
-                  // Both are past dates: sort latest first
-                  return dateB - dateA;
-              });
-         }
-
-
         // --- Address Management ---
         function saveAddress() {
             const addressText = addressInput.value.trim();
             const siteName = siteNameInput.value.trim();
-            const workDates = parseWorkDatesInput(workDatesInput.value); // Parse multiple dates
+            const workDates = workDatesInput.value ? workDatesInput.value.split(", ").filter(date => date) : [];
 
             if (!addressText) {
                 showNotification("주소를 입력하세요.", "warning");
                 addressInput.focus();
                 return;
             }
-
-             // Simple check for duplicate content (address, site, exact date array match)
-             // Note: Order of dates in the array matters for this check.
-             const isDuplicate = savedAddresses.some(addr =>
-                 addr.text === addressText &&
-                 addr.siteName === siteName &&
-                 JSON.stringify(addr.workDates || []) === JSON.stringify(workDates)
-             );
-
-            if (isDuplicate) {
+            if (savedAddresses.some(addr => 
+                addr.text === addressText && 
+                addr.siteName === siteName && 
+                JSON.stringify(addr.workDates || []) === JSON.stringify(workDates)
+            )) {
                 showNotification("이미 동일한 내용으로 저장된 주소입니다.", "warning");
                 return;
             }
 
             const newAddress = {
-                id: Date.now(), // Unique ID using timestamp
+                id: Date.now(),
                 text: addressText,
                 siteName: siteName,
-                workDates: workDates, // Store as array
-                createdAt: new Date().toISOString() // For secondary sorting
+                workDates: workDates,
+                createdAt: new Date().toISOString()
             };
-
-            savedAddresses.unshift(newAddress); // Add new address to the beginning
-             // No need to sort here, new item is at the start.
-             // Sorting happens on initial load or if explicitly triggered later.
-
-            backupToFirebase(); // Save to Firebase
-
-            // Clear input fields
+            savedAddresses.unshift(newAddress);
+            backupToFirebase();
+            searchInput.value = "";
+            renderAddresses();
             addressInput.value = "";
             siteNameInput.value = "";
             workDatesInput.value = "";
-            searchInput.value = ""; // Clear search to show the new item at the top
-
-            renderAddresses(); // Re-render the list
             showNotification("주소가 저장되었습니다.");
         }
 
@@ -693,33 +543,20 @@
 
         // --- Edit Mode ---
         function enableEditMode(cardElement, addressData) {
-             // Close any other open edit modes first
-             document.querySelectorAll('.address-card.edit-mode').forEach(card => {
-                  if (card !== cardElement) {
-                       cancelEditMode(card);
-                  }
-             });
-
             cardElement.classList.add("edit-mode");
             cardElement.querySelector(".edit-input").value = addressData.text;
             cardElement.querySelector(".edit-site-name-input").value = addressData.siteName || "";
-             // Join the workDates array back into a comma-separated string for the textarea
-            cardElement.querySelector(".edit-work-dates-input").value = (addressData.workDates || []).join(', ');
+            cardElement.querySelector(".edit-work-dates-input").value = (addressData.workDates || []).join(", ");
             cardElement.querySelector(".edit-input").focus();
-            if (sortableInstance) sortableInstance.option("disabled", true); // Disable sorting while editing
+            if (sortableInstance) sortableInstance.option("disabled", true);
         }
 
         function cancelEditMode(cardElement) {
             cardElement.classList.remove("edit-mode");
             const isSearchActive = searchInput.value.trim().length > 0;
-             // Re-enable sortable unless search is active
             if (sortableInstance && !isSearchActive) {
                 sortableInstance.option("disabled", false);
             }
-             // Re-render the card content just in case (optional, but safe)
-             // Or find the address data and update the display HTML for this card
-             // A full re-render is simpler here
-             renderAddresses();
         }
 
         function saveEdit(id) {
@@ -728,7 +565,9 @@
 
             const newText = card.querySelector(".edit-input").value.trim();
             const newSiteName = card.querySelector(".edit-site-name-input").value.trim();
-             const newWorkDates = parseWorkDatesInput(card.querySelector(".edit-work-dates-input").value); // Parse multiple dates
+            const newWorkDates = card.querySelector(".edit-work-dates-input").value 
+                ? card.querySelector(".edit-work-dates-input").value.split(", ").filter(date => date) 
+                : [];
 
             if (!newText) {
                 showNotification("주소를 비울 수 없습니다.", "warning");
@@ -737,160 +576,118 @@
 
             const addressIndex = savedAddresses.findIndex(addr => addr.id === id);
             if (addressIndex !== -1) {
-                 // Simple check if content actually changed before saving
-                 const originalAddress = savedAddresses[addressIndex];
-                 const contentChanged = originalAddress.text !== newText ||
-                                        originalAddress.siteName !== newSiteName ||
-                                        JSON.stringify(originalAddress.workDates || []) !== JSON.stringify(newWorkDates);
-
-
-                 savedAddresses[addressIndex].text = newText;
-                 savedAddresses[addressIndex].siteName = newSiteName;
-                 savedAddresses[addressIndex].workDates = newWorkDates; // Save as array
-
-                 cancelEditMode(card); // Exit edit mode BEFORE saving to prevent issues
-
-                 if (contentChanged) {
-                      backupToFirebase(); // Save to Firebase only if content changed
-                      renderAddresses(); // Re-render the list
-                      showNotification("주소가 수정되었습니다.");
-                 } else {
-                     showNotification("수정된 내용이 없습니다.");
-                     renderAddresses(); // Re-render to ensure display is updated
-                 }
-
+                savedAddresses[addressIndex].text = newText;
+                savedAddresses[addressIndex].siteName = newSiteName;
+                savedAddresses[addressIndex].workDates = newWorkDates;
+                backupToFirebase();
+                renderAddresses();
+                showNotification("주소가 수정되었습니다.");
             } else {
                 showNotification("주소 수정 중 오류 발생", "error");
                 cancelEditMode(card);
-                 renderAddresses(); // Ensure list is consistent
             }
         }
 
+        // --- Date Helper ---
+        function parseWorkDate(dateString) {
+            if (!dateString) return null;
+            try {
+                const parts = dateString.split("-");
+                if (parts.length === 3) {
+                    const year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, day = parseInt(parts[2], 10);
+                    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                        const dateObj = new Date(Date.UTC(year, month, day));
+                        if (dateObj.getUTCFullYear() === year && dateObj.getUTCMonth() === month && dateObj.getUTCDate() === day) {
+                            return dateObj;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Date parsing error:", dateString, e);
+            }
+            return null;
+        }
+
+        // --- Sort Addresses ---
+        function sortAddresses(addresses) {
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0);
+
+            return addresses.sort((a, b) => {
+                const datesA = (a.workDates || []).map(parseWorkDate).filter(Boolean);
+                const datesB = (b.workDates || []).map(parseWorkDate).filter(Boolean);
+
+                if (datesA.length === 0 && datesB.length === 0) {
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+                if (datesA.length === 0) return 1;
+                if (datesB.length === 0) return -1;
+
+                const earliestA = Math.min(...datesA.map(d => d.getTime()));
+                const earliestB = Math.min(...datesB.map(d => d.getTime()));
+
+                const isAFutureOrToday = earliestA >= today.getTime();
+                const isBFutureOrToday = earliestB >= today.getTime();
+
+                if (isAFutureOrToday && isBFutureOrToday) {
+                    return earliestA - earliestB;
+                }
+                if (isAFutureOrToday) return -1;
+                if (isBFutureOrToday) return 1;
+
+                return earliestB - earliestA;
+            });
+        }
 
         // --- Initialize SortableJS ---
         function initializeSortable() {
-            // Only initialize if not already initialized
-            if (sortableInstance) {
-                 sortableInstance.option("disabled", false); // Ensure it's enabled if called
-                 return;
-            }
-
+            if (sortableInstance) sortableInstance.destroy();
             sortableInstance = new Sortable(addressCardsContainer, {
-                handle: ".drag-handle", // Drag handle
+                handle: ".drag-handle",
                 animation: 150,
-                ghostClass: "sortable-ghost", // Class for the ghost element
-                chosenClass: "sortable-chosen", // Class for the chosen item
-                delay: 150, // Milliseconds to wait before starting drag
-                delayOnTouchOnly: true, // Only delay on touch devices
-                disabled: searchInput.value.trim().length > 0, // Disable if search is active
-
+                ghostClass: "sortable-ghost",
+                chosenClass: "sortable-chosen",
+                delay: 150,
+                delayOnTouchOnly: true,
+                disabled: false,
                 onEnd: function (evt) {
-                    // Check if the order actually changed
-                    if (evt.oldIndex === evt.newIndex) {
-                        console.log("Order did not change.");
-                        return;
-                    }
+                    if (evt.oldIndex === evt.newIndex) return;
 
-                    console.log("Drag ended. Old index:", evt.oldIndex, "New index:", evt.newIndex);
-
-                    // Get the new order of IDs from the DOM elements
                     const orderedIds = Array.from(addressCardsContainer.children)
-                         // Filter to only include actual address cards with an ID
                         .filter(card => card.classList.contains("address-card") && card.dataset.id)
-                        .map(card => parseInt(card.dataset.id, 10)); // Convert id back to number
+                        .map(card => parseInt(card.dataset.id, 10));
 
-                    console.log("New order of IDs:", orderedIds);
-
-                    // Create a new array of savedAddresses based on the new order of IDs
-                    // Use a map for quick lookup of the original address objects
                     const addressMap = new Map(savedAddresses.map(addr => [addr.id, addr]));
-
                     const newOrderedAddresses = orderedIds
-                         // Look up the original object for each ID in the new order
                         .map(id => addressMap.get(id))
-                         // Filter out any cases where an ID didn't match (shouldn't happen if rendering is correct)
                         .filter(Boolean);
 
-                     // Ensure all original addresses are included, even if not currently visible (due to search filter)
-                     // This handles cases where drag and drop happens on a filtered list - the savedAddresses array
-                     // should reflect the new order of *all* items, not just the filtered ones.
-                     // Items not in the current view/filtered list should retain their relative order
-                     // or be placed appropriately (e.g., at the end of the reordered subset).
-                     // A simpler approach is to just reorder the *full* list based on the new positions
-                     // of the elements that were visible and dragged.
+                    savedAddresses.forEach(addr => {
+                        if (!newOrderedAddresses.some(orderedAddr => orderedAddr.id === addr.id)) {
+                            newOrderedAddresses.push(addr);
+                        }
+                    });
 
-                     // Let's create a map from ID to its original address object
-                     const originalAddressesMap = new Map(savedAddresses.map(addr => [addr.id, addr]));
-
-                     // Create the new ordered list based on the DOM order of visible elements
-                     const reorderedVisibleAddresses = Array.from(addressCardsContainer.children)
-                        .filter(card => card.classList.contains("address-card") && card.dataset.id)
-                        .map(card => originalAddressesMap.get(parseInt(card.dataset.id, 10)));
-
-                     // Create a set of IDs that were visible and reordered
-                     const reorderedIdsSet = new Set(reorderedVisibleAddresses.map(addr => addr.id));
-
-                     // Add back any addresses that were NOT visible (i.e., not in reorderedIdsSet)
-                     // We'll append them at the end for simplicity, preserving their original relative order.
-                     const addressesNotVisible = savedAddresses.filter(addr => !reorderedIdsSet.has(addr.id));
-
-                     // Combine the reordered visible addresses with the non-visible ones
-                     savedAddresses = [...reorderedVisibleAddresses, ...addressesNotVisible];
-
-
-                    console.log("savedAddresses array updated based on new DOM order.");
-
-                    backupToFirebase(); // Save the new order to Firebase
-                    // renderAddresses(); // No need to re-render here, Firebase sync will handle it
-                    showNotification("순서가 저장되었습니다.");
+                    savedAddresses = newOrderedAddresses;
+                    backupToFirebase();
+                    console.log("Address order updated");
                 },
             });
         }
 
-
         // --- Event Listeners ---
         saveButton.addEventListener("click", saveAddress);
         addressInput.addEventListener("keydown", (e) => {
-            // Save on Enter key press, but not with Shift+Enter (which is for new line)
             if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault(); // Prevent newline in textarea
+                e.preventDefault();
                 saveAddress();
             }
         });
-        siteNameInput.addEventListener("keydown", (e) => {
-             if (e.key === "Enter") {
-                 e.preventDefault();
-                 saveAddress();
-             }
-        });
-         workDatesInput.addEventListener("keydown", (e) => {
-              // Allow Shift+Enter for new lines in the textarea
-              if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  saveAddress();
-              }
-         });
-
-
-        searchInput.addEventListener("input", renderAddresses); // Re-render on search input change
+        searchInput.addEventListener("input", renderAddresses);
 
         // --- Initial Load ---
-        // Restore data from Firebase first, then initialize real-time sync
         restoreFromFirebase();
         initializeRealtimeSync();
-
-        // Initialize sortable after the first render (which happens in restoreFromFirebase)
-        // A slight delay might be needed to ensure DOM is fully ready after render
-        // Or, initialize inside the restoreFromFirebase callback after renderAddresses()
-        // Let's initialize it conditionally inside renderAddresses
-         window.addEventListener('load', () => {
-             // Check if addresses were loaded and renderAddresses was called
-             // If not, call initializeSortable() here in case there are addresses initially
-             // but the realtime sync/restore calls didn't trigger render.
-             // However, renderAddresses is called by restoreFromFirebase, which happens on load.
-             // The conditional call inside renderAddresses should be sufficient.
-         });
-
     </script>
 </body>
 </html>
