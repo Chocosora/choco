@@ -509,8 +509,9 @@
                 showNotification("Firebase가 초기화되지 않았습니다.", "error");
                 return;
             }
-            console.log("Saving to Firebase at path:", firebaseDataPath, "Data:", savedAddresses);
-            database.ref(firebaseDataPath).set(savedAddresses)
+            const dataToSave = JSON.parse(JSON.stringify(savedAddresses)); // Deep copy
+            console.log("Saving to Firebase at path:", firebaseDataPath, "Data:", dataToSave);
+            database.ref(firebaseDataPath).set(dataToSave)
                 .then(() => {
                     console.log("Firebase save successful");
                     showNotification("데이터가 저장되었습니다.");
@@ -594,12 +595,12 @@
                 addressInput.focus();
                 return;
             }
+            // Check for duplicate address text and siteName only
             if (savedAddresses.some(addr => 
                 addr.text === addressText && 
-                addr.siteName === siteName && 
-                JSON.stringify(addr.workDates || []) === JSON.stringify(workDates)
+                addr.siteName === siteName
             )) {
-                showNotification("이미 동일한 내용으로 저장된 주소입니다.", "warning");
+                showNotification("이미 동일한 주소와 현장이름으로 저장된 주소입니다.", "warning");
                 return;
             }
 
@@ -704,6 +705,16 @@
                 return;
             }
 
+            // Check for duplicate address text and siteName in other addresses
+            const otherAddresses = savedAddresses.filter(addr => addr.id !== numericId);
+            if (otherAddresses.some(addr => 
+                addr.text === newText && 
+                addr.siteName === newSiteName
+            )) {
+                showNotification("이미 동일한 주소와 현장이름으로 저장된 주소가 있습니다.", "warning");
+                return;
+            }
+
             const addressIndex = savedAddresses.findIndex(addr => addr.id === numericId);
             if (addressIndex !== -1) {
                 savedAddresses[addressIndex].text = newText;
@@ -762,11 +773,17 @@
                 const isBFutureOrToday = earliestB >= today.getTime();
 
                 if (isAFutureOrToday && isBFutureOrToday) {
+                    if (earliestA === earliestB) {
+                        return new Date(b.createdAt) - new Date(a.createdAt); // Same date, sort by createdAt
+                    }
                     return earliestA - earliestB;
                 }
                 if (isAFutureOrToday) return -1;
                 if (isBFutureOrToday) return 1;
 
+                if (earliestA === earliestB) {
+                    return new Date(b.createdAt) - new Date(a.createdAt); // Same date, sort by createdAt
+                }
                 return earliestB - earliestA;
             });
         }
