@@ -118,10 +118,21 @@
         .sync-indicator.online { background-color: var(--success-color); }
         .sync-indicator.offline { background-color: var(--error-color); }
         .flatpickr-calendar { z-index: 1000; }
+        .flatpickr-day {
+            width: 36px; height: 36px; line-height: 36px; margin: 2px; font-size: 14px;
+            touch-action: manipulation; cursor: pointer;
+        }
+        .flatpickr-day:hover, .flatpickr-day:focus {
+            background: var(--primary-color); color: white;
+        }
+        .flatpickr-day.selected {
+            background: var(--primary-color); color: white; border-color: var(--primary-color);
+        }
         @media (max-width: 600px) {
             h1 { font-size: 24px; } h2 { font-size: 18px; } .subtitle { font-size: 14px; }
             .container { padding: 15px; }
             .nav-buttons { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+            .flatpickr-day { width: 40px; height: 40px; line-height: 40px; }
         }
     </style>
 </head>
@@ -213,15 +224,34 @@
         let savedAddresses = [];
         let sortableInstance = null;
 
+        // --- Utility: Format date to YYYY-MM-DD in local timezone ---
+        function formatDateToLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // --- Initialize Flatpickr for main input ---
         const workDatesPicker = flatpickr(workDatesInput, {
             mode: "multiple",
             dateFormat: "Y-m-d",
             locale: "ko",
-            onChange: function(selectedDates) {
-                const dates = selectedDates.map(date => date.toISOString().split("T")[0]).sort();
+            enableTime: false,
+            utc: false,
+            clickOpens: true,
+            disableMobile: false,
+            onChange: function(selectedDates, dateStr, instance) {
+                console.log("Main picker onChange - Raw selectedDates:", selectedDates);
+                const dates = selectedDates
+                    .map(date => formatDateToLocal(date))
+                    .sort();
                 workDatesInput.value = dates.join(", ");
-                console.log("Main input dates updated:", dates);
+                console.log("Main picker formatted dates:", dates, "Input value:", workDatesInput.value);
+            },
+            onDayCreate: function(dObj, dStr, fp, dayElem) {
+                console.log("Day created:", dayElem.dateObj, "Formatted:", formatDateToLocal(dayElem.dateObj));
+                dayElem.setAttribute('data-date', formatDateToLocal(dayElem.dateObj));
             }
         });
 
@@ -410,10 +440,21 @@
                         mode: "multiple",
                         dateFormat: "Y-m-d",
                         locale: "ko",
-                        onChange: function(selectedDates) {
-                            const dates = selectedDates.map(date => date.toISOString().split("T")[0]).sort();
+                        enableTime: false,
+                        utc: false,
+                        clickOpens: true,
+                        disableMobile: false,
+                        onChange: function(selectedDates, dateStr, instance) {
+                            console.log("Edit picker onChange - Raw selectedDates:", selectedDates);
+                            const dates = selectedDates
+                                .map(date => formatDateToLocal(date))
+                                .sort();
                             updateDateTags(dates, dateTagsContainer, editDatesInput);
-                            console.log("Edit dates updated:", dates);
+                            console.log("Edit picker formatted dates:", dates, "Input value:", editDatesInput.value);
+                        },
+                        onDayCreate: function(dObj, dStr, fp, dayElem) {
+                            console.log("Edit day created:", dayElem.dateObj, "Formatted:", formatDateToLocal(dayElem.dateObj));
+                            dayElem.setAttribute('data-date', formatDateToLocal(dayElem.dateObj));
                         }
                     });
 
@@ -433,7 +474,10 @@
                         input.value = dates.join(", ");
                     }
 
-                    addDateBtn.onclick = () => editDatesPicker.open();
+                    addDateBtn.onclick = () => {
+                        console.log("Add date button clicked for address id:", address.id);
+                        editDatesPicker.open();
+                    };
 
                     // Initialize date tags
                     const initialDates = (address.workDates || []).sort();
@@ -470,7 +514,7 @@
                 .then(() => {
                     console.log("Firebase save successful");
                     showNotification("데이터가 저장되었습니다.");
-                    renderAddresses(); // Ensure UI is updated after Firebase save
+                    renderAddresses();
                 })
                 .catch((err) => {
                     console.error("Firebase save failed:", err);
@@ -493,7 +537,7 @@
                     if (data && Array.isArray(data)) {
                         savedAddresses = data.map(addr => ({
                             ...addr,
-                            id: Number(addr.id), // Ensure id is a number
+                            id: Number(addr.id),
                             workDates: addr.workDate
                                 ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
                                 : addr.workDates || []
@@ -522,7 +566,7 @@
                 if (data && Array.isArray(data)) {
                     savedAddresses = data.map(addr => ({
                         ...addr,
-                        id: Number(addr.id), // Ensure id is a number
+                        id: Number(addr.id),
                         workDates: addr.workDate
                             ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
                             : addr.workDates || []
@@ -580,7 +624,7 @@
 
         function deleteAddress(id) {
             console.log("deleteAddress called with id:", id, "Type:", typeof id);
-            const numericId = Number(id); // Ensure id is a number
+            const numericId = Number(id);
             console.log("Converted to numericId:", numericId);
 
             if (isNaN(numericId)) {
@@ -640,7 +684,7 @@
         }
 
         function saveEdit(id) {
-            const numericId = Number(id); // Ensure id is a number
+            const numericId = Number(id);
             console.log("saveEdit called with id:", numericId);
             const card = addressCardsContainer.querySelector(`.address-card[data-id="${numericId}"]`);
             if (!card) {
