@@ -7,9 +7,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.22.2/firebase-database-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-    <!-- Flatpickr 추가 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
     <style>
         :root {
             --primary-color: #4263eb; --primary-hover: #364fc7; --secondary-color: #f8f9fa;
@@ -17,6 +17,7 @@
             --naver-color: #03C75A; --tmap-color: #ED1846; --kakao-color: #FEE500;
             --kakao-text: #3C1E1E; --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             --success-color: #4caf50; --warning-color: #ff9800; --error-color: #f44336;
+            --tag-bg: #e9ecef; --tag-text: #495057; --tag-remove: #dc3545;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -62,8 +63,7 @@
             font-size: 20px; padding: 5px; line-height: 1; z-index: 10; touch-action: none;
         }
         .drag-handle:active { cursor: grabbing; }
-        .edit-mode .drag-handle { display: none;оту
-
+        .edit-mode .drag-handle { display: none; }
         .address-info { margin-bottom: 8px; font-size: 13px; color: #495057; }
         .address-info strong { color: var(--text-color); margin-right: 4px; }
         .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
@@ -83,16 +83,29 @@
         .address-edit { display: none; }
         .edit-mode .address-edit { display: block; }
         .edit-mode .address-card { cursor: default; }
-        .edit-input-group { margin-bottom: 10px; }
-        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 3px; }
-        .edit-input, .edit-site-name-input, .edit-work-dates-input {
+        .edit-input-group { margin-bottom: 15px; }
+        .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 5px; display: block; }
+        .edit-input, .edit-site-name-input {
             width: 100%; padding: 8px 10px; border: 1px solid var(--border-color);
             border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none;
         }
-        .edit-input:focus, .edit-site-name-input:focus, .edit-work-dates-input:focus {
+        .edit-input:focus, .edit-site-name-input:focus {
             outline: 2px solid var(--primary-color); border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
         }
+        .date-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .date-tag {
+            background-color: var(--tag-bg); color: var(--tag-text); padding: 5px 10px;
+            border-radius: 12px; font-size: 13px; display: inline-flex; align-items: center;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .date-tag .remove-tag {
+            margin-left: 6px; cursor: pointer; color: var(--tag-remove); font-size: 14px;
+            line-height: 1; transition: color 0.2s;
+        }
+        .date-tag .remove-tag:hover { color: #c82333; }
+        .add-date-btn { padding: 8px 12px; font-size: 13px; background-color: var(--primary-color); color: white; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+        .add-date-btn:hover { background-color: var(--primary-hover); }
         .notification { position: fixed; bottom: 15px; left: 15px; right: 15px; transform: translateY(120px); background-color: rgba(0, 0, 0, 0.75); color: white; padding: 10px 15px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out; z-index: 1000; font-size: 14px; text-align: center; }
         .notification.show { transform: translateY(0); opacity: 1; }
         .notification.success { background-color: var(--success-color); }
@@ -200,23 +213,15 @@
         let savedAddresses = [];
         let sortableInstance = null;
 
-        // --- Initialize Flatpickr ---
-        flatpickr(workDatesInput, {
+        // --- Initialize Flatpickr for main input ---
+        const workDatesPicker = flatpickr(workDatesInput, {
             mode: "multiple",
             dateFormat: "Y-m-d",
-            locale: {
-                firstDayOfWeek: 1,
-                weekdays: {
-                    shorthand: ["일", "월", "화", "수", "목", "금", "토"],
-                    longhand: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
-                },
-                months: {
-                    shorthand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
-                    longhand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
-                }
-            },
+            locale: "ko",
             onChange: function(selectedDates) {
-                workDatesInput.value = selectedDates.map(date => date.toISOString().split("T")[0]).join(", ");
+                const dates = selectedDates.map(date => date.toISOString().split("T")[0]).sort();
+                workDatesInput.value = dates.join(", ");
+                console.log("Main input dates updated:", dates);
             }
         });
 
@@ -281,6 +286,7 @@
 
         // --- Render Address List ---
         function renderAddresses() {
+            console.log("Rendering addresses:", savedAddresses);
             const currentSearchTerm = searchInput.value.trim().toLowerCase();
             addressCardsContainer.innerHTML = "";
 
@@ -304,6 +310,7 @@
             } else {
                 emptyState.style.display = "none";
                 filteredAddresses.forEach((address) => {
+                    console.log("Rendering address card with id:", address.id);
                     const card = document.createElement("div");
                     card.className = "address-card";
                     card.dataset.id = address.id;
@@ -361,8 +368,14 @@
                     const actionButtons = document.createElement("div");
                     actionButtons.className = "action-buttons";
                     actionButtons.innerHTML = `<button class="action-btn edit-btn">수정</button><button class="action-btn delete-btn">삭제</button>`;
-                    actionButtons.querySelector(".edit-btn").onclick = () => enableEditMode(card, address);
-                    actionButtons.querySelector(".delete-btn").onclick = () => deleteAddress(address.id);
+                    actionButtons.querySelector(".edit-btn").onclick = () => {
+                        console.log("Edit button clicked for id:", address.id);
+                        enableEditMode(card, address);
+                    };
+                    actionButtons.querySelector(".delete-btn").onclick = () => {
+                        console.log("Delete button clicked for id:", address.id);
+                        deleteAddress(address.id);
+                    };
                     addressDisplay.appendChild(actionButtons);
 
                     card.appendChild(addressDisplay);
@@ -370,33 +383,62 @@
                     const addressEdit = document.createElement("div");
                     addressEdit.className = "address-edit";
                     addressEdit.innerHTML = `
-                        <div class="edit-input-group"><label>주소</label><input type="text" class="edit-input"></div>
-                        <div class="edit-input-group"><label>현장이름</label><input type="text" class="edit-site-name-input"></div>
-                        <div class="edit-input-group"><label>작업일자 (복수 선택 가능)</label><input type="text" class="edit-work-dates-input"></div>
+                        <div class="edit-input-group">
+                            <label>주소</label>
+                            <input type="text" class="edit-input">
+                        </div>
+                        <div class="edit-input-group">
+                            <label>현장이름</label>
+                            <input type="text" class="edit-site-name-input">
+                        </div>
+                        <div class="edit-input-group">
+                            <label>작업일자 (복수 선택 가능)</label>
+                            <div class="date-tags" id="dateTags-${address.id}"></div>
+                            <button class="add-date-btn">날짜 추가</button>
+                            <input type="text" class="edit-work-dates-input" style="display: none;">
+                        </div>
                         <div class="button-group">
                             <button class="btn btn-primary save-edit-btn">저장</button>
                             <button class="btn btn-secondary cancel-edit-btn">취소</button>
                         </div>
                     `;
                     const editDatesInput = addressEdit.querySelector(".edit-work-dates-input");
-                    flatpickr(editDatesInput, {
+                    const dateTagsContainer = addressEdit.querySelector(`#dateTags-${address.id}`);
+                    const addDateBtn = addressEdit.querySelector(".add-date-btn");
+
+                    const editDatesPicker = flatpickr(editDatesInput, {
                         mode: "multiple",
                         dateFormat: "Y-m-d",
-                        locale: {
-                            firstDayOfWeek: 1,
-                            weekdays: {
-                                shorthand: ["일", "월", "화", "수", "목", "금", "토"],
-                                longhand: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"]
-                            },
-                            months: {
-                                shorthand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
-                                longhand: ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
-                            }
-                        },
+                        locale: "ko",
                         onChange: function(selectedDates) {
-                            editDatesInput.value = selectedDates.map(date => date.toISOString().split("T")[0]).join(", ");
+                            const dates = selectedDates.map(date => date.toISOString().split("T")[0]).sort();
+                            updateDateTags(dates, dateTagsContainer, editDatesInput);
+                            console.log("Edit dates updated:", dates);
                         }
                     });
+
+                    function updateDateTags(dates, container, input) {
+                        container.innerHTML = "";
+                        dates.forEach(date => {
+                            const tag = document.createElement("span");
+                            tag.className = "date-tag";
+                            tag.innerHTML = `${date} <span class="remove-tag">×</span>`;
+                            tag.querySelector(".remove-tag").onclick = () => {
+                                const newDates = dates.filter(d => d !== date);
+                                input.value = newDates.join(", ");
+                                updateDateTags(newDates, container, input);
+                            };
+                            container.appendChild(tag);
+                        });
+                        input.value = dates.join(", ");
+                    }
+
+                    addDateBtn.onclick = () => editDatesPicker.open();
+
+                    // Initialize date tags
+                    const initialDates = (address.workDates || []).sort();
+                    updateDateTags(initialDates, dateTagsContainer, editDatesInput);
+
                     addressEdit.querySelector(".save-edit-btn").onclick = () => saveEdit(address.id);
                     addressEdit.querySelector(".cancel-edit-btn").onclick = () => cancelEditMode(card);
                     card.appendChild(addressEdit);
@@ -423,11 +465,12 @@
                 showNotification("Firebase가 초기화되지 않았습니다.", "error");
                 return;
             }
-            console.log("Saving to Firebase at path:", firebaseDataPath);
+            console.log("Saving to Firebase at path:", firebaseDataPath, "Data:", savedAddresses);
             database.ref(firebaseDataPath).set(savedAddresses)
                 .then(() => {
                     console.log("Firebase save successful");
                     showNotification("데이터가 저장되었습니다.");
+                    renderAddresses(); // Ensure UI is updated after Firebase save
                 })
                 .catch((err) => {
                     console.error("Firebase save failed:", err);
@@ -448,14 +491,14 @@
                 .then((snapshot) => {
                     const data = snapshot.val();
                     if (data && Array.isArray(data)) {
-                        // 기존 단일 workDate를 배열로 변환하여 호환성 유지
                         savedAddresses = data.map(addr => ({
                             ...addr,
+                            id: Number(addr.id), // Ensure id is a number
                             workDates: addr.workDate
                                 ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
                                 : addr.workDates || []
                         }));
-                        console.log(`Firebase load complete: ${savedAddresses.length} items`);
+                        console.log(`Firebase load complete: ${savedAddresses.length} items`, savedAddresses);
                         showNotification("데이터를 성공적으로 로드했습니다.");
                     } else {
                         console.warn("No valid data found or data is not an array:", data);
@@ -479,11 +522,12 @@
                 if (data && Array.isArray(data)) {
                     savedAddresses = data.map(addr => ({
                         ...addr,
+                        id: Number(addr.id), // Ensure id is a number
                         workDates: addr.workDate
                             ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
                             : addr.workDates || []
                     }));
-                    console.log(`Realtime update: ${savedAddresses.length} items`);
+                    console.log(`Realtime update: ${savedAddresses.length} items`, savedAddresses);
                 } else {
                     savedAddresses = [];
                     console.warn("Realtime data is not an array:", data);
@@ -499,7 +543,7 @@
         function saveAddress() {
             const addressText = addressInput.value.trim();
             const siteName = siteNameInput.value.trim();
-            const workDates = workDatesInput.value ? workDatesInput.value.split(", ").filter(date => date) : [];
+            const workDates = workDatesInput.value ? workDatesInput.value.split(", ").filter(date => date).sort() : [];
 
             if (!addressText) {
                 showNotification("주소를 입력하세요.", "warning");
@@ -522,6 +566,7 @@
                 workDates: workDates,
                 createdAt: new Date().toISOString()
             };
+            console.log("Saving new address:", newAddress);
             savedAddresses.unshift(newAddress);
             backupToFirebase();
             searchInput.value = "";
@@ -529,29 +574,64 @@
             addressInput.value = "";
             siteNameInput.value = "";
             workDatesInput.value = "";
+            workDatesPicker.clear();
             showNotification("주소가 저장되었습니다.");
         }
 
         function deleteAddress(id) {
+            console.log("deleteAddress called with id:", id, "Type:", typeof id);
+            const numericId = Number(id); // Ensure id is a number
+            console.log("Converted to numericId:", numericId);
+
+            if (isNaN(numericId)) {
+                console.error("Invalid id:", id);
+                showNotification("유효하지 않은 주소 ID입니다.", "error");
+                return;
+            }
+
+            const addressExists = savedAddresses.some(addr => addr.id === numericId);
+            console.log("Address exists in savedAddresses:", addressExists, savedAddresses);
+
+            if (!addressExists) {
+                console.error("No address found with id:", numericId);
+                showNotification("삭제할 주소를 찾을 수 없습니다.", "error");
+                return;
+            }
+
             if (confirm("이 주소를 삭제하시겠습니까?")) {
-                savedAddresses = savedAddresses.filter(addr => addr.id !== id);
-                backupToFirebase();
-                renderAddresses();
-                showNotification("주소가 삭제되었습니다.");
+                const initialLength = savedAddresses.length;
+                savedAddresses = savedAddresses.filter(addr => {
+                    const keep = addr.id !== numericId;
+                    console.log(`Comparing addr.id=${addr.id} with numericId=${numericId}, Keep: ${keep}`);
+                    return keep;
+                });
+                console.log(`After filter: ${initialLength} -> ${savedAddresses.length} addresses`, savedAddresses);
+
+                if (savedAddresses.length < initialLength) {
+                    console.log("Address successfully removed from array, saving to Firebase");
+                    backupToFirebase();
+                    showNotification("주소가 삭제되었습니다.");
+                } else {
+                    console.error("Failed to remove address with id:", numericId);
+                    showNotification("주소 삭제에 실패했습니다.", "error");
+                }
+            } else {
+                console.log("Deletion cancelled by user");
             }
         }
 
         // --- Edit Mode ---
         function enableEditMode(cardElement, addressData) {
+            console.log("Enabling edit mode for address id:", addressData.id);
             cardElement.classList.add("edit-mode");
             cardElement.querySelector(".edit-input").value = addressData.text;
             cardElement.querySelector(".edit-site-name-input").value = addressData.siteName || "";
-            cardElement.querySelector(".edit-work-dates-input").value = (addressData.workDates || []).join(", ");
             cardElement.querySelector(".edit-input").focus();
             if (sortableInstance) sortableInstance.option("disabled", true);
         }
 
         function cancelEditMode(cardElement) {
+            console.log("Cancelling edit mode");
             cardElement.classList.remove("edit-mode");
             const isSearchActive = searchInput.value.trim().length > 0;
             if (sortableInstance && !isSearchActive) {
@@ -560,13 +640,19 @@
         }
 
         function saveEdit(id) {
-            const card = addressCardsContainer.querySelector(`.address-card[data-id="${id}"]`);
-            if (!card) return;
+            const numericId = Number(id); // Ensure id is a number
+            console.log("saveEdit called with id:", numericId);
+            const card = addressCardsContainer.querySelector(`.address-card[data-id="${numericId}"]`);
+            if (!card) {
+                console.error("Card not found for id:", numericId);
+                showNotification("주소 수정 중 오류: 카드를 찾을 수 없습니다.", "error");
+                return;
+            }
 
             const newText = card.querySelector(".edit-input").value.trim();
             const newSiteName = card.querySelector(".edit-site-name-input").value.trim();
             const newWorkDates = card.querySelector(".edit-work-dates-input").value 
-                ? card.querySelector(".edit-work-dates-input").value.split(", ").filter(date => date) 
+                ? card.querySelector(".edit-work-dates-input").value.split(", ").filter(date => date).sort() 
                 : [];
 
             if (!newText) {
@@ -574,15 +660,17 @@
                 return;
             }
 
-            const addressIndex = savedAddresses.findIndex(addr => addr.id === id);
+            const addressIndex = savedAddresses.findIndex(addr => addr.id === numericId);
             if (addressIndex !== -1) {
                 savedAddresses[addressIndex].text = newText;
                 savedAddresses[addressIndex].siteName = newSiteName;
                 savedAddresses[addressIndex].workDates = newWorkDates;
+                console.log("Saving edited address:", savedAddresses[addressIndex]);
                 backupToFirebase();
                 renderAddresses();
                 showNotification("주소가 수정되었습니다.");
             } else {
+                console.error("No address found with id:", numericId);
                 showNotification("주소 수정 중 오류 발생", "error");
                 cancelEditMode(card);
             }
@@ -655,7 +743,7 @@
 
                     const orderedIds = Array.from(addressCardsContainer.children)
                         .filter(card => card.classList.contains("address-card") && card.dataset.id)
-                        .map(card => parseInt(card.dataset.id, 10));
+                        .map(card => Number(card.dataset.id));
 
                     const addressMap = new Map(savedAddresses.map(addr => [addr.id, addr]));
                     const newOrderedAddresses = orderedIds
@@ -669,8 +757,8 @@
                     });
 
                     savedAddresses = newOrderedAddresses;
+                    console.log("Address order updated:", savedAddresses);
                     backupToFirebase();
-                    console.log("Address order updated");
                 },
             });
         }
