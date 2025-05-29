@@ -69,6 +69,7 @@
         .address-info span + span::before { content: "|"; margin: 0 6px; color: var(--border-color); }
         .day-of-week { color: #6c757d; font-size: 12px; margin-left: 2px; }
         .address-text { margin-bottom: 12px; font-size: 15px; word-break: break-all; }
+        .memo-text { margin-bottom: 12px; font-size: 14px; color: #6c757d; word-break: break-all; }
         .nav-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px; }
         .nav-btn { padding: 8px 10px; border-radius: 4px; font-size: 13px; cursor: pointer; text-align: center; text-decoration: none; font-weight: bold; transition: opacity 0.2s, transform 0.1s; border: 1px solid transparent; min-height: 38px; display: flex; align-items: center; justify-content: center; min-width: 80px; touch-action: manipulation; }
         .nav-btn:hover { opacity: 0.85; }
@@ -85,14 +86,15 @@
         .edit-mode .address-card { cursor: default; }
         .edit-input-group { margin-bottom: 15px; }
         .edit-input-group label { font-size: 13px; color: #6c757d; margin-bottom: 5px; display: block; }
-        .edit-input, .edit-site-name-input {
+        .edit-input, .edit-site-name-input, .edit-memo-input {
             width: 100%; padding: 8px 10px; border: 1px solid var(--border-color);
             border-radius: 4px; font-size: 14px; font-family: inherit; -webkit-appearance: none; appearance: none;
         }
-        .edit-input:focus, .edit-site-name-input:focus {
+        .edit-input:focus, .edit-site-name-input:focus, .edit-memo-input:focus {
             outline: 2px solid var(--primary-color); border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
         }
+        .edit-memo-input { resize: vertical; min-height: 60px; }
         .date-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
         .date-tag {
             background-color: var(--tag-bg); color: var(--tag-text); padding: 5px 10px;
@@ -157,6 +159,10 @@
             <input type="text" id="siteNameInput" placeholder="예: 목동 아파트 현장">
         </div>
         <div class="input-group">
+            <label for="memoInput">메모 (선택)</label>
+            <textarea id="memoInput" placeholder="예: 5층 엘리베이터 없음"></textarea>
+        </div>
+        <div class="input-group">
             <label for="workDatesInput">작업일자 (선택, 복수 선택 가능)</label>
             <input type="text" id="workDatesInput" placeholder="날짜를 선택하세요">
         </div>
@@ -167,7 +173,7 @@
 
     <div class="search-container">
         <label for="searchInput" style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #495057;">주소 검색</label>
-        <input type="search" id="searchInput" placeholder="주소 또는 현장이름으로 검색...">
+        <input type="search" id="searchInput" placeholder="주소, 현장이름, 메모로 검색...">
     </div>
 
     <h2>저장된 주소 (핸들 드래그하여 순서 변경)</h2>
@@ -209,6 +215,7 @@
         // --- DOM Elements ---
         const addressInput = document.getElementById("addressInput");
         const siteNameInput = document.getElementById("siteNameInput");
+        const memoInput = document.getElementById("memoInput");
         const workDatesInput = document.getElementById("workDatesInput");
         const saveButton = document.getElementById("saveButton");
         const searchInput = document.getElementById("searchInput");
@@ -326,7 +333,8 @@
                 if (!currentSearchTerm) return true;
                 const textMatch = (address.text || "").toLowerCase().includes(currentSearchTerm);
                 const siteMatch = (address.siteName || "").toLowerCase().includes(currentSearchTerm);
-                return textMatch || siteMatch;
+                const memoMatch = (address.memo || "").toLowerCase().includes(currentSearchTerm);
+                return textMatch || siteMatch || memoMatch;
             });
 
             if (filteredAddresses.length === 0) {
@@ -357,6 +365,9 @@
                     let infoHtml = "";
                     if (address.siteName) {
                         infoHtml += `<span><strong>현장:</strong> ${address.siteName}</span>`;
+                    }
+                    if (address.memo) {
+                        infoHtml += `<span><strong>메모:</strong> ${address.memo}</span>`;
                     }
                     if (address.workDates && address.workDates.length > 0) {
                         const dateStrings = address.workDates.map(dateStr => {
@@ -420,6 +431,10 @@
                         <div class="edit-input-group">
                             <label>현장이름</label>
                             <input type="text" class="edit-site-name-input">
+                        </div>
+                        <div class="edit-input-group">
+                            <label>메모</label>
+                            <textarea class="edit-memo-input"></textarea>
                         </div>
                         <div class="edit-input-group">
                             <label>작업일자 (복수 선택 가능)</label>
@@ -541,7 +556,8 @@
                             id: Number(addr.id),
                             workDates: addr.workDate
                                 ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
-                                : addr.workDates || []
+                                : addr.workDates || [],
+                            memo: addr.memo || ""
                         }));
                         console.log(`Firebase load complete: ${savedAddresses.length} items`, savedAddresses);
                         showNotification("데이터를 성공적으로 로드했습니다.");
@@ -570,7 +586,8 @@
                         id: Number(addr.id),
                         workDates: addr.workDate
                             ? (typeof addr.workDate === "string" ? [addr.workDate] : addr.workDate)
-                            : addr.workDates || []
+                            : addr.workDates || [],
+                        memo: addr.memo || ""
                     }));
                     console.log(`Realtime update: ${savedAddresses.length} items`, savedAddresses);
                 } else {
@@ -588,6 +605,7 @@
         function saveAddress() {
             const addressText = addressInput.value.trim();
             const siteName = siteNameInput.value.trim();
+            const memo = memoInput.value.trim();
             const workDates = workDatesInput.value ? workDatesInput.value.split(", ").filter(date => date).sort() : [];
 
             if (!addressText) {
@@ -608,6 +626,7 @@
                 id: Date.now(),
                 text: addressText,
                 siteName: siteName,
+                memo: memo,
                 workDates: workDates,
                 createdAt: new Date().toISOString()
             };
@@ -618,6 +637,7 @@
             renderAddresses();
             addressInput.value = "";
             siteNameInput.value = "";
+            memoInput.value = "";
             workDatesInput.value = "";
             workDatesPicker.clear();
             showNotification("주소가 저장되었습니다.");
@@ -671,6 +691,7 @@
             cardElement.classList.add("edit-mode");
             cardElement.querySelector(".edit-input").value = addressData.text;
             cardElement.querySelector(".edit-site-name-input").value = addressData.siteName || "";
+            cardElement.querySelector(".edit-memo-input").value = addressData.memo || "";
             cardElement.querySelector(".edit-input").focus();
             if (sortableInstance) sortableInstance.option("disabled", true);
         }
@@ -696,6 +717,7 @@
 
             const newText = card.querySelector(".edit-input").value.trim();
             const newSiteName = card.querySelector(".edit-site-name-input").value.trim();
+            const newMemo = card.querySelector(".edit-memo-input").value.trim();
             const newWorkDates = card.querySelector(".edit-work-dates-input").value 
                 ? card.querySelector(".edit-work-dates-input").value.split(", ").filter(date => date).sort() 
                 : [];
@@ -719,6 +741,7 @@
             if (addressIndex !== -1) {
                 savedAddresses[addressIndex].text = newText;
                 savedAddresses[addressIndex].siteName = newSiteName;
+                savedAddresses[addressIndex].memo = newMemo;
                 savedAddresses[addressIndex].workDates = newWorkDates;
                 console.log("Saving edited address:", savedAddresses[addressIndex]);
                 backupToFirebase();
