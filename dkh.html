@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>둔촌회관 2층 배치도</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .seating-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        .pillar {
+            width: 40px;
+            height: 35px;
+            background: #888;
+            border: 2px solid #666;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            user-select: none;
+        }
+
+        .pillar-space {
+            width: 48px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            height: 42px;
+        }
+
+        #broadcast-section, #info-section {
+            justify-content: center;
+        }
+
+        .seat {
+            width: 50px;
+            height: 35px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px; /* --- 변경: 14px -> 16px --- */
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 3px;
+            line-height: 1.2;
+            touch-action: manipulation;
+        }
+
+        .seat:hover {
+            border-color: #999;
+            transform: scale(1.05);
+        }
+
+        .seat.occupied {
+            background: #e8e8e8;
+            border-color: #999;
+            color: #333;
+        }
+
+        .seat.unused {
+            background: #ffcccc;
+            border-color: #ff6666;
+            color: #ff0000;
+            font-size: 18px;
+        }
+
+        .aisle {
+            width: 30px;
+            height: 100%;
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .special-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .special-area {
+            background: #f8f8f8;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .amp-label {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #666;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .special-title {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .mic-section {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mic-position {
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            color: #333;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            min-width: 100px;
+            cursor: pointer;
+            flex: 1;
+            max-width: 140px;
+            touch-action: manipulation;
+        }
+
+        .mic-position:hover {
+            background: #e8e8e8;
+            border-color: #999;
+        }
+
+        .stage {
+            background: #e0e0e0;
+            height: 35px;
+            width: 250px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .row-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 25px;
+            background: #f0f0f0;
+            color: #666;
+            font-weight: bold;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-right: 6px;
+            font-size: 9px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .modal h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #999;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+        }
+
+        .btn:hover {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .btn-save {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+
+        .btn-save:hover {
+            background: #555;
+            border-color: #555;
+        }
+
+        .btn-mark {
+            background: #ff6666;
+            color: white;
+            border-color: #ff6666;
+        }
+
+        .btn-mark:hover {
+            background: #ff3333;
+            border-color: #ff3333;
+        }
+
+        .controls {
+            display: none;
+        }
+
+        .empty-row {
+            height: 42px;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                padding: 10px;
+            }
+            .seat {
+                width: 45px;
+                height: 32px;
+                font-size: 12px; /* 반응형에서도 글자 크기 조정 */
+            }
+            .pillar {
+                width: 35px;
+                height: 32px;
+            }
+            .pillar-space {
+                width: 43px;
+                height: 32px;
+            }
+            .row, .empty-row {
+                height: 38px;
+                gap: 5px;
+            }
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="special-section">
+            <div class="special-area">
+                <div class="special-title">확성부</div>
+                <div class="row" id="broadcast-section">
+                </div>
+                <div class="amp-label">엠프</div>
+            </div>
+
+            <div class="mic-section">
+                <div class="mic-position" onclick="editMic('left')">
+                    마이크 (좌)<br>
+                    <span id="mic-left-name" style="cursor: pointer; text-decoration: underline;">담당자 미정</span>
+                </div>
+                <div class="mic-position" onclick="editMic('right')">
+                    마이크 (우)<br>
+                    <span id="mic-right-name" style="cursor: pointer; text-decoration: underline;">담당자 미정</span>
+                </div>
+            </div>
+
+            <div class="special-area">
+                <div class="special-title">안내부</div>
+                <div class="row" id="info-section">
+                </div>
+            </div>
+        </div>
+
+        <div class="seating-area">
+            <div class="section">
+                <div class="section-title">청중석 (좌)</div>
+                <div id="left-section"></div>
+            </div>
+
+            <div class="aisle">복도</div>
+
+            <div class="section">
+                <div class="section-title">청중석 (중)</div>
+                <div id="center-section"></div>
+            </div>
+
+            <div class="aisle">복도</div>
+
+            <div class="section">
+                <div class="section-title">청중석 (우)</div>
+                <div id="right-section"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin-top: 15px;">
+            <div class="stage">
+                연단
+            </div>
+        </div>
+    </div>
+
+    <div id="nameModal" class="modal">
+        <div class="modal-content">
+            <h3>좌석 정보 입력</h3>
+            <input type="text" id="nameInput" placeholder="이름을 입력하세요" maxlength="20">
+            <div class="modal-buttons">
+                <button class="btn btn-save" onclick="saveName()">저장</button>
+                <button class="btn btn-mark" onclick="toggleUnused()">X 표시</button>
+                <button class="btn" onclick="clearName()">삭제</button>
+                <button class="btn" onclick="closeModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.firebasestorage.app",
+            messagingSenderId: "798065461606",
+            appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
+            measurementId: "G-4FYC7HVNNV"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const dbRef = db.ref('seatingChart/dunchon2f');
+
+        let currentSeat = null;
+
+        // 좌석 생성 함수
+        function createSeats() {
+            // 왼쪽 청중석 (11줄 4칸) - 상단 빈 공간
+            const leftSection = document.getElementById('left-section');
+            
+            // 13~12줄은 빈 공간 (중앙과 맞추기 위해)
+            for (let row = 13; row >= 12; row--) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row empty-row';
+                leftSection.appendChild(rowDiv);
+            }
+            
+            // 11~1줄 실제 좌석
+            for (let row = 11; row >= 1; row--) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                // 기둥 공간 (모든 줄에 일관성 있게 추가)
+                const pillarSpace = document.createElement('div');
+                pillarSpace.className = 'pillar-space';
+                
+                // 3, 8, 9번 줄에 기둥 표시
+                if (row === 3 || row === 8 || row === 9) {
+                    const pillar = document.createElement('div');
+                    pillar.className = 'pillar';
+                    pillar.textContent = '기둥';
+                    pillarSpace.appendChild(pillar);
+                }
+                
+                rowDiv.appendChild(pillarSpace);
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowDiv.appendChild(rowLabel);
+                
+                for (let seat = 1; seat <= 4; seat++) {
+                    const seatDiv = document.createElement('div');
+                    seatDiv.className = 'seat';
+                    seatDiv.id = `L${row}-${seat}`;
+                    seatDiv.onclick = () => openModal(seatDiv.id);
+                    seatDiv.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(seatDiv.id); };
+                    rowDiv.appendChild(seatDiv);
+                }
+                leftSection.appendChild(rowDiv);
+            }
+
+            // 중앙 청중석 (13줄 5칸)
+            const centerSection = document.getElementById('center-section');
+            for (let row = 13; row >= 1; row--) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowDiv.appendChild(rowLabel);
+                
+                for (let seat = 1; seat <= 5; seat++) {
+                    const seatDiv = document.createElement('div');
+                    seatDiv.className = 'seat';
+                    seatDiv.id = `C${row}-${seat}`;
+                    seatDiv.onclick = () => openModal(seatDiv.id);
+                    seatDiv.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(seatDiv.id); };
+                    rowDiv.appendChild(seatDiv);
+                }
+                centerSection.appendChild(rowDiv);
+            }
+
+            // 오른쪽 청중석 (8줄 4칸) - 상단 빈 공간
+            const rightSection = document.getElementById('right-section');
+            
+            // 13~9줄은 빈 공간 (중앙과 맞추기 위해)
+            for (let row = 13; row >= 9; row--) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row empty-row';
+                rightSection.appendChild(rowDiv);
+            }
+            
+            // 8~1줄 실제 좌석
+            for (let row = 8; row >= 1; row--) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = row;
+                rowDiv.appendChild(rowLabel);
+                
+                for (let seat = 1; seat <= 4; seat++) {
+                    const seatDiv = document.createElement('div');
+                    seatDiv.className = 'seat';
+                    seatDiv.id = `R${row}-${seat}`;
+                    seatDiv.onclick = () => openModal(seatDiv.id);
+                    seatDiv.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(seatDiv.id); };
+                    rowDiv.appendChild(seatDiv);
+                }
+                
+                // 기둥 추가 (row 4 오른쪽)
+                if (row === 4) {
+                    const pillar = document.createElement('div');
+                    pillar.className = 'pillar';
+                    pillar.textContent = '기둥';
+                    rowDiv.appendChild(pillar);
+                }
+                
+                rightSection.appendChild(rowDiv);
+            }
+
+            // 확성부 (4칸)
+            const broadcastSection = document.getElementById('broadcast-section');
+            for (let seat = 1; seat <= 4; seat++) {
+                const seatDiv = document.createElement('div');
+                seatDiv.className = 'seat';
+                seatDiv.id = `B${seat}`;
+                seatDiv.onclick = () => openModal(seatDiv.id);
+                seatDiv.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(seatDiv.id); };
+                broadcastSection.appendChild(seatDiv);
+            }
+
+            // 안내부 (4칸)
+            const infoSection = document.getElementById('info-section');
+            for (let seat = 1; seat <= 4; seat++) {
+                const seatDiv = document.createElement('div');
+                seatDiv.className = 'seat';
+                seatDiv.id = `I${seat}`;
+                seatDiv.onclick = () => openModal(seatDiv.id);
+                seatDiv.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(seatDiv.id); };
+                infoSection.appendChild(seatDiv);
+            }
+        }
+
+        // 모달 열기
+        function openModal(seatId) {
+            currentSeat = seatId;
+            const modal = document.getElementById('nameModal');
+            const input = document.getElementById('nameInput');
+            db.ref(`seatingChart/dunchon2f/seats/${seatId}/name`).once('value', (snapshot) => {
+                input.value = snapshot.val() || '';
+            });
+            modal.style.display = 'block';
+            input.focus();
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('nameModal').style.display = 'none';
+            currentSeat = null;
+        }
+
+        // 이름 저장
+        function saveName() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name && currentSeat) {
+                db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).set({ name: name, unused: false });
+            }
+            closeModal();
+        }
+
+        // 이름 삭제
+        function clearName() {
+            if (currentSeat) {
+                db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
+            }
+            closeModal();
+        }
+
+        // X 표시 토글 (모달 버튼)
+        function toggleUnused() {
+            if (currentSeat) {
+                db.ref(`seatingChart/dunchon2f/seats/${currentSeat}/unused`).once('value', (snapshot) => {
+                    const isUnused = snapshot.val();
+                    if (isUnused) {
+                        db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
+                    } else {
+                        db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).set({ unused: true });
+                    }
+                });
+            }
+            closeModal();
+        }
+
+        // X 표시 토글 (우클릭)
+        function toggleUnusedDirect(seatId) {
+            db.ref(`seatingChart/dunchon2f/seats/${seatId}/unused`).once('value', (snapshot) => {
+                const isUnused = snapshot.val();
+                if (isUnused) {
+                    db.ref(`seatingChart/dunchon2f/seats/${seatId}`).remove();
+                } else {
+                    db.ref(`seatingChart/dunchon2f/seats/${seatId}`).set({ unused: true });
+                }
+            });
+        }
+
+        // 좌석 표시 업데이트 (Firebase 리스너에서 호출됨)
+        function updateSeatDisplay(seatId, seatInfo) {
+            const seatElement = document.getElementById(seatId);
+            if (seatElement) {
+                if (seatInfo && seatInfo.unused) {
+                    seatElement.textContent = 'X';
+                    seatElement.classList.add('unused');
+                    seatElement.classList.remove('occupied');
+                } else {
+                    const name = seatInfo ? seatInfo.name : '';
+                    seatElement.textContent = name || '';
+                    seatElement.classList.remove('unused');
+                    if (name) {
+                        seatElement.classList.add('occupied');
+                    } else {
+                        seatElement.classList.remove('occupied');
+                    }
+                }
+            }
+        }
+
+        // 마이크 담당자 편집
+        function editMic(position) {
+            const currentName = document.getElementById(`mic-${position}-name`).textContent;
+            const name = prompt(`마이크 (${position === 'left' ? '좌' : '우'}) 담당자 이름을 입력하세요:`, currentName === '담당자 미정' ? '' : currentName);
+            if (name !== null) {
+                db.ref(`seatingChart/dunchon2f/mics/${position}`).set(name.trim());
+            }
+        }
+
+        // --- Firebase Realtime Listener ---
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            const seats = data.seats || {};
+            const mics = data.mics || {};
+
+            document.querySelectorAll('.seat').forEach(seat => {
+                    updateSeatDisplay(seat.id, null);
+            });
+
+            for (const seatId in seats) {
+                updateSeatDisplay(seatId, seats[seatId]);
+            }
+
+            document.getElementById('mic-left-name').textContent = mics.left || '담당자 미정';
+            document.getElementById('mic-right-name').textContent = mics.right || '담당자 미정';
+        });
+
+
+        // Enter 키로 저장
+        document.getElementById('nameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveName();
+            }
+        });
+
+        // 모달 외부 클릭으로 닫기
+        document.getElementById('nameModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 초기화
+        createSeats();
+    </script>
+</body>
+</html>
