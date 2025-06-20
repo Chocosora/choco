@@ -35,7 +35,8 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 20px;
+            /* gap: 20px; 이전 간격 */
+            gap: 10px; /* --- 수정: 간격 줄임 --- */
             margin-bottom: 10px;
             width: 100%;
         }
@@ -91,7 +92,8 @@
         }
 
         .seat {
-            width: 50px;
+            /* width: 50px; 이전 너비 */
+            width: 60px; /* --- 수정: 너비 증가 --- */
             height: 35px;
             background: white;
             border: 2px solid #ccc;
@@ -100,7 +102,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px; /* --- 변경: 14px -> 16px --- */
+            font-size: 18px; /* --- 변경: 16px -> 18px --- */
             font-weight: bold;
             color: #333;
             text-align: center;
@@ -133,7 +135,8 @@
         }
 
         .aisle {
-            width: 30px;
+            /* width: 30px; 이전 너비 */
+            width: 15px; /* --- 수정: 너비 절반으로 줄임 --- */
             height: 100%;
             background: #f8f8f8;
             border: 1px solid #e0e0e0;
@@ -142,7 +145,7 @@
             align-items: center;
             justify-content: center;
             color: #666;
-            font-size: 10px;
+            font-size: 0; /* --- 수정: 복도 텍스트 제거 (폰트 사이즈 0) --- */
             font-weight: bold;
         }
 
@@ -350,9 +353,10 @@
                 padding: 10px;
             }
             .seat {
-                width: 45px;
+                /* width: 45px; 이전 너비 */
+                width: 55px; /* --- 수정: 반응형 너비 증가 --- */
                 height: 32px;
-                font-size: 12px; /* 반응형에서도 글자 크기 조정 */
+                font-size: 14px; /* --- 변경: 12px -> 14px (모바일도 조금 키움) --- */
             }
             .pillar {
                 width: 35px;
@@ -365,6 +369,9 @@
             .row, .empty-row {
                 height: 38px;
                 gap: 5px;
+            }
+            .aisle {
+                width: 10px; /* --- 수정: 반응형 복도 너비 줄임 --- */
             }
         }
     </style>
@@ -405,16 +412,12 @@
                 <div id="left-section"></div>
             </div>
 
-            <div class="aisle">복도</div>
-
-            <div class="section">
+            <div class="aisle"></div> <div class="section">
                 <div class="section-title">청중석 (중)</div>
                 <div id="center-section"></div>
             </div>
 
-            <div class="aisle">복도</div>
-
-            <div class="section">
+            <div class="aisle"></div> <div class="section">
                 <div class="section-title">청중석 (우)</div>
                 <div id="right-section"></div>
             </div>
