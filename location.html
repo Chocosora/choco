@@ -231,11 +231,13 @@
         let savedAddresses = [];
         let sortableInstance = null;
 
-        // --- Utility: Format date to YYYY-MM-DD in local timezone ---
-        function formatDateToLocal(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+        // --- Utility: Format date to YYYY-MM-DD in KST ---
+        function formatDateToKST(date) {
+            const kstOffset = 9 * 60; // KST is UTC+9
+            const kstDate = new Date(date.getTime() + kstOffset * 60 * 1000);
+            const year = kstDate.getUTCFullYear();
+            const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(kstDate.getUTCDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
 
@@ -251,14 +253,14 @@
             onChange: function(selectedDates, dateStr, instance) {
                 console.log("Main picker onChange - Raw selectedDates:", selectedDates);
                 const dates = selectedDates
-                    .map(date => formatDateToLocal(date))
+                    .map(date => formatDateToKST(date))
                     .sort();
                 workDatesInput.value = dates.join(", ");
                 console.log("Main picker formatted dates:", dates, "Input value:", workDatesInput.value);
             },
             onDayCreate: function(dObj, dStr, fp, dayElem) {
-                console.log("Day created:", dayElem.dateObj, "Formatted:", formatDateToLocal(dayElem.dateObj));
-                dayElem.setAttribute('data-date', formatDateToLocal(dayElem.dateObj));
+                console.log("Day created:", dayElem.dateObj, "Formatted:", formatDateToKST(dayElem.dateObj));
+                dayElem.setAttribute('data-date', formatDateToKST(dayElem.dateObj));
             }
         });
 
@@ -375,7 +377,7 @@
                             let dayOfWeek = "?";
                             if (parsedDate) {
                                 try {
-                                    dayOfWeek = parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "UTC" });
+                                    dayOfWeek = parsedDate.toLocaleDateString("ko-KR", { weekday: "short", timeZone: "Asia/Seoul" });
                                 } catch (e) {
                                     console.error("Day of week formatting error:", e);
                                 }
@@ -462,14 +464,14 @@
                         onChange: function(selectedDates, dateStr, instance) {
                             console.log("Edit picker onChange - Raw selectedDates:", selectedDates);
                             const dates = selectedDates
-                                .map(date => formatDateToLocal(date))
+                                .map(date => formatDateToKST(date))
                                 .sort();
                             updateDateTags(dates, dateTagsContainer, editDatesInput);
                             console.log("Edit picker formatted dates:", dates, "Input value:", editDatesInput.value);
                         },
                         onDayCreate: function(dObj, dStr, fp, dayElem) {
-                            console.log("Edit day created:", dayElem.dateObj, "Formatted:", formatDateToLocal(dayElem.dateObj));
-                            dayElem.setAttribute('data-date', formatDateToLocal(dayElem.dateObj));
+                            console.log("Edit day created:", dayElem.dateObj, "Formatted:", formatDateToKST(dayElem.dateObj));
+                            dayElem.setAttribute('data-date', formatDateToKST(dayElem.dateObj));
                         }
                     });
 
@@ -760,7 +762,9 @@
             try {
                 const parts = dateString.split("-");
                 if (parts.length === 3) {
-                    const year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, day = parseInt(parts[2], 10);
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const day = parseInt(parts[2], 10);
                     if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
                         const dateObj = new Date(Date.UTC(year, month, day));
                         if (dateObj.getUTCFullYear() === year && dateObj.getUTCMonth() === month && dateObj.getUTCDate() === day) {
@@ -776,13 +780,23 @@
 
         // --- Sort Addresses ---
         function sortAddresses(addresses) {
-            const today = new Date();
-            today.setUTCHours(0, 0, 0, 0);
+            const todayKST = new Date();
+            todayKST.setTime(todayKST.getTime() + (9 * 60 * 60 * 1000)); // Adjust to KST (UTC+9)
+            const todayStr = formatDateToKST(todayKST);
 
             return addresses.sort((a, b) => {
                 const datesA = (a.workDates || []).map(parseWorkDate).filter(Boolean);
                 const datesB = (b.workDates || []).map(parseWorkDate).filter(Boolean);
 
+                // Check if today is in workDates
+                const aHasToday = a.workDates && a.workDates.includes(todayStr);
+                const bHasToday = b.workDates && b.workDates.includes(todayStr);
+
+                // Prioritize addresses with today's date
+                if (aHasToday && !bHasToday) return -1;
+                if (!aHasToday && bHasToday) return 1;
+
+                // If both or neither have today, proceed with existing logic
                 if (datesA.length === 0 && datesB.length === 0) {
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 }
@@ -792,12 +806,12 @@
                 const earliestA = Math.min(...datesA.map(d => d.getTime()));
                 const earliestB = Math.min(...datesB.map(d => d.getTime()));
 
-                const isAFutureOrToday = earliestA >= today.getTime();
-                const isBFutureOrToday = earliestB >= today.getTime();
+                const isAFutureOrToday = earliestA >= todayKST.setUTCHours(0, 0, 0, 0);
+                const isBFutureOrToday = earliestB >= todayKST.setUTCHours(0, 0, 0, 0);
 
                 if (isAFutureOrToday && isBFutureOrToday) {
                     if (earliestA === earliestB) {
-                        return new Date(b.createdAt) - new Date(a.createdAt); // Same date, sort by createdAt
+                        return new Date(b.createdAt) - new Date(a.createdAt);
                     }
                     return earliestA - earliestB;
                 }
@@ -805,7 +819,7 @@
                 if (isBFutureOrToday) return 1;
 
                 if (earliestA === earliestB) {
-                    return new Date(b.createdAt) - new Date(a.createdAt); // Same date, sort by createdAt
+                    return new Date(b.createdAt) - new Date(a.createdAt);
                 }
                 return earliestB - earliestA;
             });
