@@ -53,7 +53,7 @@
             background: #f8f9fa;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
-            text-align: center;
+            text-align: left; /* 변경: center에서 left로 수정하여 내용을 왼쪽 정렬 */
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
@@ -72,7 +72,25 @@
             font-weight: 700;
             font-size: 16px;
             line-height: 1.3;
-            white-space: nowrap;
+            /* white-space: nowrap; 삭제하여 텍스트가 자연스럽게 줄바꿈되도록 함 */
+        }
+        /* 추가: 날짜, 장소 정보를 위한 스타일 */
+        .session-date {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .session-location {
+            font-size: 15px;
+            font-weight: 700;
+            color: #000;
+        }
+        .session-tab.active .session-date {
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .session-tab.active .session-location {
+            color: white;
         }
         .session-count {
             position: absolute;
@@ -268,7 +286,6 @@
             color: #333;
         }
         
-        /* 모바일 최적화 */
         @media (max-width: 768px) {
             .container {
                 margin: 0;
@@ -331,7 +348,6 @@
             }
         }
 
-        /* 더 작은 모바일 화면 */
         @media (max-width: 480px) {
             .session-tabs {
                 grid-template-columns: 1fr;
@@ -465,6 +481,9 @@
             return baseRoster.filter(person => scheduledPeople.includes(person.name)).sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
         }
 
+        // =================================================================
+        // === 여기가 수정된 함수입니다 (renderSessionTabs) ===
+        // =================================================================
         function renderSessionTabs() {
             const tabsContainer = document.getElementById('sessionTabs');
             tabsContainer.innerHTML = '';
@@ -473,23 +492,22 @@
                 const tab = document.createElement('div');
                 tab.className = `session-tab ${session.id === currentSession ? 'active' : ''}`;
                 tab.onclick = () => selectSession(session.id);
-                const icon = session.type === 'departure' ? '🚌' : '🏠';
                 
-                let sessionText;
+                const icon = session.type === 'departure' ? '🚌' : '🏠';
+                const dateText = session.date;
+                let locationText;
+
                 if (session.type === 'departure') {
-                    if (session.location === '강일주민센터') {
-                        sessionText = `${icon} ${session.date} 출발 강일 주민센터`;
-                    } else if (session.location === '미사역') {
-                        sessionText = `${icon} ${session.date} 출발 미사역`;
-                    } else {
-                        sessionText = `${icon} ${session.date} ${session.time} ${session.location}`;
-                    }
-                } else {
-                    sessionText = `${icon} ${session.date} ${session.location}`;
+                    locationText = `출발 ${session.location}`;
+                } else { // type === 'return'
+                    locationText = session.location; // "복귀"
                 }
                 
                 tab.innerHTML = `
-                    <div class="session-info">${sessionText}</div>
+                    <div class="session-info">
+                        <div class="session-date">${dateText}</div>
+                        <div class="session-location">${icon} ${locationText}</div>
+                    </div>
                     <div class="session-count">${stats.boarded}/${stats.total}</div>
                 `;
                 tabsContainer.appendChild(tab);
@@ -512,13 +530,10 @@
             }, 100); 
         }
 
-        // =================================================================
-        // === 여기가 수정된 함수입니다 (renderAttendanceSection) ===
-        // =================================================================
         function renderAttendanceSection() {
             if (!currentSession) return;
 
-            const roster = getRoster(currentSession); // 명단 (이름순 정렬)
+            const roster = getRoster(currentSession);
             const attendanceSection = document.getElementById('attendanceSection');
             const session = sessions.find(s => s.id === currentSession);
             const leaderName = leaders[session.location];
@@ -529,7 +544,6 @@
             }
 
             const stats = getAttendanceStats(currentSession);
-            // 미탑승자 명단은 기존 순서(이름순)를 유지합니다.
             const notBoardedList = roster.filter(person => getAttendanceStatus(currentSession, person.name) !== 'boarded');
 
             const icon = session.type === 'departure' ? '🚌' : '🏠';
@@ -573,21 +587,16 @@
                 `;
             }
             
-            // --- 코드 수정 부분 ---
-            // 출석 체크리스트를 위한 명단 정렬: 미탑승자 우선, 그 다음 탑승자 순으로 정렬합니다.
-            // 각 그룹 내에서는 이름순을 유지합니다.
             roster.sort((a, b) => {
                 const aIsBoarded = getAttendanceStatus(currentSession, a.name) === 'boarded';
                 const bIsBoarded = getAttendanceStatus(currentSession, b.name) === 'boarded';
 
                 if (aIsBoarded !== bIsBoarded) {
-                    return aIsBoarded ? 1 : -1; // false(미탑승)가 앞으로, true(탑승)가 뒤로 갑니다.
+                    return aIsBoarded ? 1 : -1;
                 }
                 
-                // 출석 상태가 같을 경우 이름순으로 정렬합니다.
                 return a.name.localeCompare(b.name, 'ko-KR');
             });
-            // --- 코드 수정 끝 ---
 
             const listItemsHtml = roster.map(person => {
                 const status = getAttendanceStatus(currentSession, person.name);
@@ -624,9 +633,6 @@
                 </div>
             `;
         }
-        // =================================================================
-        // === 함수 수정 끝 ===
-        // =================================================================
 
         function toggleAttendance(name) {
             if (!currentSession) return;
