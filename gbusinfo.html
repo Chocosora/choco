@@ -172,9 +172,21 @@
             color: #8a6d3b;
             padding: 15px;
             border-radius: 10px;
-            text-align: center;
+            text-align: center; /* 이미지와 텍스트를 중앙 정렬하기 위해 추가 */
             font-size: 15px;
             line-height: 1.6;
+        }
+        .location-details img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+        .location-details p.image-caption { /* 이미지 캡션을 위한 스타일 */
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -202,21 +214,63 @@
     </div>
 
     <script>
-        // --- 데이터 (변경 없음) ---
-        const gangilRoster = [{name:'권오훈 형제',phone:'010-9490-0846'},{name:'김춘옥 자매',phone:'010-6218-0846'},{name:'이우혁 형제',phone:'010-6556-7678'},{name:'정영휘 자매',phone:'010-7600-2314'},{name:'조병일 형제',phone:'010-7701-0437'},{name:'지부연 자매',phone:'010-5663-4466'},{name:'최승연 자매',phone:'010-3783-6648'},{name:'강진원 형제',phone:'010-4931-6151'},{name:'최화순 자매',phone:'010-2237-2164'}];
-        const misaRoster = [{name:'계은경 자매',phone:'010-5362-6573'},{name:'곽영희 자매',phone:'010-6301-8990'},{name:'노남숙 자매',phone:'010-7602-6266'},{name:'노연화 자매',phone:'010-4172-1914'},{name:'박동준 형제',phone:'010-2235-3747'},{name:'신동순 자매',phone:'010-7132-4226'},{name: '이명희 자매',phone:'010-5612-7753'},{name:'이상옥 자매',phone:'010-2371-3747'},{name:'이철호 형제',phone:'010-3930-6573'},{name:'정윤두 형제',phone:'010-2381-2635'},{name:'최성은 자매',phone:'010-3378-8097'},{name:'현진선 자매',phone:'010-7532-0724'}];
-        const returnOnlyRoster = [{name:'강소영 자매',phone:'010-4473-7795'},{name:'서존 형제',phone:'010-9510-7795'}];
+        // --- 데이터 ---
+        // 전화번호는 인도자 (조병일 형제, 정윤두 형제)만 유지
+        const gangilRoster = [
+            {name:'권오훈 형제'},{name:'김춘옥 자매'},{name:'이우혁 형제'},{name:'정영휘 자매'},
+            {name:'조병일 형제', phone:'010-7701-0437'}, // 전화번호 유지
+            {name:'지부연 자매'},{name:'최승연 자매'},{name:'강진원 형제'},{name:'최화순 자매'}
+        ];
+        const misaRoster = [
+            {name:'계은경 자매'},{name:'곽영희 자매'},{name:'노남숙 자매'},{name:'노연화 자매'},
+            {name:'박동준 형제'},{name:'신동순 자매'},{name: '이명희 자매'},{name:'이상옥 자매'},
+            {name:'이철호 형제'},
+            {name:'정윤두 형제', phone:'010-2381-2635'}, // 전화번호 유지
+            {name:'최성은 자매'},{name:'현진선 자매'}
+        ];
+        // 복귀 버스만 탑승하는 인원 별도 분리 및 명칭 수정
+        const returnOnlyRoster = [
+            {name:'강소영 자매 (복귀버스만 탑승)'},
+            {name:'서존 형제 (복귀버스만 탑승)'}
+        ];
+        // 전체 명단 (현재는 전화번호가 필요 없어 보이지만, 추후 확장성을 위해 유지)
         const fullRoster = [...gangilRoster, ...misaRoster, ...returnOnlyRoster];
+
+        // 날짜별 탑승 명단
         const schedule = {
-            '8/15':['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','계은경 자매','곽영희 자매','노남숙 자매','노연화 자매','박동준 형제','이명희 자매','이상옥 자매','이철호 형제','정윤두 형제','최성은 자매','최화순 자매','현진선 자매'],
-            '8/16':['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','정윤두 형제','최성은 자매','최화순 자매','현진선 자매','서존 형제'],
-            '8/17':['권오훈 형제','김춘옥 자매','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','계은경 자매','곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','이철호 형제','정윤두 형제','최성은 자매','최화순 자매','현진선 자매','강소영 자매']
+            '8/15': {
+                '강일주민센터': ['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
+                '미사역': ['계은경 자매','곽영희 자매','노남숙 자매','노연화 자매','박동준 형제','이명희 자매','이상옥 자매','이철호 형제','정윤두 형제','최성은 자매','현진선 자매']
+            },
+            '8/16': {
+                '강일주민센터': ['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
+                '미사역': ['곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','정윤두 형제','최성은 자매','현진선 자매']
+            },
+            '8/17': {
+                '강일주민센터': ['권오훈 형제','김춘옥 자매','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
+                '미사역': ['계은경 자매','곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','이철호 형제','정윤두 형제','최성은 자매','현진선 자매']
+            }
         };
+
         const leaders = {'강일주민센터':'조병일 형제','미사역':'정윤두 형제'};
         const dates = [{'8/15': '8/15 (금)'}, {'8/16': '8/16 (토)'}, {'8/17': '8/17 (일)'}];
         const locations = ['강일주민센터', '미사역'];
 
-        // --- 앱 로직 (변경 없음) ---
+        // 장소별 상세 정보와 이미지 경로 추가
+        const locationInfo = {
+            '강일주민센터': {
+                details: '강일 주민센터 앞 공원에서 조병일 형제에게 안내받으시기 바랍니다.',
+                image: 'https://chocosora.github.io/choco/IMG_8921.jpeg', // 이미지 URL
+                imageCaption: '주민센터앞 공원' // 이미지 설명
+            },
+            '미사역': {
+                details: '미사역 4번 출구 앞.',
+                image: '', // 미사역 이미지가 없으면 비워둡니다.
+                imageCaption: ''
+            }
+        };
+
+        // --- 앱 로직 ---
         let selectedDate = null;
         let selectedLocation = null;
 
@@ -267,34 +321,48 @@
             if (!selectedDate || !selectedLocation) {
                 return;
             }
+
             const coordinatorName = leaders[selectedLocation];
             const coordinator = findCoordinator(coordinatorName);
-            const passengerList = schedule[selectedDate].sort((a, b) => a.localeCompare(b, 'ko-KR'));
+            // 선택된 날짜와 장소에 해당하는 탑승자 명단 가져오기
+            const passengerList = schedule[selectedDate][selectedLocation].sort((a, b) => a.localeCompare(b, 'ko-KR'));
+            const current_location_details = locationInfo[selectedLocation]; // 선택된 장소의 정보 가져오기
+
             const coordinatorHtml = `
                 <div class="info-section">
                     <h3>📞 담당 인도자</h3>
                     <div class="coordinator-section">
                         <span class="coordinator-name">${coordinator.name}</span>
-                        <a href="tel:${coordinator.phone}" class="call-btn">전화 연결</a>
+                        ${coordinator.phone ? `<a href="tel:${coordinator.phone}" class="call-btn">전화 연결</a>` : ''}
                     </div>
                 </div>
             `;
+
+            // 해당 장소에 복귀버스만 탑승하는 인원을 명단에 포함시키지 않음.
+            // 필요하다면 별도의 섹션으로 복귀버스 탑승자만 보여주는 로직을 추가할 수 있습니다.
             const passengersHtml = `
                 <div class="info-section">
-                    <h3>👥 ${selectedDate}일 전체 탑승자 (${passengerList.length}명)</h3>
+                    <h3>👥 ${selectedDate}일 ${selectedLocation} 탑승자 (${passengerList.length}명)</h3>
                     <div class="passenger-list">
                         ${passengerList.map(name => `<div class="name-tag">${name}</div>`).join('')}
                     </div>
                 </div>
             `;
+
+            // 장소 상세 안내 섹션 (이미지 포함)
             const locationDetailsHtml = `
                 <div class="info-section">
-                     <h3>📍 탑승 장소 상세 안내</h3>
-                     <div class="location-details">
-                        자세한 탑승 장소 안내가 곧 추가될 예정입니다.
-                     </div>
+                    <h3>📍 탑승 장소 상세 안내</h3>
+                    <div class="location-details">
+                        <p>${current_location_details.details}</p>
+                        ${current_location_details.image ? `
+                            <img src="${current_location_details.image}" alt="${selectedLocation} 탑승 장소">
+                            ${current_location_details.imageCaption ? `<p class="image-caption">${current_location_details.imageCaption}</p>` : ''}
+                        ` : ''}
+                    </div>
                 </div>
             `;
+
             infoDisplay.innerHTML = `
                 <div class="info-card">
                     ${coordinatorHtml}
@@ -303,6 +371,7 @@
                 </div>
             `;
         }
+
         document.addEventListener('DOMContentLoaded', renderSelectors);
     </script>
 </body>
