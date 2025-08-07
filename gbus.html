@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>버스 출석 체크 (Firebase)</title>
+    <title>지역대회 버스 출석부</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +25,7 @@
             overflow: hidden;
         }
         .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #6c7b8a 0%, #8a94a6 100%);
             padding: 25px 20px;
             text-align: center;
             color: white;
@@ -44,12 +44,12 @@
         }
         .session-tabs {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 10px;
             margin-bottom: 25px;
         }
         .session-tab {
-            padding: 12px 10px;
+            padding: 15px 12px;
             background: #f8f9fa;
             border: 2px solid #e1e5e9;
             border-radius: 12px;
@@ -59,25 +59,20 @@
             position: relative;
         }
         .session-tab:hover {
-            border-color: #4facfe;
+            border-color: #8a94a6;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.2);
+            box-shadow: 0 5px 15px rgba(138, 148, 166, 0.2);
         }
         .session-tab.active {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            border-color: #4facfe;
+            background: linear-gradient(135deg, #8a94a6 0%, #9ca6b8 100%);
+            border-color: #8a94a6;
             color: white;
         }
         .session-info {
-            font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 3px;
-            line-height: 1.2;
-        }
-        .session-details {
-            font-size: 13px;
-            opacity: 0.8;
-            line-height: 1.1;
+            font-weight: 700;
+            font-size: 16px;
+            line-height: 1.3;
+            white-space: nowrap;
         }
         .session-count {
             position: absolute;
@@ -92,10 +87,28 @@
         }
         .session-tab.active .session-count {
             background: rgba(255,255,255,0.9);
-            color: #4facfe;
+            color: #8a94a6;
         }
         .attendance-section {
             margin-top: 20px;
+        }
+        .session-header {
+            background: linear-gradient(135deg, #8a94a6 0%, #9ca6b8 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(138, 148, 166, 0.3);
+        }
+        .session-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .session-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
         }
         .stats-bar {
             display: grid;
@@ -271,21 +284,27 @@
                 margin-bottom: 20px;
             }
             .session-tab {
-                padding: 10px 8px;
+                padding: 12px 8px;
             }
             .session-info {
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 700;
-                margin-bottom: 4px;
-            }
-            .session-details {
-                font-size: 14px;
             }
             .session-count {
                 top: 3px;
                 right: 5px;
                 font-size: 11px;
                 padding: 2px 6px;
+            }
+            .session-header {
+                padding: 12px 15px;
+                margin-bottom: 15px;
+            }
+            .session-title {
+                font-size: 16px;
+            }
+            .session-subtitle {
+                font-size: 13px;
             }
             .stats-bar {
                 grid-template-columns: repeat(3, 1fr);
@@ -322,11 +341,8 @@
                 padding: 12px 10px;
             }
             .session-info {
-                font-size: 17px;
+                font-size: 14px;
                 font-weight: 700;
-            }
-            .session-details {
-                font-size: 15px;
             }
             .checklist-header,
             .checklist-item {
@@ -343,7 +359,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚌 버스 출석 체크</h1>
+            <h1>🚌 지역대회 버스 출석부</h1>
             <p>지역대회 버스 인도자용 (8월 15일 - 8월 17일)</p>
         </div>
         <div class="content">
@@ -458,9 +474,22 @@
                 tab.className = `session-tab ${session.id === currentSession ? 'active' : ''}`;
                 tab.onclick = () => selectSession(session.id);
                 const icon = session.type === 'departure' ? '🚌' : '🏠';
+                
+                let sessionText;
+                if (session.type === 'departure') {
+                    if (session.location === '강일주민센터') {
+                        sessionText = `${icon} ${session.date} 출발 강일 주민센터`;
+                    } else if (session.location === '미사역') {
+                        sessionText = `${icon} ${session.date} 출발 미사역`;
+                    } else {
+                        sessionText = `${icon} ${session.date} ${session.time} ${session.location}`;
+                    }
+                } else {
+                    sessionText = `${icon} ${session.date} ${session.location}`;
+                }
+                
                 tab.innerHTML = `
-                    <div class="session-info">${icon} ${session.date}</div>
-                    <div class="session-details">${session.time} • ${session.location}</div>
+                    <div class="session-info">${sessionText}</div>
                     <div class="session-count">${stats.boarded}/${stats.total}</div>
                 `;
                 tabsContainer.appendChild(tab);
@@ -472,7 +501,6 @@
             renderSessionTabs();
             renderAttendanceSection();
             
-            // 자동 스크롤 기능 추가
             setTimeout(() => {
                 const attendanceSection = document.getElementById('attendanceSection');
                 if (attendanceSection) {
@@ -481,13 +509,16 @@
                         block: 'start'
                     });
                 }
-            }, 100); // 렌더링 완료 후 스크롤
+            }, 100); 
         }
 
+        // =================================================================
+        // === 여기가 수정된 함수입니다 (renderAttendanceSection) ===
+        // =================================================================
         function renderAttendanceSection() {
             if (!currentSession) return;
-            const roster = getRoster(currentSession);
-            const sessionData = attendanceData[currentSession] || {};
+
+            const roster = getRoster(currentSession); // 명단 (이름순 정렬)
             const attendanceSection = document.getElementById('attendanceSection');
             const session = sessions.find(s => s.id === currentSession);
             const leaderName = leaders[session.location];
@@ -498,7 +529,34 @@
             }
 
             const stats = getAttendanceStats(currentSession);
-            const notBoardedList = roster.filter(person => sessionData[person.name] !== 'boarded');
+            // 미탑승자 명단은 기존 순서(이름순)를 유지합니다.
+            const notBoardedList = roster.filter(person => getAttendanceStatus(currentSession, person.name) !== 'boarded');
+
+            const icon = session.type === 'departure' ? '🚌' : '🏠';
+            let sessionTitle, sessionSubtitle;
+            
+            if (session.type === 'departure') {
+                if (session.location === '강일주민센터') {
+                    sessionTitle = `${icon} ${session.date}`;
+                    sessionSubtitle = '출발 강일 주민센터';
+                } else if (session.location === '미사역') {
+                    sessionTitle = `${icon} ${session.date}`;
+                    sessionSubtitle = '출발 미사역';
+                } else {
+                    sessionTitle = `${icon} ${session.date} ${session.time}`;
+                    sessionSubtitle = session.location;
+                }
+            } else {
+                sessionTitle = `${icon} ${session.date} ${session.time}`;
+                sessionSubtitle = session.location;
+            }
+            
+            const sessionHeaderHtml = `
+                <div class="session-header">
+                    <div class="session-title">${sessionTitle}</div>
+                    <div class="session-subtitle">${sessionSubtitle}</div>
+                </div>
+            `;
 
             let notBoardedHtml = '';
             if (notBoardedList.length > 0) {
@@ -514,6 +572,22 @@
                     </div>
                 `;
             }
+            
+            // --- 코드 수정 부분 ---
+            // 출석 체크리스트를 위한 명단 정렬: 미탑승자 우선, 그 다음 탑승자 순으로 정렬합니다.
+            // 각 그룹 내에서는 이름순을 유지합니다.
+            roster.sort((a, b) => {
+                const aIsBoarded = getAttendanceStatus(currentSession, a.name) === 'boarded';
+                const bIsBoarded = getAttendanceStatus(currentSession, b.name) === 'boarded';
+
+                if (aIsBoarded !== bIsBoarded) {
+                    return aIsBoarded ? 1 : -1; // false(미탑승)가 앞으로, true(탑승)가 뒤로 갑니다.
+                }
+                
+                // 출석 상태가 같을 경우 이름순으로 정렬합니다.
+                return a.name.localeCompare(b.name, 'ko-KR');
+            });
+            // --- 코드 수정 끝 ---
 
             const listItemsHtml = roster.map(person => {
                 const status = getAttendanceStatus(currentSession, person.name);
@@ -537,6 +611,7 @@
             }).join('');
 
             attendanceSection.innerHTML = `
+                ${sessionHeaderHtml}
                 <div class="stats-bar">
                     <div class="stat-item"><div class="stat-number total">${stats.total}</div><div class="stat-label">총 인원</div></div>
                     <div class="stat-item"><div class="stat-number boarded">${stats.boarded}</div><div class="stat-label">탑승</div></div>
@@ -549,6 +624,9 @@
                 </div>
             `;
         }
+        // =================================================================
+        // === 함수 수정 끝 ===
+        // =================================================================
 
         function toggleAttendance(name) {
             if (!currentSession) return;
