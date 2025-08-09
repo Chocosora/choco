@@ -1,428 +1,507 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>지역대회 버스 탑승 안내</title>
-  <style>
-    :root{
-      --primary-color:#6c7b8a; --secondary-color:#8a94a6; --background-color:#f8f9fa;
-      --text-color:#333; --white-color:#fff; --accent-color:#007bff;
-    }
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
-      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:var(--text-color);
-      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale
-    }
-    .container{max-width:720px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);overflow:hidden}
-    .header{background:linear-gradient(135deg,var(--primary-color) 0%,var(--secondary-color) 100%);padding:22px 18px;text-align:center;color:#fff}
-    .header h1{font-size:24px;margin-bottom:6px;font-weight:700}
-    .header p{opacity:.92;font-size:14px}
-    .content{padding:22px}
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>지역대회 버스 탑승 안내</title>
+<style>
+  :root{--primary-color:#6c7b8a;--secondary-color:#8a94a6;--background-color:#f8f9fa;--text-color:#333;--white:#fff;--accent:#007bff}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ubuntu,'Helvetica Neue',sans-serif;
+    background:#eef2f8;min-height:100vh;padding:16px;color:var(--text-color)
+  }
+  .container{max-width:760px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.08);overflow:hidden}
+  .header{background:linear-gradient(135deg,var(--primary-color),var(--secondary-color));color:#fff;text-align:center;padding:22px 16px}
+  .header h1{font-size:24px;margin-bottom:6px}
+  .content{padding:20px}
 
-    .selector-group{margin-bottom:22px}
-    .selector-group h2{font-size:18px;margin-bottom:12px;color:var(--primary-color);font-weight:700}
-    .selector-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-    .selector-btn{
-      padding:14px 12px;font-size:16px;font-weight:700;min-height:56px;display:flex;align-items:center;justify-content:center;
-      background:var(--background-color);border:2px solid #e1e5e9;border-radius:12px;cursor:pointer;transition:all .2s ease
-    }
-    .selector-btn:hover{border-color:var(--secondary-color);transform:translateY(-1px)}
-    .selector-btn.active{background:var(--secondary-color);border-color:var(--primary-color);color:#fff}
+  .selector-group{margin-bottom:20px}
+  /* ✅ 섹션 제목 글자 확실히 크게 */
+  .selector-group h2{
+    font-size:22px; line-height:1.25; color:var(--primary-color);
+    font-weight:800; letter-spacing:.2px; margin-bottom:12px
+  }
+  .selector-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .selector-btn{
+    background:#f6f8fb;border:2px solid #e3e8ef;border-radius:12px;padding:14px 12px;
+    font-weight:800;font-size:16px;cursor:pointer;text-align:center
+  }
+  .selector-btn.active{background:var(--secondary-color);border-color:var(--primary-color);color:#fff}
 
-    #info-display{margin-top:16px}
-    .info-card{background:var(--background-color);border-radius:12px;padding:18px;border:1px solid #e1e5e9}
-    .info-placeholder{text-align:center;color:#777;padding:36px 8px;font-size:15px;line-height:1.6}
+  .info-card{background:var(--background-color);border:1px solid #e3e8ef;border-radius:12px;padding:16px}
+  .info-section{margin-bottom:20px}
+  .info-section:last-child{margin-bottom:0}
+  .info-section h3{font-size:18px;margin-bottom:10px;font-weight:800}
 
-    .info-section{margin-bottom:20px}
-    .info-section:last-child{margin-bottom:0}
-    .info-section h3{font-size:17px;margin-bottom:10px;color:var(--text-color)}
+  .passenger-list{display:flex;flex-wrap:wrap;gap:8px}
+  .name-tag{background:#fff;border:1px solid #e3e8ef;border-radius:8px;padding:7px 12px}
 
-    .coordinator-section{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px;border-radius:10px}
-    .coordinator-name{font-weight:700;font-size:16px}
-    .call-btn{display:inline-block;text-decoration:none;background-color:var(--accent-color);color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:700}
+  .coordinator{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e3e8ef;border-radius:10px;padding:10px}
+  .call-btn{background:var(--accent);color:#fff;text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:800}
 
-    .passenger-list{display:flex;flex-wrap:wrap;gap:8px}
-    .name-tag{background:#fff;color:var(--text-color);padding:7px 12px;border-radius:8px;font-size:15px;font-weight:500;border:1px solid #ddd}
+  .location-details{background:#fffbe6;border:1px solid #ffe58f;color:#8a6d3b;border-radius:10px;padding:12px;text-align:center}
+  .departure-time{display:block;font-weight:900;color:#d8000c;margin-bottom:6px}
+  .loc-img{max-width:100%;border-radius:8px;margin-top:10px}
 
-    .location-details{background:#fffbe6;border:1px solid #ffe58f;color:#8a6d3b;padding:12px;border-radius:10px;text-align:center;font-size:14px;line-height:1.6}
-    .location-details img{max-width:100%;height:auto;margin-top:10px;border-radius:8px}
-    .location-details p.image-caption{text-align:center;font-size:13px;color:#777;margin-top:4px}
-    .departure-time{font-weight:bold;color:#d8000c;margin-bottom:4px;display:block}
-    .important-note{font-size:13px;color:#8a6d3b;margin:8px 0 10px;line-height:1.5;background-color:#fff8e1;padding:8px;border-radius:8px;border:1px dashed #ffe082}
-
-    /* 복귀 카드 내 인라인 편집 */
-    .edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-    .btn{border:1px solid #cfd6e0;background:#fff;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .btn.primary{background:#2f7d32;color:#fff;border-color:#2f7d32}
-    .btn.danger{background:#c62828;color:#fff;border-color:#c62828}
-    .edit-field{width:100%;padding:8px;border-radius:8px;border:1px solid #ccd6e0;font-size:14px}
-    .edit-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
-  </style>
+  .edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+  .btn{border:1px solid #cfd6e0;background:#fff;border-radius:8px;padding:9px 14px;font-weight:800;cursor:pointer}
+  .btn.primary{background:#2f7d32;border-color:#2f7d32;color:#fff}
+  .btn.secondary{background:#006d77;border-color:#006d77;color:#fff}
+  .edit-field{width:100%;padding:10px;border-radius:8px;border:1px solid #ccd6e0;font-size:15px}
+  .edit-label{display:block;text-align:left;margin-top:10px;margin-bottom:6px;font-weight:700}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🚌 지역대회 버스 탑승 안내</h1>
-      <p>날짜와 장소를 선택하면 해당 정보가 표시됩니다. (복귀는 <b>대회장(복귀)</b> 선택)</p>
-    </div>
-
-    <div class="content">
-      <div class="selector-group">
-        <h2>1. 탑승 날짜 선택</h2>
-        <div id="date-selector" class="selector-buttons"></div>
-      </div>
-
-      <div class="selector-group">
-        <h2>2. 탑승 장소 선택</h2>
-        <div id="location-selector" class="selector-buttons"></div>
-      </div>
-
-      <div id="info-display">
-        <div class="info-placeholder">
-          <p>먼저 <b>날짜</b>와 <b>장소</b>를 선택해주세요.<br/>복귀 안내는 <b>대회장(복귀)</b>에서 확인·수정할 수 있습니다.</p>
-        </div>
-      </div>
-    </div>
+<div class="container">
+  <div class="header">
+    <h1>🚌 지역대회 버스 탑승 안내</h1>
+    <p>날짜와 장소를 선택하면 상세 정보가 표시됩니다. (복귀는 <b>대회장(복귀)</b>)</p>
   </div>
 
-  <!-- Firebase (CDN / 모듈) -->
-  <script type="module">
-    /************* Firebase 초기화 (네가 제공한 설정값 적용) *************/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics.js";
-    import { getDatabase, ref, child, get, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
-    import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+  <div class="content">
+    <div class="selector-group">
+      <h2>1. 탑승 날짜</h2>
+      <div id="date-selector" class="selector-buttons"></div>
+    </div>
+    <div class="selector-group">
+      <h2>2. 탑승 장소</h2>
+      <div id="location-selector" class="selector-buttons"></div>
+    </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
-      authDomain: "chocosora-ad4df.firebaseapp.com",
-      databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
-      projectId: "chocosora-ad4df",
-      storageBucket: "chocosora-ad4df.firebasestorage.app",
-      messagingSenderId: "798065461606",
-      appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
-      measurementId: "G-4FYC7HVNNV"
-    };
-    const app = initializeApp(firebaseConfig);
-    getAnalytics(app);
-    const db = getDatabase(app);
-    const storage = getStorage(app);
+    <div id="info-display">
+      <div class="info-card">먼저 날짜와 장소를 선택해주세요.</div>
+    </div>
+  </div>
+</div>
 
-    /************* 기본 데이터 / 유틸 *************/
-    const DAY_LABEL = { '8/15':'금','8/16':'토','8/17':'일' };
+<script type="module">
+/* ===== Firebase (Realtime DB만 사용) ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import { getDatabase, ref, child, get, set } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
 
-    const leaders = {
-      '강일주민센터': { name: '조병일 형제', phone: '010-7701-0437' },
-      '미사역': { name: '정윤두 형제', phone: '010-2381-2635' },
-      '대회장(복귀)': null
-    };
+/* Firebase 설정 (DB 규칙: .read/.write 둘 다 true 가정) */
+const firebaseConfig = {
+  apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+  authDomain: "chocosora-ad4df.firebaseapp.com",
+  databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+  projectId: "chocosora-ad4df",
+  storageBucket: "chocosora-ad4df.appspot.com",
+  messagingSenderId: "798065461606",
+  appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
+  measurementId: "G-4FYC7HVNNV"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
 
-    const people = [
-      // 강일주민센터
-      { name:'정영휘 자매', start:'강일주민센터', days:['금','토','일'] },
-      { name:'조병일 형제', start:'강일주민센터', days:['금','토','일'] },
-      { name:'최승연 자매', start:'강일주민센터', days:['금','토','일'] },
-      { name:'이우혁 형제', start:'강일주민센터', days:['금','토'] },
-      { name:'지부연 자매', start:'강일주민센터', days:['금','토','일'] },
-      { name:'권오훈 형제', start:'강일주민센터', days:['금','토','일'] },
-      { name:'김춘옥 자매', start:'강일주민센터', days:['금','토','일'] },
-      { name:'강진원 형제', start:'강일주민센터', days:['금','토','일'] },
-      { name:'최화순 자매', start:'강일주민센터', days:['금','토','일'] },
+/* ===== GitHub 업로드 설정 — ⚠️ 토큰 직접 포함(임시용) ===== */
+const GITHUB = {
+  token : "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",
+  owner : "Chocosora",
+  repo  : "choco",
+  branch: "main" // 기본 브랜치가 다르면 변경
+};
 
-      // 미사역
-      { name:'정윤두 형제', start:'미사역', days:['금','토','일'] },
-      { name:'노남숙 자매', start:'미사역', days:['금','토','일'] },
-      { name:'박동준 형제', start:'미사역', days:['금'] },
-      { name:'이상옥 자매', start:'미사역', days:['금'] },
-      { name:'계은경 자매', start:'미사역', days:['금','일'] },
-      { name:'노연화 자매', start:'미사역', days:['금'] },
-      { name:'신동순 자매', start:'미사역', days:['토','일'] },
-      { name:'곽영희 자매', start:'미사역', days:['금','토','일'] },
-      { name:'이명희 자매', start:'미사역', days:['금','토','일'] },
-      { name:'현진선 자매', start:'미사역', days:['금','토','일'] },
-      { name:'최성은 자매', start:'미사역', days:['금','토','일'] },
-      { name:'이철호 형제', start:'미사역', days:['금','일'] },
+/* ===== 기본 데이터 ===== */
+const DAY_LABEL = { '8/15':'금','8/16':'토','8/17':'일' };
+const leaders = {
+  '강일주민센터': { name: '조병일 형제', phone: '010-7701-0437' },
+  '미사역':       { name: '정윤두 형제', phone: '010-2381-2635' },
+  '대회장(복귀)': null
+};
+const people = [
+  // 강일주민센터
+  { name:'정영휘 자매', start:'강일주민센터', days:['금','토','일'] },
+  { name:'조병일 형제', start:'강일주민센터', days:['금','토','일'] },
+  { name:'최승연 자매', start:'강일주민센터', days:['금','토','일'] },
+  { name:'이우혁 형제', start:'강일주민센터', days:['금','토'] },
+  { name:'지부연 자매', start:'강일주민센터', days:['금','토','일'] },
+  { name:'권오훈 형제', start:'강일주민센터', days:['금','토','일'] },
+  { name:'김춘옥 자매', start:'강일주민센터', days:['금','토','일'] },
+  { name:'강진원 형제', start:'강일주민센터', days:['금','토','일'] },
+  { name:'최화순 자매', start:'강일주민센터', days:['금','토','일'] },
 
-      // 복귀 전용
-      { name:'서존 형제', start:'대회장(복귀)', days:['토'], returnOnly:true },
-      { name:'강소영 자매', start:'대회장(복귀)', days:['일'], returnOnly:true }
-    ];
+  // 미사역
+  { name:'정윤두 형제', start:'미사역', days:['금','토','일'] },
+  { name:'노남숙 자매', start:'미사역', days:['금','토','일'] },
+  { name:'박동준 형제', start:'미사역', days:['금'] },
+  { name:'이상옥 자매', start:'미사역', days:['금'] },
+  { name:'계은경 자매', start:'미사역', days:['금','일'] },
+  { name:'노연화 자매', start:'미사역', days:['금'] },
+  { name:'신동순 자매', start:'미사역', days:['토','일'] },
+  { name:'곽영희 자매', start:'미사역', days:['금','토','일'] },
+  { name:'이명희 자매', start:'미사역', days:['금','토','일'] },
+  { name:'현진선 자매', start:'미사역', days:['금','토','일'] },
+  { name:'최성은 자매', start:'미사역', days:['금','토','일'] },
+  { name:'이철호 형제', start:'미사역', days:['금','일'] },
 
-    const locationInfoGo = {
-      '강일주민센터': {
-        details: '강일 주민센터 앞 공원에서 조병일 형제에게 안내받으시기 바랍니다.',
-        image: 'https://chocosora.github.io/choco/IMG_8921.jpeg',
-        imageCaption: '주민센터 앞 공원',
-        departureTime: '오전 7:40'
-      },
-      '미사역': {
-        details: '미사역 5번 출구 앞 버스정류장 부근에서 정윤두 형제의 안내를 받으시기 바랍니다.',
-        image: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA01.png',
-        image2: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA02.jpeg',
-        imageCaption: '미사역 5번 출구 앞 버스정류장',
-        departureTime: '오전 7:55'
-      }
-    };
+  // 복귀 전용(오는편만)
+  { name:'서존 형제', start:'대회장(복귀)', days:['토'], returnOnly:true },
+  { name:'강소영 자매', start:'대회장(복귀)', days:['일'], returnOnly:true }
+];
 
-    function defaultReturnDetail(){
-      return { time:'오후 5:20', place:'버스주차장', desc:'', img1:'', img2:'' };
-    }
-    const dates = [{ '8/15':'8/15 (금)' },{ '8/16':'8/16 (토)' },{ '8/17':'8/17 (일)' }];
-    const dateKeyToPath = (k)=>k.replace('/','-');
+/* 기본(로컬) 출발 정보 — DB에 커스텀이 없을 때 사용 */
+const DEFAULT_GO_INFO = {
+  '강일주민센터': {
+    time: '오전 7:40',
+    details: '강일 주민센터 앞 공원에서 조병일 형제에게 안내받으시기 바랍니다.',
+    image: 'https://chocosora.github.io/choco/IMG_8921.jpeg',
+    image2: '',
+    caption: '주민센터 앞 공원'
+  },
+  '미사역': {
+    time: '오전 7:55',
+    details: '미사역 5번 출구 앞 버스정류장 부근에서 정윤두 형제의 안내를 받으시기 바랍니다.',
+    image: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA01.png',
+    image2: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA02.jpeg',
+    caption: '미사역 5번 출구 앞 버스정류장'
+  }
+};
 
-    /************* DOM *************/
-    const dateSelector = document.getElementById('date-selector');
-    const locationSelector = document.getElementById('location-selector');
-    const infoDisplay = document.getElementById('info-display');
+/* 복귀 기본 이미지(없을 때 표시) */
+const RETURN_DEFAULT_IMG = "https://github.com/Chocosora/choco/blob/main/IMG_8938.jpeg?raw=true";
 
-    let selectedDate = null;
-    let selectedLocation = null;
+/* 선택지 */
+const dates = [{ key:'8/15', label:'8/15 (금)' },{ key:'8/16', label:'8/16 (토)' },{ key:'8/17', label:'8/17 (일)' }];
+const locations = ['강일주민센터','미사역','대회장(복귀)'];
+const dateKeyToPath = k => k.replace('/','-');
 
-    function renderSelectors(){
-      dateSelector.innerHTML=''; locationSelector.innerHTML='';
-      dates.forEach(obj=>{
-        const key=Object.keys(obj)[0], value=obj[key];
-        const btn=document.createElement('button');
-        btn.className='selector-btn'; btn.textContent=value;
-        btn.onclick=()=>selectDate(key);
-        dateSelector.appendChild(btn);
+/* ===== 셀렉터/상태 ===== */
+const dateSelector = document.getElementById('date-selector');
+const locationSelector = document.getElementById('location-selector');
+const infoDisplay = document.getElementById('info-display');
+
+let selectedDate = null;
+let selectedLocation = null;
+
+function renderSelectors(){
+  dateSelector.innerHTML = '';
+  dates.forEach(d=>{
+    const b = document.createElement('button');
+    b.className = 'selector-btn';
+    b.textContent = d.label;
+    b.onclick = ()=> selectDate(d.key);
+    dateSelector.appendChild(b);
+  });
+
+  locationSelector.innerHTML = '';
+  locations.forEach(loc=>{
+    const b = document.createElement('button');
+    b.className = 'selector-btn';
+    b.textContent = loc;
+    b.onclick = ()=> selectLocation(loc);
+    locationSelector.appendChild(b);
+  });
+}
+function selectDate(key){
+  selectedDate = key;
+  [...dateSelector.children].forEach(el=>el.classList.remove('active'));
+  const btn = [...dateSelector.children].find(el=>el.textContent.includes(key));
+  if(btn) btn.classList.add('active');
+  renderInfo();
+}
+function selectLocation(loc){
+  selectedLocation = loc;
+  [...locationSelector.children].forEach(el=>el.classList.remove('active'));
+  const btn = [...locationSelector.children].find(el=>el.textContent===loc);
+  if(btn) btn.classList.add('active');
+  renderInfo();
+}
+
+/* ===== 명단 유틸 ===== */
+function getOutboundPassengers(dateKey, location){
+  const day = DAY_LABEL[dateKey]; if(!day) return [];
+  return people.filter(p => !p.returnOnly && p.start===location && p.days.includes(day))
+    .map(p => p.name).sort((a,b)=>a.localeCompare(b,'ko-KR'));
+}
+function getReturnPassengers(dateKey){
+  const day = DAY_LABEL[dateKey]; if(!day) return [];
+  return people.filter(p => p.days.includes(day))
+    .map(p => p.name).sort((a,b)=>a.localeCompare(b,'ko-KR'));
+}
+function coordinatorBlockOf(location){
+  const c = leaders[location];
+  if(!c) return '';
+  return `
+    <div class="info-section">
+      <h3>📞 담당 인도자</h3>
+      <div class="coordinator">
+        <span>${c.name}</span>
+        <a class="call-btn" href="tel:${c.phone}">전화 연결</a>
+      </div>
+    </div>`;
+}
+
+/* ===== GitHub 업로드(프론트에서 토큰 사용) ===== */
+async function pickAndUploadToGitHub(prefix = 'misc', originalNameHint = 'image'){
+  // 1) 파일 선택
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.click();
+  await new Promise(res => input.onchange = res);
+  const file = input.files?.[0];
+  if (!file) return null;
+
+  // 2) Base64 변환
+  const dataUrl = await new Promise(res => { const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file); });
+  const base64 = String(dataUrl).split(',')[1];
+
+  // 3) 경로
+  const safeName = file.name || originalNameHint;
+  const path = `${prefix}/${Date.now()}_${safeName}`;
+
+  // 4) GitHub API 호출
+  const ghUrl = `https://api.github.com/repos/${encodeURIComponent(GITHUB.owner)}/${encodeURIComponent(GITHUB.repo)}/contents/${encodeURIComponent(path)}`;
+  const ghRes = await fetch(ghUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${GITHUB.token}`,
+      'Accept': 'application/vnd.github+json'
+    },
+    body: JSON.stringify({
+      message: `Upload via page: ${safeName}`,
+      content: base64,
+      branch: GITHUB.branch
+    })
+  });
+  const data = await ghRes.json();
+  if (!ghRes.ok) {
+    console.error('GitHub 업로드 실패:', data);
+    alert('업로드 실패: ' + (data?.message || JSON.stringify(data)));
+    return null;
+  }
+  // RAW URL
+  const rawUrl = `https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/${GITHUB.branch}/${path}`;
+  return rawUrl;
+}
+
+/* ===== 복귀 카드(보기/편집) — 사진 2장 지원 ===== */
+/* DB: returnDetails/{날짜} -> { time, place, desc, photoUrl, photoUrl2 } */
+async function fetchReturnDetail(dateKey){
+  const path = `returnDetails/${dateKeyToPath(dateKey)}`;
+  try{
+    const snap = await get(child(ref(db), path));
+    return snap.exists()
+      ? { photoUrl:'', photoUrl2:'', ...snap.val() }
+      : { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl:'', photoUrl2:'' };
+  }catch{
+    return { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl:'', photoUrl2:'' };
+  }
+}
+function buildReturnCard(dateKey, d){
+  const img1 = d.photoUrl  || RETURN_DEFAULT_IMG;
+  const img2 = d.photoUrl2 || '';
+  const viewHtml = `
+    <div class="info-section" id="return-card-slot">
+      <h3>📍 대회장(복귀) 탑승 안내</h3>
+      <div class="location-details">
+        <span class="departure-time">출발 시간: ${d.time || '오후 5:20'}</span>
+        <p>${(d.place||'버스주차장')}${d.desc ? ' — '+d.desc : ''}</p>
+        <img class="loc-img" src="${img1}" alt="복귀 탑승 장소 1">
+        ${img2 ? `<img class="loc-img" src="${img2}" alt="복귀 탑승 장소 2">` : ''}
+        <div class="edit-actions">
+          <button class="btn" id="ret-edit-btn">편집</button>
+        </div>
+      </div>
+    </div>`;
+  const editHtml = `
+    <div class="info-section" id="return-card-slot">
+      <h3>📍 대회장(복귀) 탑승 안내 — 편집</h3>
+      <div class="location-details">
+        <img class="loc-img" id="ret-preview-1" src="${img1}" alt="복귀 탑승 장소 1">
+        ${img2 ? `<img class="loc-img" id="ret-preview-2" src="${img2}" alt="복귀 탑승 장소 2">` : `<img class="loc-img" id="ret-preview-2" src="" style="display:none" alt="복귀 탑승 장소 2">`}
+        <label class="edit-label">출발 시간</label>
+        <input class="edit-field" id="e-time" placeholder="오후 5:20" value="${d.time || '오후 5:20'}">
+        <label class="edit-label">장소</label>
+        <input class="edit-field" id="e-place" placeholder="버스주차장" value="${d.place || '버스주차장'}">
+        <label class="edit-label">추가 안내</label>
+        <textarea class="edit-field" id="e-desc" rows="3" placeholder="예: 정문 맞은편 버스주차장으로 집결">${d.desc || ''}</textarea>
+
+        <div class="edit-actions" style="justify-content:flex-start">
+          <button class="btn secondary" id="ret-change-photo-1">사진1 변경</button>
+          <button class="btn secondary" id="ret-add-photo-2">사진2 추가/변경</button>
+        </div>
+
+        <div class="edit-actions">
+          <button class="btn" id="ret-cancel-btn">취소</button>
+          <button class="btn primary" id="ret-save-btn">저장</button>
+        </div>
+      </div>
+    </div>`;
+  return { viewHtml, editHtml };
+}
+async function attachReturnHandlers(dateKey){
+  const editBtn = document.getElementById('ret-edit-btn');
+  if(editBtn){
+    editBtn.addEventListener('click', async ()=>{
+      const d = await fetchReturnDetail(dateKey);
+      const built = buildReturnCard(dateKey, d);
+      document.getElementById('return-card-slot').outerHTML = built.editHtml;
+
+      let pending = { ...d };
+      const prev1 = document.getElementById('ret-preview-1');
+      const prev2 = document.getElementById('ret-preview-2');
+
+      document.getElementById('ret-cancel-btn').addEventListener('click', async ()=>{
+        const latest = await fetchReturnDetail(dateKey);
+        const b = buildReturnCard(dateKey, latest);
+        document.getElementById('return-card-slot').outerHTML = b.viewHtml;
+        await attachReturnHandlers(dateKey);
       });
-      ['강일주민센터','미사역','대회장(복귀)'].forEach(loc=>{
-        const btn=document.createElement('button');
-        btn.className='selector-btn'; btn.textContent=loc;
-        btn.onclick=()=>selectLocation(loc);
-        locationSelector.appendChild(btn);
+
+      document.getElementById('ret-change-photo-1').addEventListener('click', async ()=>{
+        const newUrl = await pickAndUploadToGitHub(`return_photos/${dateKeyToPath(dateKey)}`,'return1.jpg');
+        if(newUrl){ pending.photoUrl = newUrl; prev1.src = newUrl; prev1.style.display=''; }
       });
-    }
-    function selectDate(key){
-      selectedDate=key;
-      [...dateSelector.children].forEach(b=>b.classList.remove('active'));
-      const clicked=[...dateSelector.children].find(b=>b.textContent.includes(key));
-      if(clicked) clicked.classList.add('active');
-      renderInfo();
-    }
-    function selectLocation(loc){
-      selectedLocation=loc;
-      [...locationSelector.children].forEach(b=>b.classList.remove('active'));
-      const clicked=[...locationSelector.children].find(b=>b.textContent===loc);
-      if(clicked) clicked.classList.add('active');
-      renderInfo();
-    }
-
-    function getOutboundPassengers(dateKey, location){
-      const day = DAY_LABEL[dateKey]; if(!day) return [];
-      return people.filter(p=>!p.returnOnly && p.start===location && p.days.includes(day))
-                   .map(p=>p.name).sort((a,b)=>a.localeCompare(b,'ko-KR'));
-    }
-    function getReturnPassengers(dateKey){
-      const day = DAY_LABEL[dateKey]; if(!day) return [];
-      return people.filter(p=>p.days.includes(day))
-                   .map(p=>p.name).sort((a,b)=>a.localeCompare(b,'ko-KR'));
-    }
-
-    function coordinatorBlockOf(location){
-      const coord = leaders[location];
-      if(!coord) return '';
-      return `
-        <div class="info-section">
-          <h3>📞 담당 인도자</h3>
-          <div class="coordinator-section">
-            <span class="coordinator-name">${coord.name}</span>
-            <a href="tel:${coord.phone}" class="call-btn">전화 연결</a>
-          </div>
-        </div>`;
-    }
-
-    // ---------- 복귀(대회장) 카드: 보기 <-> 편집 토글 ----------
-    function renderReturnCard(dateKey){
-      const path = `returnDetails/${dateKeyToPath(dateKey)}`;
-      return get(child(ref(db), path)).then(async snap=>{
-        const d = snap.exists() ? snap.val() : defaultReturnDetail();
-        return buildReturnCard(dateKey, d);
-      }).catch(()=>{
-        const d = defaultReturnDetail();
-        return buildReturnCard(dateKey, d);
+      document.getElementById('ret-add-photo-2').addEventListener('click', async ()=>{
+        const newUrl = await pickAndUploadToGitHub(`return_photos/${dateKeyToPath(dateKey)}`,'return2.jpg');
+        if(newUrl){ pending.photoUrl2 = newUrl; prev2.src = newUrl; prev2.style.display=''; }
       });
-    }
 
-    function buildReturnCard(dateKey, d){
-      // 보기 모드 카드
-      const imgHtml = `${d.img1?`<img src="${d.img1}" alt="복귀 이미지 1">`:''}${d.img2?`<img src="${d.img2}" alt="복귀 이미지 2">`:''}`;
-      const viewHtml = `
-        <div class="info-section">
-          <h3>📍 대회장(복귀) 탑승 안내</h3>
-          <div class="location-details">
-            <span class="departure-time">출발 시간: ${d.time || '오후 5:20'}</span>
-            <p class="important-note">복귀 버스는 한 곳에서 탑승합니다. 공지된 위치로 모여 주세요.</p>
-            <p>${(d.place||'버스주차장')}${d.desc ? ' — '+d.desc : ''}</p>
-            ${imgHtml}
-            <div class="edit-actions">
-              <button class="btn" id="ret-edit-btn">편집</button>
-            </div>
-          </div>
-        </div>`;
-
-      // 편집 모드 카드 (같은 스타일 영역에서 input 표시)
-      const editHtml = `
-        <div class="info-section">
-          <h3>📍 대회장(복귀) 탑승 안내 — 편집</h3>
-          <div class="location-details">
-            <div class="edit-grid">
-              <div>
-                <label>출발 시간</label>
-                <input class="edit-field" id="e-time" placeholder="오후 5:20" value="${d.time || '오후 5:20'}"/>
-              </div>
-              <div>
-                <label>장소</label>
-                <input class="edit-field" id="e-place" placeholder="버스주차장" value="${d.place || '버스주차장'}"/>
-              </div>
-              <div>
-                <label>추가 안내</label>
-                <textarea class="edit-field" id="e-desc" rows="3" placeholder="예: 정문 맞은편 버스주차장으로 집결">${d.desc || ''}</textarea>
-              </div>
-              <div>
-                <label>이미지 업로드(최대 2장)</label>
-                <input class="edit-field" type="file" id="e-img1" accept="image/*"/>
-                <input class="edit-field" type="file" id="e-img2" accept="image/*" style="margin-top:6px"/>
-                <div style="margin-top:8px">${imgHtml || '<em>등록된 이미지 없음</em>'}</div>
-              </div>
-            </div>
-            <div class="edit-actions">
-              <button class="btn" id="ret-cancel-btn">취소</button>
-              <button class="btn primary" id="ret-save-btn">저장</button>
-            </div>
-          </div>
-        </div>`;
-
-      return { viewHtml, editHtml, data: d };
-    }
-
-    async function uploadIfAny(fileInput, dateKey, label){
-      if(!fileInput || !fileInput.files || !fileInput.files[0]) return '';
-      const file=fileInput.files[0];
-      const path=`returnDetails/${dateKeyToPath(dateKey)}/${label}_${Date.now()}_${file.name}`;
-      const r=sRef(storage, path);
-      await uploadBytes(r, file);
-      return await getDownloadURL(r);
-    }
-
-    async function attachReturnCardHandlers(dateKey){
-      const editBtn = document.getElementById('ret-edit-btn');
-      if(editBtn){
-        editBtn.addEventListener('click', async ()=>{
-          const built = await renderReturnCard(dateKey);
-          swapReturnCard(built.editHtml);
-          await bindEditHandlers(dateKey, built.data);
-        });
-      }
-    }
-
-    async function bindEditHandlers(dateKey, currentData){
-      const cancelBtn = document.getElementById('ret-cancel-btn');
-      const saveBtn = document.getElementById('ret-save-btn');
-      cancelBtn.addEventListener('click', async ()=>{
-        const built = await renderReturnCard(dateKey);
-        swapReturnCard(built.viewHtml);
-        await attachReturnCardHandlers(dateKey);
-      });
-      saveBtn.addEventListener('click', async ()=>{
-        const etime = document.getElementById('e-time').value.trim() || '오후 5:20';
-        const eplace = document.getElementById('e-place').value.trim() || '버스주차장';
-        const edesc = document.getElementById('e-desc').value.trim();
-        const img1Input = document.getElementById('e-img1');
-        const img2Input = document.getElementById('e-img2');
-
-        const [u1,u2] = await Promise.all([
-          uploadIfAny(img1Input, dateKey, 'img1'),
-          uploadIfAny(img2Input, dateKey, 'img2')
-        ]);
-
-        const payload = {
-          time: etime,
-          place: eplace,
-          desc: edesc,
-          img1: u1 || currentData.img1 || '',
-          img2: u2 || currentData.img2 || ''
-        };
-
-        await set(ref(db, `returnDetails/${dateKeyToPath(dateKey)}`), payload);
+      document.getElementById('ret-save-btn').addEventListener('click', async ()=>{
+        pending.time  = (document.getElementById('e-time')?.value || '오후 5:20').trim();
+        pending.place = (document.getElementById('e-place')?.value || '버스주차장').trim();
+        pending.desc  = (document.getElementById('e-desc')?.value || '').trim();
+        await set(ref(db, `returnDetails/${dateKeyToPath(dateKey)}`), pending);
         alert('복귀 정보가 저장되었습니다.');
-        const built = await renderReturnCard(dateKey);
-        swapReturnCard(built.viewHtml);
-        await attachReturnCardHandlers(dateKey);
+        const latest = await fetchReturnDetail(dateKey);
+        const b = buildReturnCard(dateKey, latest);
+        document.getElementById('return-card-slot').outerHTML = b.viewHtml;
+        await attachReturnHandlers(dateKey);
       });
-    }
+    });
+  }
+}
 
-    function swapReturnCard(html){
-      const card = document.getElementById('return-card-slot');
-      if(card){ card.outerHTML = htmlWithSlot(html); }
-    }
-    function htmlWithSlot(inner){
-      // return-card-slot 마커를 다시 삽입해 핸들러 재바인딩 편의성 확보
-      return inner.replace('<div class="info-section">','<div class="info-section" id="return-card-slot">');
-    }
+/* ===== 출발(강일/미사) 카드 — 보기/편집(사진2장 지원) & DB저장 ===== */
+/* DB: goDetails/{장소명} -> { time, details, image, image2, caption } */
+async function fetchGoDetail(location){
+  const path = `goDetails/${encodeURIComponent(location)}`;
+  try{
+    const snap = await get(child(ref(db), path));
+    if (snap.exists()) return { image:'', image2:'', caption:'', ...snap.val() };
+  }catch{}
+  // 기본
+  return { ...DEFAULT_GO_INFO[location] };
+}
+function buildGoCard(location, info){
+  const img1 = info.image || '';
+  const img2 = info.image2 || '';
+  const caption = info.caption || '';
+  const viewHtml = `
+    <div class="info-section" id="go-card-slot">
+      <h3>📍 ${location} 탑승 장소 상세 안내</h3>
+      <div class="location-details">
+        ${info.time ? `<span class="departure-time">출발 시간: ${info.time}</span>`:''}
+        <p>${info.details || ''}</p>
+        ${img1 ? `<img class="loc-img" src="${img1}" alt="${location} 이미지 1">` : ''}
+        ${caption ? `<p style="margin-top:6px;color:#777">${caption}</p>` : ''}
+        ${img2 ? `<img class="loc-img" src="${img2}" alt="${location} 이미지 2">` : ''}
+        <div class="edit-actions"><button class="btn" id="go-edit-btn">편집</button></div>
+      </div>
+    </div>`;
+  const editHtml = `
+    <div class="info-section" id="go-card-slot">
+      <h3>📍 ${location} 탑승 장소 상세 안내 — 편집</h3>
+      <div class="location-details">
+        ${img1 ? `<img class="loc-img" id="go-preview-1" src="${img1}" alt="${location} 이미지 1">` : `<img class="loc-img" id="go-preview-1" src="" style="display:none" alt="${location} 이미지 1">`}
+        ${img2 ? `<img class="loc-img" id="go-preview-2" src="${img2}" alt="${location} 이미지 2">` : `<img class="loc-img" id="go-preview-2" src="" style="display:none" alt="${location} 이미지 2">`}
+        <label class="edit-label">출발 시간</label>
+        <input class="edit-field" id="g-time" placeholder="예: 오전 7:40" value="${info.time || ''}">
+        <label class="edit-label">장소 설명</label>
+        <textarea class="edit-field" id="g-details" rows="3" placeholder="예: ○○ 출구 앞 버스정류장 부근">${info.details || ''}</textarea>
+        <label class="edit-label">이미지 캡션(선택)</label>
+        <input class="edit-field" id="g-caption" placeholder="예: ○○역 5번 출구 앞 정류장" value="${caption}">
+        <div class="edit-actions" style="justify-content:flex-start;flex-wrap:wrap">
+          <button class="btn secondary" id="g-change-photo-1">사진1 변경</button>
+          <button class="btn secondary" id="g-change-photo-2">사진2 변경</button>
+        </div>
+        <div class="edit-actions">
+          <button class="btn" id="g-cancel-btn">취소</button>
+          <button class="btn primary" id="g-save-btn">저장</button>
+        </div>
+      </div>
+    </div>`;
+  return { viewHtml, editHtml };
+}
+async function attachGoHandlers(location){
+  const editBtn = document.getElementById('go-edit-btn');
+  if(editBtn){
+    editBtn.addEventListener('click', async ()=>{
+      const info = await fetchGoDetail(location);
+      const built = buildGoCard(location, info);
+      document.getElementById('go-card-slot').outerHTML = built.editHtml;
 
-    /************* 메인 렌더 *************/
-    async function renderInfo(){
-      if(!selectedDate || !selectedLocation) return;
+      let pending = { ...info }; // {time, details, image, image2, caption}
+      const prev1 = document.getElementById('go-preview-1');
+      const prev2 = document.getElementById('go-preview-2');
 
-      let passengersHtml = '';
-      let coordinatorHtml = '';
-      let locationHtml = '';
+      document.getElementById('g-cancel-btn').addEventListener('click', async ()=>{
+        const latest = await fetchGoDetail(location);
+        const b2 = buildGoCard(location, latest);
+        document.getElementById('go-card-slot').outerHTML = b2.viewHtml;
+        await attachGoHandlers(location);
+      });
 
-      // 공통: 탑승자
-      let passengerList = (selectedLocation==='대회장(복귀)')
-        ? getReturnPassengers(selectedDate)
-        : getOutboundPassengers(selectedDate, selectedLocation);
+      document.getElementById('g-change-photo-1').addEventListener('click', async ()=>{
+        const newUrl = await pickAndUploadToGitHub(`go_photos/${encodeURIComponent(location)}`,'go1.jpg');
+        if(newUrl){ pending.image = newUrl; prev1.src = newUrl; prev1.style.display=''; }
+      });
+      document.getElementById('g-change-photo-2').addEventListener('click', async ()=>{
+        const newUrl = await pickAndUploadToGitHub(`go_photos/${encodeURIComponent(location)}`,'go2.jpg');
+        if(newUrl){ pending.image2 = newUrl; prev2.src = newUrl; prev2.style.display=''; }
+      });
 
-      passengersHtml = `
-        <div class="info-section">
-          <h3>👥 ${selectedDate} ${selectedLocation} 탑승자 (${passengerList.length}명)</h3>
-          <div class="passenger-list">
-            ${passengerList.map(n=>`<div class="name-tag">${n}</div>`).join('')}
-          </div>
-        </div>`;
+      document.getElementById('g-save-btn').addEventListener('click', async ()=>{
+        pending.time    = (document.getElementById('g-time')?.value || '').trim();
+        pending.details = (document.getElementById('g-details')?.value || '').trim();
+        pending.caption = (document.getElementById('g-caption')?.value || '').trim();
+        await set(ref(db, `goDetails/${encodeURIComponent(location)}`), pending);
+        alert('출발 정보가 저장되었습니다.');
+        const latest = await fetchGoDetail(location);
+        const b2 = buildGoCard(location, latest);
+        document.getElementById('go-card-slot').outerHTML = b2.viewHtml;
+        await attachGoHandlers(location);
+      });
+    });
+  }
+}
 
-      if(selectedLocation === '대회장(복귀)'){
-        // 복귀 카드(보기 모드) 빌드 & 핸들러 연결
-        const built = await renderReturnCard(selectedDate);
-        locationHtml = htmlWithSlot(built.viewHtml); // id=return-card-slot 삽입
-        infoDisplay.innerHTML = `
-          <div class="info-card">
-            ${passengersHtml}
-            ${locationHtml}
-          </div>`;
-        await attachReturnCardHandlers(selectedDate);
-      } else {
-        // 가는편
-        coordinatorHtml = coordinatorBlockOf(selectedLocation);
-        const locInfo = locationInfoGo[selectedLocation];
-        if(locInfo){
-          locationHtml = `
-            <div class="info-section">
-              <h3>📍 탑승 장소 상세 안내</h3>
-              <div class="location-details">
-                ${locInfo.departureTime ? `<span class="departure-time">출발 시간: ${locInfo.departureTime}</span>`:''}
-                <p class="important-note">출발 시간 전에 미리 도착해 주세요. 늦으실 경우 인도자에게 연락 바랍니다.</p>
-                <p>${locInfo.details}</p>
-                ${locInfo.image ? `<img src="${locInfo.image}" alt="${selectedLocation} 탑승 장소">`:''}
-                ${locInfo.imageCaption ? `<p class="image-caption">${locInfo.imageCaption}</p>`:''}
-                ${locInfo.image2 ? `<img src="${locInfo.image2}" alt="${selectedLocation} 탑승 장소 2">`:''}
-              </div>
-            </div>`;
-        }
-        infoDisplay.innerHTML = `
-          <div class="info-card">
-            ${coordinatorHtml}
-            ${passengersHtml}
-            ${locationHtml}
-          </div>`;
-      }
-    }
+/* ===== 메인 렌더 ===== */
+async function renderInfo(){
+  if(!selectedDate || !selectedLocation) return;
 
-    document.addEventListener('DOMContentLoaded', ()=>{ renderSelectors(); });
-  </script>
+  if(selectedLocation === '대회장(복귀)'){
+    const list = getReturnPassengers(selectedDate);
+    const passengersHtml = `
+      <div class="info-section">
+        <h3>👥 ${selectedDate} ${selectedLocation} 탑승자 (${list.length}명)</h3>
+        <div class="passenger-list">${list.map(n=>`<div class="name-tag">${n}</div>`).join('')}</div>
+      </div>`;
+    const d = await fetchReturnDetail(selectedDate);
+    const built = buildReturnCard(selectedDate, d);
+    infoDisplay.innerHTML = `<div class="info-card">${passengersHtml}${built.viewHtml}</div>`;
+    await attachReturnHandlers(selectedDate);
+  } else {
+    const list = getOutboundPassengers(selectedDate, selectedLocation);
+    const passengersHtml = `
+      <div class="info-section">
+        <h3>👥 ${selectedDate} ${selectedLocation} 탑승자 (${list.length}명)</h3>
+        <div class="passenger-list">${list.map(n=>`<div class="name-tag">${n}</div>`).join('')}</div>
+      </div>`;
+
+    const coord = coordinatorBlockOf(selectedLocation);
+    const info = await fetchGoDetail(selectedLocation); // DB 우선, 없으면 기본
+    const built = buildGoCard(selectedLocation, info);
+
+    infoDisplay.innerHTML = `<div class="info-card">${coord}${passengersHtml}${built.viewHtml}</div>`;
+    await attachGoHandlers(selectedLocation);
+  }
+}
+
+/* ===== 시작 ===== */
+document.addEventListener('DOMContentLoaded', ()=>{ renderSelectors(); });
+</script>
 </body>
 </html>
