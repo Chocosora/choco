@@ -282,9 +282,10 @@
                 departureTime: '오전 8:00' // 출발 시간 추가
             },
             '미사역': {
-                details: '미사역 10번 출구 앞에 버스가 정차합니다.',
-                image: '', // 미사역 이미지가 없으면 비워둡니다.
-                imageCaption: '',
+                details: '미사역 5번출구 앞 버스정류장 부근에서 정윤두 형제의 안내를 받으시기 바랍니다.',
+                image: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA01.png', // 첫 번째 이미지
+                image2: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA02.jpeg', // 두 번째 이미지 추가
+                imageCaption: '미사역 5번출구 앞 버스정류장',
                 departureTime: '오전 8:15' // 출발 시간 추가
             }
         };
@@ -380,6 +381,9 @@
                         ${current_location_details.image ? `
                             <img src="${current_location_details.image}" alt="${selectedLocation} 탑승 장소">
                             ${current_location_details.imageCaption ? `<p class="image-caption">${current_location_details.imageCaption}</p>` : ''}
+                        ` : ''}
+                        ${current_location_details.image2 ? `
+                            <img src="${current_location_details.image2}" alt="${selectedLocation} 탑승 장소 2">
                         ` : ''}
                     </div>
                 </div>
