@@ -1,404 +1,447 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>지역대회 버스 탑승 안내</title>
-    <style>
-        :root {
-            --primary-color: #6c7b8a;
-            --secondary-color: #8a94a6;
-            --background-color: #f8f9fa;
-            --text-color: #333;
-            --white-color: #fff;
-            --accent-color: #007bff;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            /* 모바일에서 탭 하이라이트 제거 */
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 15px;
-            color: var(--text-color);
-            /* 폰트 렌더링 최적화 */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .container {
-            max-width: 640px;
-            margin: 0 auto;
-            background: var(--white-color);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            padding: 25px 20px;
-            text-align: center;
-            color: var(--white-color);
-        }
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-            font-weight: 700;
-        }
-        .header p {
-            opacity: 0.9;
-            font-size: 15px;
-        }
-        .content {
-            padding: 25px;
-        }
-        .selector-group {
-            margin-bottom: 30px;
-        }
-        .selector-group h2 {
-            /* 변경: 글씨 크기 키움 */
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            font-weight: 700;
-        }
-        .selector-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-        }
-        .selector-btn {
-            /* 변경: 버튼 크기와 글씨 크기 키움 */
-            padding: 18px 12px;
-            font-size: 17px;
-            font-weight: 700;
-            min-height: 65px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--background-color);
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .selector-btn:hover {
-            border-color: var(--secondary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(138, 148, 166, 0.2);
-        }
-        .selector-btn.active {
-            background: var(--secondary-color);
-            border-color: var(--primary-color);
-            color: var(--white-color);
-            transform: translateY(0);
-        }
-        #info-display {
-            margin-top: 20px;
-        }
-        .info-card {
-            background: var(--background-color);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #e1e5e9;
-        }
-        .info-placeholder {
-            text-align: center;
-            color: #777;
-            padding: 40px 10px;
-            font-size: 16px;
-            line-height: 1.6;
-        }
-        .info-section {
-            margin-bottom: 25px;
-        }
-        .info-section:last-child {
-            margin-bottom: 0;
-        }
-        .info-section h3 {
-            font-size: 18px;
-            margin-bottom: 12px;
-            color: var(--text-color);
-        }
-        .coordinator-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--white-color);
-            padding: 15px;
-            border-radius: 10px;
-        }
-        .coordinator-name {
-            font-weight: 700;
-            font-size: 18px;
-        }
-        .call-btn {
-            display: inline-block;
-            text-decoration: none;
-            background-color: var(--accent-color);
-            color: var(--white-color);
-            padding: 12px 18px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: background-color 0.2s ease;
-        }
-        .call-btn:hover {
-            background-color: #0056b3;
-        }
-        .passenger-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .name-tag {
-            background: var(--white-color);
-            color: var(--text-color);
-            padding: 8px 14px;
-            border-radius: 8px;
-            /* 변경: 탑승자 이름 글씨 크기 키움 */
-            font-size: 16px;
-            font-weight: 500;
-            border: 1px solid #ddd;
-        }
-        .location-details {
-            background: #fffbe6;
-            border: 1px solid #ffe58f;
-            color: #8a6d3b;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center; /* 이미지와 텍스트를 중앙 정렬하기 위해 추가 */
-            font-size: 15px;
-            line-height: 1.6;
-        }
-        .location-details img {
-            max-width: 100%;
-            height: auto;
-            margin-top: 15px;
-            border-radius: 8px;
-        }
-        .location-details p.image-caption { /* 이미지 캡션을 위한 스타일 */
-            text-align: center;
-            font-size: 14px;
-            color: #777;
-            margin-top: 5px;
-        }
-        .departure-time {
-            font-weight: bold;
-            color: #d8000c; /* 강조 색상 */
-            margin-bottom: 5px; /* 줄 간격 조절 */
-            display: block;
-        }
-        .important-note {
-            font-size: 14px;
-            color: #8a6d3b;
-            margin-top: 10px; /* 출발 시간과의 간격 조절 */
-            margin-bottom: 15px; /* 다음 요소와의 간격 조절 */
-            line-height: 1.5;
-            background-color: #fff8e1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px dashed #ffe082;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>지역대회 버스 탑승 안내</title>
+  <style>
+    :root{
+      --primary-color:#6c7b8a; --secondary-color:#8a94a6; --background-color:#f8f9fa;
+      --text-color:#333; --white-color:#fff; --accent-color:#007bff;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:var(--text-color);
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale
+    }
+    .container{max-width:720px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);overflow:hidden}
+    .header{background:linear-gradient(135deg,var(--primary-color) 0%,var(--secondary-color) 100%);padding:22px 18px;text-align:center;color:#fff}
+    .header h1{font-size:24px;margin-bottom:6px;font-weight:700}
+    .header p{opacity:.92;font-size:14px}
+    .content{padding:22px}
+
+    .selector-group{margin-bottom:22px}
+    .selector-group h2{font-size:18px;margin-bottom:12px;color:var(--primary-color);font-weight:700}
+    .selector-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+    .selector-btn{
+      padding:14px 12px;font-size:16px;font-weight:700;min-height:56px;display:flex;align-items:center;justify-content:center;
+      background:var(--background-color);border:2px solid #e1e5e9;border-radius:12px;cursor:pointer;transition:all .2s ease
+    }
+    .selector-btn:hover{border-color:var(--secondary-color);transform:translateY(-1px)}
+    .selector-btn.active{background:var(--secondary-color);border-color:var(--primary-color);color:#fff}
+
+    #info-display{margin-top:16px}
+    .info-card{background:var(--background-color);border-radius:12px;padding:18px;border:1px solid #e1e5e9}
+    .info-placeholder{text-align:center;color:#777;padding:36px 8px;font-size:15px;line-height:1.6}
+
+    .info-section{margin-bottom:20px}
+    .info-section:last-child{margin-bottom:0}
+    .info-section h3{font-size:17px;margin-bottom:10px;color:var(--text-color)}
+
+    .coordinator-section{display:flex;justify-content:space-between;align-items:center;background:#fff;padding:12px;border-radius:10px}
+    .coordinator-name{font-weight:700;font-size:16px}
+    .call-btn{display:inline-block;text-decoration:none;background-color:var(--accent-color);color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;font-weight:700}
+
+    .passenger-list{display:flex;flex-wrap:wrap;gap:8px}
+    .name-tag{background:#fff;color:var(--text-color);padding:7px 12px;border-radius:8px;font-size:15px;font-weight:500;border:1px solid #ddd}
+
+    .location-details{background:#fffbe6;border:1px solid #ffe58f;color:#8a6d3b;padding:12px;border-radius:10px;text-align:center;font-size:14px;line-height:1.6}
+    .location-details img{max-width:100%;height:auto;margin-top:10px;border-radius:8px}
+    .location-details p.image-caption{text-align:center;font-size:13px;color:#777;margin-top:4px}
+    .departure-time{font-weight:bold;color:#d8000c;margin-bottom:4px;display:block}
+    .important-note{font-size:13px;color:#8a6d3b;margin:8px 0 10px;line-height:1.5;background-color:#fff8e1;padding:8px;border-radius:8px;border:1px dashed #ffe082}
+
+    /* 대회장(복귀) 편집 패널 */
+    details.editor{background:#eef5ff;border:1px solid #cfe0ff;border-radius:12px;padding:10px 12px}
+    details.editor summary{cursor:pointer;font-weight:700;color:#335;margin-bottom:8px}
+    .editor-grid{display:grid;grid-template-columns:1fr;gap:8px}
+    .editor-grid label{font-size:13px;font-weight:700;color:#334}
+    .editor-grid input[type="text"],.editor-grid textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ccd6e0;font-size:14px}
+    .editor-grid input[type="file"]{padding:6px;font-size:13px}
+    .save-btn{background:#2f7d32;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚌 지역대회 버스 탑승 안내</h1>
-            <p>탑승하실 날짜와 장소를 선택해주세요.</p>
-        </div>
-        <div class="content">
-            <div class="selector-group">
-                <h2>1. 탑승 날짜 선택</h2>
-                <div id="date-selector" class="selector-buttons"></div>
-            </div>
-            <div class="selector-group">
-                <h2>2. 탑승 장소 선택</h2>
-                <div id="location-selector" class="selector-buttons"></div>
-            </div>
-            <div id="info-display">
-                <div class="info-placeholder">
-                    <p>먼저 탑승하실 **날짜**와 **장소**를<br>순서대로 선택해주세요.</p>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <h1>🚌 지역대회 버스 탑승 안내</h1>
+      <p>날짜와 장소를 선택하면 해당 정보가 표시됩니다. (복귀는 <b>대회장(복귀)</b> 선택)</p>
     </div>
 
-    <script>
-        // --- 데이터 ---
-        // 전화번호는 인도자 (조병일 형제, 정윤두 형제)만 유지
-        const gangilRoster = [
-            {name:'권오훈 형제'},{name:'김춘옥 자매'},{name:'이우혁 형제'},{name:'정영휘 자매'},
-            {name:'조병일 형제', phone:'010-7701-0437'}, // 전화번호 유지
-            {name:'지부연 자매'},{name:'최승연 자매'},{name:'강진원 형제'},{name:'최화순 자매'}
-        ];
-        const misaRoster = [
-            {name:'계은경 자매'},{name:'곽영희 자매'},{name:'노남숙 자매'},{name:'노연화 자매'},
-            {name:'박동준 형제'},{name:'신동순 자매'},{name: '이명희 자매'},{name:'이상옥 자매'},
-            {name:'이철호 형제'},
-            {name:'정윤두 형제', phone:'010-2381-2635'}, // 전화번호 유지
-            {name:'최성은 자매'},{name:'현진선 자매'}
-        ];
-        // 복귀 버스만 탑승하는 인원 별도 분리 및 명칭 수정
-        const returnOnlyRoster = [
-            {name:'강소영 자매 (복귀버스만 탑승)'},
-            {name:'서존 형제 (복귀버스만 탑승)'}
-        ];
-        // 전체 명단 (현재는 전화번호가 필요 없어 보이지만, 추후 확장성을 위해 유지)
-        const fullRoster = [...gangilRoster, ...misaRoster, ...returnOnlyRoster];
+    <div class="content">
+      <div class="selector-group">
+        <h2>1. 탑승 날짜 선택</h2>
+        <div id="date-selector" class="selector-buttons"></div>
+      </div>
 
-        // 날짜별 탑승 명단
-        const schedule = {
-            '8/15': {
-                '강일주민센터': ['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
-                '미사역': ['계은경 자매','곽영희 자매','노남숙 자매','노연화 자매','박동준 형제','이명희 자매','이상옥 자매','이철호 형제','정윤두 형제','최성은 자매','현진선 자매']
-            },
-            '8/16': {
-                '강일주민센터': ['권오훈 형제','김춘옥 자매','이우혁 형제','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
-                '미사역': ['곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','정윤두 형제','최성은 자매','현진선 자매']
-            },
-            '8/17': {
-                '강일주민센터': ['권오훈 형제','김춘옥 자매','정영휘 자매','조병일 형제','지부연 자매','최승연 자매','강진원 형제','최화순 자매'],
-                '미사역': ['계은경 자매','곽영희 자매','노남숙 자매','신동순 자매','이명희 자매','이철호 형제','정윤두 형제','최성은 자매','현진선 자매']
-            }
-        };
+      <div class="selector-group">
+        <h2>2. 탑승 장소 선택</h2>
+        <div id="location-selector" class="selector-buttons"></div>
+      </div>
 
-        const leaders = {'강일주민센터':'조병일 형제','미사역':'정윤두 형제'};
-        const dates = [{'8/15': '8/15 (금)'}, {'8/16': '8/16 (토)'}, {'8/17': '8/17 (일)'}];
-        const locations = ['강일주민센터', '미사역'];
+      <div id="info-display">
+        <div class="info-placeholder">
+          <p>먼저 <b>날짜</b>와 <b>장소</b>를 선택해주세요.<br/>복귀 안내는 <b>대회장(복귀)</b>에서 확인·수정할 수 있습니다.</p>
+        </div>
+      </div>
 
-        // 장소별 상세 정보, 이미지 경로, 출발 시간 추가
-        const locationInfo = {
-            '강일주민센터': {
-                details: '강일 주민센터 앞 공원에서 조병일 형제에게 안내받으시기 바랍니다.',
-                image: 'https://chocosora.github.io/choco/IMG_8921.jpeg', // 이미지 URL
-                imageCaption: '주민센터앞 공원', // 이미지 설명
-                departureTime: '오전 7:40' // 출발 시간 추가
-            },
-            '미사역': {
-                details: '미사역 5번출구 앞 버스정류장 부근에서 정윤두 형제의 안내를 받으시기 바랍니다.',
-                image: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA01.png', // 첫 번째 이미지
-                image2: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA02.jpeg', // 두 번째 이미지 추가
-                imageCaption: '미사역 5번출구 앞 버스정류장',
-                departureTime: '오전 7:55' // 출발 시간 추가
-            }
-        };
+      <!-- 대회장(복귀) 편집 -->
+      <div id="return-editor-wrap" style="display:none; margin-top:16px;">
+        <details class="editor" open>
+          <summary>🛠 대회장(복귀) 세부 정보 편집 — <span id="ret-date-label">날짜 선택</span></summary>
+          <div class="editor-grid">
+            <label>출발 시간 (예: 오후 5:20)
+              <input type="text" id="ret-time" placeholder="예: 오후 5:20"/>
+            </label>
+            <label>장소 (예: 버스주차장)
+              <input type="text" id="ret-place" placeholder="예: 버스주차장"/>
+            </label>
+            <label>추가 안내문
+              <textarea id="ret-desc" rows="3" placeholder="예: 정문 맞은편 버스주차장으로 집결"></textarea>
+            </label>
+            <label>장소 이미지(최대 2장 업로드)
+              <input type="file" id="ret-img1" accept="image/*"/>
+              <input type="file" id="ret-img2" accept="image/*"/>
+            </label>
+            <button class="save-btn" id="ret-save">저장</button>
+            <small>※ 저장 내용은 Firebase Realtime Database / Storage에 보관됩니다.</small>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
 
-        // --- 앱 로직 ---
-        let selectedDate = null;
-        let selectedLocation = null;
+  <!-- Firebase SDKs (modular) -->
+  <script type="module">
+    /*******************************
+     * 🔧 Firebase 초기 설정
+     *******************************/
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import {
+      getDatabase, ref, get, set, child
+    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+    import {
+      getStorage, ref as sRef, uploadBytes, getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 
-        const dateSelector = document.getElementById('date-selector');
-        const locationSelector = document.getElementById('location-selector');
-        const infoDisplay = document.getElementById('info-display');
+    // TODO: 아래 구성값을 본인의 Firebase 프로젝트로 교체하세요.
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
-        function findCoordinator(name) {
-            return fullRoster.find(person => person.name === name);
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    /*******************************
+     * 📅 기본 데이터
+     *******************************/
+    const DAY_LABEL = { '8/15':'금','8/16':'토','8/17':'일' };
+
+    // 인도자(전화 연결은 인도자만)
+    const leaders = {
+      '강일주민센터': { name: '조병일 형제', phone: '010-7701-0437' },
+      '미사역': { name: '정윤두 형제', phone: '010-2381-2635' },
+      '대회장(복귀)': null
+    };
+
+    // 탑승자 (전화번호는 저장/표시하지 않음)
+    const people = [
+      // 강일주민센터
+      { name:'정영휘 자매', start:'강일주민센터', days:['금','토','일'] },
+      { name:'조병일 형제', start:'강일주민센터', days:['금','토','일'] },
+      { name:'최승연 자매', start:'강일주민센터', days:['금','토','일'] },
+      { name:'이우혁 형제', start:'강일주민센터', days:['금','토'] },
+      { name:'지부연 자매', start:'강일주민센터', days:['금','토','일'] },
+      { name:'권오훈 형제', start:'강일주민센터', days:['금','토','일'] },
+      { name:'김춘옥 자매', start:'강일주민센터', days:['금','토','일'] },
+      { name:'강진원 형제', start:'강일주민센터', days:['금','토','일'] },
+      { name:'최화순 자매', start:'강일주민센터', days:['금','토','일'] },
+
+      // 미사역
+      { name:'정윤두 형제', start:'미사역', days:['금','토','일'] },
+      { name:'노남숙 자매', start:'미사역', days:['금','토','일'] },
+      { name:'박동준 형제', start:'미사역', days:['금'] },
+      { name:'이상옥 자매', start:'미사역', days:['금'] },
+      { name:'계은경 자매', start:'미사역', days:['금','일'] },
+      { name:'노연화 자매', start:'미사역', days:['금'] },
+      { name:'신동순 자매', start:'미사역', days:['토','일'] },
+      { name:'곽영희 자매', start:'미사역', days:['금','토','일'] },
+      { name:'이명희 자매', start:'미사역', days:['금','토','일'] },
+      { name:'현진선 자매', start:'미사역', days:['금','토','일'] },
+      { name:'최성은 자매', start:'미사역', days:['금','토','일'] },
+      { name:'이철호 형제', start:'미사역', days:['금','일'] },
+
+      // 복귀 전용
+      { name:'서존 형제', start:'대회장(복귀)', days:['토'], returnOnly:true },
+      { name:'강소영 자매', start:'대회장(복귀)', days:['일'], returnOnly:true }
+    ];
+
+    // 가는편 장소 정보 (이미지 URL은 예시)
+    const locationInfoGo = {
+      '강일주민센터': {
+        details: '강일 주민센터 앞 공원에서 조병일 형제에게 안내받으시기 바랍니다.',
+        image: 'https://chocosora.github.io/choco/IMG_8921.jpeg',
+        imageCaption: '주민센터 앞 공원',
+        departureTime: '오전 7:40'
+      },
+      '미사역': {
+        details: '미사역 5번 출구 앞 버스정류장 부근에서 정윤두 형제의 안내를 받으시기 바랍니다.',
+        image: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA01.png',
+        image2: 'https://raw.githubusercontent.com/Chocosora/choco/refs/heads/main/MISA02.jpeg',
+        imageCaption: '미사역 5번 출구 앞 버스정류장',
+        departureTime: '오전 7:55'
+      }
+    };
+
+    // 복귀 기본값
+    function defaultReturnDetail(){
+      return { time:'오후 5:20', place:'버스주차장', desc:'', img1:'', img2:'' };
+    }
+
+    /*******************************
+     * 🔌 DOM 참조
+     *******************************/
+    const dateSelector = document.getElementById('date-selector');
+    const locationSelector = document.getElementById('location-selector');
+    const infoDisplay = document.getElementById('info-display');
+    const returnEditorWrap = document.getElementById('return-editor-wrap');
+    const retDateLabel = document.getElementById('ret-date-label');
+    const retTime = document.getElementById('ret-time');
+    const retPlace = document.getElementById('ret-place');
+    const retDesc = document.getElementById('ret-desc');
+    const retImg1 = document.getElementById('ret-img1');
+    const retImg2 = document.getElementById('ret-img2');
+    const retSave = document.getElementById('ret-save');
+
+    const dates = [{ '8/15':'8/15 (금)' },{ '8/16':'8/16 (토)' },{ '8/17':'8/17 (일)' }];
+    let selectedDate = null; // '8/15' | '8/16' | '8/17'
+    let selectedLocation = null; // '강일주민센터' | '미사역' | '대회장(복귀)'
+
+    /*******************************
+     * 🧭 렌더링/선택
+     *******************************/
+    function renderSelectors(){
+      dateSelector.innerHTML=''; locationSelector.innerHTML='';
+      dates.forEach(obj=>{
+        const key = Object.keys(obj)[0]; const value = obj[key];
+        const btn = document.createElement('button');
+        btn.className='selector-btn'; btn.textContent=value;
+        btn.onclick = ()=>selectDate(key);
+        dateSelector.appendChild(btn);
+      });
+      ['강일주민센터','미사역','대회장(복귀)'].forEach(loc=>{
+        const btn = document.createElement('button');
+        btn.className='selector-btn'; btn.textContent=loc;
+        btn.onclick = ()=>selectLocation(loc);
+        locationSelector.appendChild(btn);
+      });
+    }
+
+    function selectDate(key){
+      selectedDate = key;
+      Array.from(dateSelector.children).forEach(b=>b.classList.remove('active'));
+      const clicked = Array.from(dateSelector.children).find(b=>b.textContent.includes(key));
+      if(clicked) clicked.classList.add('active');
+      syncReturnEditor();
+      renderInfo();
+    }
+
+    function selectLocation(loc){
+      selectedLocation = loc;
+      Array.from(locationSelector.children).forEach(b=>b.classList.remove('active'));
+      const clicked = Array.from(locationSelector.children).find(b=>b.textContent===loc);
+      if(clicked) clicked.classList.add('active');
+      returnEditorWrap.style.display = (loc==='대회장(복귀)') ? 'block':'none';
+      renderInfo();
+    }
+
+    function getOutboundPassengers(dateKey, location){
+      const day = DAY_LABEL[dateKey]; if(!day) return [];
+      return people
+        .filter(p=>!p.returnOnly && p.start===location && p.days.includes(day))
+        .map(p=>p.name)
+        .sort((a,b)=>a.localeCompare(b,'ko-KR'));
+    }
+
+    function getReturnPassengers(dateKey){
+      const day = DAY_LABEL[dateKey]; if(!day) return [];
+      return people
+        .filter(p=>p.days.includes(day))
+        .map(p=>p.name)
+        .sort((a,b)=>a.localeCompare(b,'ko-KR'));
+    }
+
+    function renderInfo(){
+      if(!selectedDate || !selectedLocation) return;
+
+      let passengerList = [];
+      let coordinatorBlock = '';
+      let locationBlock = '';
+
+      if(selectedLocation === '대회장(복귀)'){
+        // 복귀편: DB에서 로드된 값 표시 (동기화는 syncReturnEditor에서 처리)
+        passengerList = getReturnPassengers(selectedDate);
+
+        const path = `returnDetails/${selectedDate.replace('/','-')}`;
+        get(child(ref(db), path)).then(snap=>{
+          const d = snap.exists() ? snap.val() : defaultReturnDetail();
+          const imgHtml = `${d.img1 ? `<img src="${d.img1}" alt="복귀 이미지 1">`:''}${d.img2 ? `<img src="${d.img2}" alt="복귀 이미지 2">`:''}`;
+          const block = `
+            <div class="info-section">
+              <h3>📍 대회장(복귀) 탑승 안내</h3>
+              <div class="location-details">
+                <span class="departure-time">출발 시간: ${d.time || '오후 5:20'}</span>
+                <p class="important-note">복귀 버스는 한 곳에서 탑승합니다. 공지된 위치로 모여 주세요.</p>
+                <p>${(d.place||'버스주차장')}${d.desc? ' — '+d.desc:''}</p>
+                ${imgHtml}
+              </div>
+            </div>`;
+          setLocationBlock(block);
+        }).catch(()=>{
+          // 에러 시 기본값
+          const d = defaultReturnDetail();
+          const block = `
+            <div class="info-section">
+              <h3>📍 대회장(복귀) 탑승 안내</h3>
+              <div class="location-details">
+                <span class="departure-time">출발 시간: ${d.time}</span>
+                <p class="important-note">복귀 버스는 한 곳에서 탑승합니다. 공지된 위치로 모여 주세요.</p>
+                <p>${d.place}</p>
+              </div>
+            </div>`;
+          setLocationBlock(block);
+        });
+      } else {
+        // 가는편
+        passengerList = getOutboundPassengers(selectedDate, selectedLocation);
+        const coord = leaders[selectedLocation];
+        if(coord){
+          coordinatorBlock = `
+            <div class="info-section">
+              <h3>📞 담당 인도자</h3>
+              <div class="coordinator-section">
+                <span class="coordinator-name">${coord.name}</span>
+                <a href="tel:${coord.phone}" class="call-btn">전화 연결</a>
+              </div>
+            </div>`;
         }
-
-        function renderSelectors() {
-            dates.forEach(dateObj => {
-                const key = Object.keys(dateObj)[0];
-                const value = dateObj[key];
-                const btn = document.createElement('button');
-                btn.className = 'selector-btn';
-                btn.textContent = value;
-                btn.onclick = () => selectDate(key);
-                dateSelector.appendChild(btn);
-            });
-            locations.forEach(location => {
-                const btn = document.createElement('button');
-                btn.className = 'selector-btn';
-                btn.textContent = location;
-                btn.onclick = () => selectLocation(location);
-                locationSelector.appendChild(btn);
-            });
+        const locInfo = locationInfoGo[selectedLocation];
+        if(locInfo){
+          locationBlock = `
+            <div class="info-section">
+              <h3>📍 탑승 장소 상세 안내</h3>
+              <div class="location-details">
+                ${locInfo.departureTime ? `<span class="departure-time">출발 시간: ${locInfo.departureTime}</span>`:''}
+                <p class="important-note">출발 시간 전에 미리 도착해 주세요. 늦으실 경우 인도자에게 연락 바랍니다.</p>
+                <p>${locInfo.details}</p>
+                ${locInfo.image ? `<img src="${locInfo.image}" alt="${selectedLocation} 탑승 장소">`:''}
+                ${locInfo.imageCaption ? `<p class="image-caption">${locInfo.imageCaption}</p>`:''}
+                ${locInfo.image2 ? `<img src="${locInfo.image2}" alt="${selectedLocation} 탑승 장소 2">`:''}
+              </div>
+            </div>`;
         }
+      }
 
-        function selectDate(dateKey) {
-            selectedDate = dateKey;
-            Array.from(dateSelector.children).forEach(btn => btn.classList.remove('active'));
-            const clickedBtn = Array.from(dateSelector.children).find(btn => btn.textContent.includes(dateKey));
-            if(clickedBtn) clickedBtn.classList.add('active');
-            renderInfo();
-        }
+      const passengersHtml = `
+        <div class="info-section">
+          <h3>👥 ${selectedDate} ${selectedLocation} 탑승자 (${passengerList.length}명)</h3>
+          <div class="passenger-list">
+            ${passengerList.map(n=>`<div class="name-tag">${n}</div>`).join('')}
+          </div>
+        </div>`;
 
-        function selectLocation(location) {
-            selectedLocation = location;
-            Array.from(locationSelector.children).forEach(btn => btn.classList.remove('active'));
-            const clickedBtn = Array.from(locationSelector.children).find(btn => btn.textContent === location);
-            if(clickedBtn) clickedBtn.classList.add('active');
-            renderInfo();
-        }
+      infoDisplay.innerHTML = `
+        <div class="info-card">
+          ${coordinatorBlock}
+          ${passengersHtml}
+          ${locationBlock}
+        </div>`;
 
-        function renderInfo() {
-            if (!selectedDate || !selectedLocation) {
-                return;
-            }
+      function setLocationBlock(blockHtml){
+        infoDisplay.innerHTML = `
+          <div class="info-card">
+            ${coordinatorBlock}
+            ${passengersHtml}
+            ${blockHtml}
+          </div>`;
+      }
+    }
 
-            const coordinatorName = leaders[selectedLocation];
-            const coordinator = findCoordinator(coordinatorName);
-            // 선택된 날짜와 장소에 해당하는 탑승자 명단 가져오기
-            const passengerList = schedule[selectedDate][selectedLocation].sort((a, b) => a.localeCompare(b, 'ko-KR'));
-            const current_location_details = locationInfo[selectedLocation]; // 선택된 장소의 정보 가져오기
+    /*******************************
+     * 🗂️ 복귀편 편집/저장 (Realtime DB + Storage)
+     *******************************/
+    function dateKeyToPath(dateKey){
+      // e.g. '8/15' -> '8-15'
+      return dateKey.replace('/','-');
+    }
 
-            const coordinatorHtml = `
-                <div class="info-section">
-                    <h3>📞 담당 인도자</h3>
-                    <div class="coordinator-section">
-                        <span class="coordinator-name">${coordinator.name}</span>
-                        ${coordinator.phone ? `<a href="tel:${coordinator.phone}" class="call-btn">전화 연결</a>` : ''}
-                    </div>
-                </div>
-            `;
+    async function syncReturnEditor(){
+      retDateLabel.textContent = selectedDate ? `${selectedDate}` : '날짜 선택';
+      if(!selectedDate) return;
 
-            const passengersHtml = `
-                <div class="info-section">
-                    <h3>👥 ${selectedDate}일 ${selectedLocation} 탑승자 (${passengerList.length}명)</h3>
-                    <div class="passenger-list">
-                        ${passengerList.map(name => `<div class="name-tag">${name}</div>`).join('')}
-                    </div>
-                </div>
-            `;
+      const path = `returnDetails/${dateKeyToPath(selectedDate)}`;
+      const snap = await get(child(ref(db), path));
+      const d = snap.exists() ? snap.val() : defaultReturnDetail();
 
-            // 장소 상세 안내 섹션 (이미지 포함)
-            const locationDetailsHtml = `
-                <div class="info-section">
-                    <h3>📍 탑승 장소 상세 안내</h3>
-                    <div class="location-details">
-                        ${current_location_details.departureTime ? `<span class="departure-time">출발 시간: ${current_location_details.departureTime}</span>` : ''}
-                        <p class="important-note">
-                            출발 시간 전에 미리 도착하여 주시기 바랍니다.<br>
-                            늦으실 경우에는 인도자 형제에게 꼭 연락 주시기 바랍니다.
-                        </p>
-                        <p>${current_location_details.details}</p>
-                        ${current_location_details.image ? `
-                            <img src="${current_location_details.image}" alt="${selectedLocation} 탑승 장소">
-                            ${current_location_details.imageCaption ? `<p class="image-caption">${current_location_details.imageCaption}</p>` : ''}
-                        ` : ''}
-                        ${current_location_details.image2 ? `
-                            <img src="${current_location_details.image2}" alt="${selectedLocation} 탑승 장소 2">
-                        ` : ''}
-                    </div>
-                </div>
-            `;
+      // 기본값 보장
+      retTime.value  = d.time  || '오후 5:20';
+      retPlace.value = d.place || '버스주차장';
+      retDesc.value  = d.desc  || '';
+      // 파일 input은 보안상 value 설정 불가 -> 그대로 둠
+      retImg1.value = '';
+      retImg2.value = '';
+    }
 
-            infoDisplay.innerHTML = `
-                <div class="info-card">
-                    ${coordinatorHtml}
-                    ${passengersHtml}
-                    ${locationDetailsHtml}
-                </div>
-            `;
-        }
+    async function uploadImageIfAny(fileInput, dateKey, label){
+      if(!fileInput.files || !fileInput.files[0]) return '';
+      const file = fileInput.files[0];
+      const path = `returnDetails/${dateKeyToPath(dateKey)}/${label}_${Date.now()}_${file.name}`;
+      const storageRef = sRef(storage, path);
+      await uploadBytes(storageRef, file);
+      return await getDownloadURL(storageRef);
+    }
 
-        document.addEventListener('DOMContentLoaded', renderSelectors);
-    </script>
+    retSave.addEventListener('click', async ()=>{
+      if(!selectedDate){ alert('먼저 날짜를 선택해 주세요.'); return; }
+
+      // 기존 값 로드
+      const path = `returnDetails/${dateKeyToPath(selectedDate)}`;
+      const snap = await get(child(ref(db), path));
+      const current = snap.exists() ? snap.val() : defaultReturnDetail();
+
+      // 파일 업로드 (있을 때만)
+      const [url1, url2] = await Promise.all([
+        uploadImageIfAny(retImg1, selectedDate, 'img1'),
+        uploadImageIfAny(retImg2, selectedDate, 'img2')
+      ]);
+
+      const payload = {
+        time : (retTime.value || '오후 5:20').trim(),
+        place: (retPlace.value || '버스주차장').trim(),
+        desc : (retDesc.value || '').trim(),
+        img1 : url1 || current.img1 || '',
+        img2 : url2 || current.img2 || ''
+      };
+
+      await set(ref(db, path), payload);
+      alert('복귀 정보가 저장되었습니다.');
+      renderInfo();
+    });
+
+    /*******************************
+     * 🚀 초기화
+     *******************************/
+    document.addEventListener('DOMContentLoaded', ()=>{
+      renderSelectors();
+    });
+  </script>
 </body>
 </html>
