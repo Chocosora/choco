@@ -17,7 +17,6 @@
   .content{padding:20px}
 
   .selector-group{margin-bottom:20px}
-  /* ✅ 섹션 제목 글자 확실히 크게 */
   .selector-group h2{
     font-size:22px; line-height:1.25; color:var(--primary-color);
     font-weight:800; letter-spacing:.2px; margin-bottom:12px
@@ -99,7 +98,7 @@ const GITHUB = {
   token : "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",
   owner : "Chocosora",
   repo  : "choco",
-  branch: "main" // 기본 브랜치가 다르면 변경
+  branch: "main"
 };
 
 /* ===== 기본 데이터 ===== */
@@ -109,6 +108,12 @@ const leaders = {
   '미사역':       { name: '정윤두 형제', phone: '010-2381-2635' },
   '대회장(복귀)': null
 };
+/* ✅ 복귀 인도자(두 명) */
+const returnLeaders = [
+  { name: '정윤두 형제', phone: '010-2381-2635' },
+  { name: '조병일 형제', phone: '010-7701-0437' }
+];
+
 const people = [
   // 강일주민센터
   { name:'정영휘 자매', start:'강일주민센터', days:['금','토','일'] },
@@ -128,7 +133,7 @@ const people = [
   { name:'이상옥 자매', start:'미사역', days:['금'] },
   { name:'계은경 자매', start:'미사역', days:['금','일'] },
   { name:'노연화 자매', start:'미사역', days:['금'] },
-  { name:'신동순 자매', start:'강일주민센터', days:['토','일'] },
+  { name:'신동순 자매', start:'강일주민센터', days:['토','일'] }, /* ← 변경 반영 */
   { name:'곽영희 자매', start:'미사역', days:['금','토','일'] },
   { name:'이명희 자매', start:'미사역', days:['금','토','일'] },
   { name:'현진선 자매', start:'미사역', days:['금','토','일'] },
@@ -231,10 +236,23 @@ function coordinatorBlockOf(location){
       </div>
     </div>`;
 }
+/* ✅ 복귀용 인도자 블록(두 명 표시, 순서: 정윤두 → 조병일) */
+function returnCoordinatorsBlock(){
+  return `
+    <div class="info-section">
+      <h3>📞 담당 인도자 (복귀)</h3>
+      ${returnLeaders.map(l => `
+        <div class="coordinator" style="margin-top:8px">
+          <span>${l.name}</span>
+          <a class="call-btn" href="tel:${l.phone}">전화 연결</a>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
 
 /* ===== GitHub 업로드(프론트에서 토큰 사용) ===== */
 async function pickAndUploadToGitHub(prefix = 'misc', originalNameHint = 'image'){
-  // 1) 파일 선택
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
@@ -243,15 +261,12 @@ async function pickAndUploadToGitHub(prefix = 'misc', originalNameHint = 'image'
   const file = input.files?.[0];
   if (!file) return null;
 
-  // 2) Base64 변환
   const dataUrl = await new Promise(res => { const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file); });
   const base64 = String(dataUrl).split(',')[1];
 
-  // 3) 경로
   const safeName = file.name || originalNameHint;
   const path = `${prefix}/${Date.now()}_${safeName}`;
 
-  // 4) GitHub API 호출
   const ghUrl = `https://api.github.com/repos/${encodeURIComponent(GITHUB.owner)}/${encodeURIComponent(GITHUB.repo)}/contents/${encodeURIComponent(path)}`;
   const ghRes = await fetch(ghUrl, {
     method: 'PUT',
@@ -271,7 +286,6 @@ async function pickAndUploadToGitHub(prefix = 'misc', originalNameHint = 'image'
     alert('업로드 실패: ' + (data?.message || JSON.stringify(data)));
     return null;
   }
-  // RAW URL
   const rawUrl = `https://raw.githubusercontent.com/${GITHUB.owner}/${GITHUB.repo}/${GITHUB.branch}/${path}`;
   return rawUrl;
 }
@@ -375,14 +389,12 @@ async function attachReturnHandlers(dateKey){
 }
 
 /* ===== 출발(강일/미사) 카드 — 보기/편집(사진2장 지원) & DB저장 ===== */
-/* DB: goDetails/{장소명} -> { time, details, image, image2, caption } */
 async function fetchGoDetail(location){
   const path = `goDetails/${encodeURIComponent(location)}`;
   try{
     const snap = await get(child(ref(db), path));
     if (snap.exists()) return { image:'', image2:'', caption:'', ...snap.val() };
   }catch{}
-  // 기본
   return { ...DEFAULT_GO_INFO[location] };
 }
 function buildGoCard(location, info){
@@ -433,7 +445,7 @@ async function attachGoHandlers(location){
       const built = buildGoCard(location, info);
       document.getElementById('go-card-slot').outerHTML = built.editHtml;
 
-      let pending = { ...info }; // {time, details, image, image2, caption}
+      let pending = { ...info };
       const prev1 = document.getElementById('go-preview-1');
       const prev2 = document.getElementById('go-preview-2');
 
@@ -481,7 +493,11 @@ async function renderInfo(){
       </div>`;
     const d = await fetchReturnDetail(selectedDate);
     const built = buildReturnCard(selectedDate, d);
-    infoDisplay.innerHTML = `<div class="info-card">${passengersHtml}${built.viewHtml}</div>`;
+
+    /* ✅ 복귀 인도자 연락 섹션 추가 */
+    const contactHtml = returnCoordinatorsBlock();
+
+    infoDisplay.innerHTML = `<div class="info-card">${contactHtml}${passengersHtml}${built.viewHtml}</div>`;
     await attachReturnHandlers(selectedDate);
   } else {
     const list = getOutboundPassengers(selectedDate, selectedLocation);
@@ -492,7 +508,7 @@ async function renderInfo(){
       </div>`;
 
     const coord = coordinatorBlockOf(selectedLocation);
-    const info = await fetchGoDetail(selectedLocation); // DB 우선, 없으면 기본
+    const info = await fetchGoDetail(selectedLocation);
     const built = buildGoCard(selectedLocation, info);
 
     infoDisplay.innerHTML = `<div class="info-card">${coord}${passengersHtml}${built.viewHtml}</div>`;
