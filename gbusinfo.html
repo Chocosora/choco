@@ -164,7 +164,9 @@ const DEFAULT_GO_INFO = {
 };
 
 /* 복귀 기본 이미지(없을 때 표시) */
-const RETURN_DEFAULT_IMG = "https://github.com/Chocosora/choco/blob/main/IMG_8938.jpeg?raw=true";
+const RETURN_DEFAULT_IMG  = "https://github.com/Chocosora/choco/blob/main/IMG_8938.jpeg?raw=true";
+/* ✅ 요청하신 두 번째 기본 이미지 추가 */
+const RETURN_DEFAULT_IMG2 = "https://github.com/Chocosora/choco/blob/main/IMG_8967.jpeg?raw=true";
 
 /* 선택지 */
 const dates = [{ key:'8/15', label:'8/15 (금)' },{ key:'8/16', label:'8/16 (토)' },{ key:'8/17', label:'8/17 (일)' }];
@@ -236,7 +238,7 @@ function coordinatorBlockOf(location){
       </div>
     </div>`;
 }
-/* ✅ 복귀용 인도자 블록(두 명 표시, 순서: 정윤두 → 조병일) */
+/* ✅ 복귀용 인도자 블록(두 명 표시) */
 function returnCoordinatorsBlock(){
   return `
     <div class="info-section">
@@ -296,16 +298,27 @@ async function fetchReturnDetail(dateKey){
   const path = `returnDetails/${dateKeyToPath(dateKey)}`;
   try{
     const snap = await get(child(ref(db), path));
-    return snap.exists()
-      ? { photoUrl:'', photoUrl2:'', ...snap.val() }
-      : { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl:'', photoUrl2:'' };
+    if (snap.exists()) {
+      /* ✅ 기본값을 먼저 넣고, DB 값으로 덮어써서 비어있으면 자동으로 기본 이미지 사용 */
+      return {
+        time: '오후 5:20',
+        place: '버스주차장',
+        desc: '',
+        photoUrl: RETURN_DEFAULT_IMG,
+        photoUrl2: RETURN_DEFAULT_IMG2,
+        ...snap.val()
+      };
+    }
+    /* DB에 없을 때 */
+    return { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl: RETURN_DEFAULT_IMG, photoUrl2: RETURN_DEFAULT_IMG2 };
   }catch{
-    return { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl:'', photoUrl2:'' };
+    /* 에러 시도 기본값 */
+    return { time:'오후 5:20', place:'버스주차장', desc:'', photoUrl: RETURN_DEFAULT_IMG, photoUrl2: RETURN_DEFAULT_IMG2 };
   }
 }
 function buildReturnCard(dateKey, d){
   const img1 = d.photoUrl  || RETURN_DEFAULT_IMG;
-  const img2 = d.photoUrl2 || '';
+  const img2 = d.photoUrl2 || RETURN_DEFAULT_IMG2; /* ✅ 기본값 보장 */
   const viewHtml = `
     <div class="info-section" id="return-card-slot">
       <h3>📍 대회장(복귀) 탑승 안내</h3>
