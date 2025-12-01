@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나만의 회중 성서 연구 노트 (심플 Ver)</title>
+    <title>나만의 회중 성서 연구 노트 (완전 해결 Ver)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDKs (인증 모듈 제거됨) -->
@@ -23,12 +23,14 @@
             measurementId: "G-4FYC7HVNNV"
         };
 
-        // Firebase 초기화 (Auth 인증 과정 삭제됨)
+        // Firebase 초기화
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 고정된 저장소 ID
-        const FIXED_DOC_ID = "my-private-study-final"; 
+        // ★ 수정된 핵심 부분: 주소를 아주 단순하게 변경 (오류 원인 제거)
+        // 'bible_study'라는 서랍 안에 'script_v1'이라는 문서를 만듭니다.
+        const COLLECTION_NAME = "bible_study";
+        const DOC_NAME = "script_v1";
         
         let fontSize = 18;
         let isOnline = false;
@@ -66,26 +68,26 @@
                     data[el.id] = el.innerHTML;
                 });
 
-                // 1. 로컬 백업
-                localStorage.setItem(FIXED_DOC_ID, JSON.stringify(data));
+                // 1. 로컬 백업 (인터넷 끊길 때 대비)
+                localStorage.setItem(DOC_NAME, JSON.stringify(data));
 
-                // 2. 파이어베이스 저장 (인증 없이 바로 시도)
+                // 2. 파이어베이스 저장
                 try {
-                    const docRef = doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', FIXED_DOC_ID);
+                    // ★ 수정된 단순 경로 사용
+                    const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
                     await setDoc(docRef, data, { merge: true });
                     
                     statusEl.textContent = "클라우드 저장 완료";
                     statusEl.className = "text-green-600 font-bold text-xs sm:text-sm";
                     
-                    // 성공하면 에러 배너 숨김
                     if (!errorBanner.classList.contains('hidden')) errorBanner.classList.add('hidden');
                     
                 } catch (e) {
                     console.error("저장 실패:", e);
-                    // 권한 에러인 경우 배너 표시
+                    // 규칙 문제가 아니라면 인터넷 문제일 수 있음
                     if (e.code === 'permission-denied') {
                         errorBanner.classList.remove('hidden');
-                        statusEl.textContent = "권한 거부됨 (설정 필요)";
+                        statusEl.textContent = "권한 거부됨";
                         statusEl.className = "text-red-600 font-bold text-xs sm:text-sm";
                     } else {
                         statusEl.textContent = "내 기기에만 저장됨";
@@ -102,15 +104,18 @@
             }, 500);
         }
 
-        // 실시간 연동 시작 (페이지 열자마자 바로 실행)
+        // 실시간 연동 시작
         function startSync() {
-            const docRef = doc(db, 'artifacts', firebaseConfig.appId, 'public', 'data', FIXED_DOC_ID);
+            // ★ 수정된 단순 경로 사용
+            const docRef = doc(db, COLLECTION_NAME, DOC_NAME);
             
             onSnapshot(docRef, (docSnap) => {
+                // 데이터가 있으면 불러오기
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     Object.keys(data).forEach(key => {
                         const el = document.getElementById(key);
+                        // 내가 지금 치고 있는 부분은 건드리지 않음
                         if (el && document.activeElement !== el) {
                             el.innerHTML = data[key];
                         }
@@ -120,6 +125,11 @@
                     statusDot.className = "w-3 h-3 rounded-full bg-green-500 animate-pulse";
                     statusEl.textContent = "실시간 연동 중";
                     errorBanner.classList.add('hidden');
+                } else {
+                    // 문서가 아직 없으면(처음 실행) 로컬 데이터라도 보여줌
+                    statusEl.textContent = "새 문서 생성됨";
+                    isOnline = true; // 연결은 된 상태
+                    statusDot.className = "w-3 h-3 rounded-full bg-green-500";
                 }
             }, (error) => {
                 console.error("연동 실패:", error);
@@ -131,8 +141,8 @@
             });
         }
 
-        // 초기 로컬 데이터 로드
-        const localData = localStorage.getItem(FIXED_DOC_ID);
+        // 초기 로컬 데이터 로드 (화면 깜빡임 방지)
+        const localData = localStorage.getItem(DOC_NAME);
         if (localData) {
             const data = JSON.parse(localData);
             Object.keys(data).forEach(key => {
@@ -145,7 +155,7 @@
             el.addEventListener('input', saveData);
         });
 
-        // 즉시 시작
+        // 시작
         startSync();
 
     </script>
@@ -154,8 +164,7 @@
 
     <!-- 설정 오류 안내 배너 (권한 없을 때만 뜸) -->
     <div id="error-banner" class="hidden bg-red-100 border-b border-red-200 text-red-700 px-4 py-3 text-sm text-center">
-        <strong>⚠️ 중요:</strong> 파이어베이스 콘솔 > Firestore Database > <strong>[규칙]</strong> 탭에서<br>
-        <code>allow read, write: if true;</code> 로 변경해야 연동이 시작됩니다.
+        <strong>⚠️ 중요:</strong> 파이어베이스 콘솔 > Firestore > [규칙] 탭이 <code>allow read, write: if true;</code> 인지 확인해주세요.
     </div>
 
     <!-- 상단 컨트롤 패널 -->
