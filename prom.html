@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>다중 원고 프롬프터</title>
+<style>
+    :root { --accent: #0d6efd; --bg: #f8f9fa; --card-bg: #ffffff; }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; padding-bottom: 100px; }
+
+    /* --- 공통 UI --- */
+    button { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    button:active { transform: scale(0.98); }
+    .hidden { display: none !important; }
+
+    /* --- 목록 화면 (List View) --- */
+    #list-view { padding: 20px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: env(safe-area-inset-top); }
+    .header h1 { font-size: 24px; margin: 0; color: #333; }
+    #btn-new { background: var(--accent); color: white; padding: 10px 20px; font-size: 16px; border-radius: 20px;}
+
+    .script-list { list-style: none; padding: 0; margin: 0; }
+    .script-item { 
+        background: var(--card-bg); margin-bottom: 15px; padding: 20px; 
+        border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer; border: 1px solid transparent;
+    }
+    .script-item:hover { border-color: var(--accent); }
+    .script-info h3 { margin: 0 0 5px 0; font-size: 18px; color: #333; }
+    .script-info p { margin: 0; font-size: 14px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;}
+    .btn-delete { background: #fee2e2; color: #dc2626; padding: 8px 12px; font-size: 14px; margin-left: 10px; }
+
+    /* --- 프롬프터 화면 (Prompter View) --- */
+    #prompter-view { display: none; }
+    
+    #controls {
+        position: fixed; top: 0; left: 0; right: 0;
+        background: rgba(255,255,255,0.95); border-bottom: 1px solid #ddd;
+        padding: 10px 15px; z-index: 1000;
+        display: flex; justify-content: space-between; align-items: center;
+        padding-top: calc(10px + env(safe-area-inset-top));
+    }
+    
+    #btn-back { background: #e9ecef; color: #333; padding: 8px 15px; border-radius: 20px; margin-right: 10px; }
+    #btn-reset { background: #dc3545; color: white; padding: 8px 15px; border-radius: 20px; }
+    #btn-edit { background: #198754; color: white; padding: 8px 15px; border-radius: 20px; }
+
+    .font-controls { display: flex; gap: 5px; align-items: center; background: #eee; padding: 5px; border-radius: 20px; margin-right: 10px; }
+    .btn-font { width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; background: white; border-radius: 50%; border: 1px solid #ddd; }
+
+    #script-container {
+        margin-top: 80px; padding: 20px; font-size: 26px; line-height: 1.8;
+        white-space: pre-wrap; word-break: keep-all; min-height: 500px;
+    }
+
+    /* --- 편집기 (Modal) --- */
+    #editor-modal {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: white; z-index: 2000; padding: 20px; display: none;
+        flex-direction: column;
+        padding-top: calc(20px + env(safe-area-inset-top));
+    }
+    #editor-title { width: 100%; padding: 15px; font-size: 20px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 10px; box-sizing: border-box; font-weight: bold; }
+    #editor-content { flex-grow: 1; width: 100%; font-size: 18px; padding: 15px; border: 1px solid #ddd; border-radius: 10px; resize: none; font-family: inherit; box-sizing: border-box; line-height: 1.6;}
+    .edit-btns { margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end; }
+    #btn-save { background: #0d6efd; color: white; padding: 12px 24px; font-size: 16px; }
+    #btn-cancel { background: #6c757d; color: white; padding: 12px 24px; font-size: 16px; }
+
+    /* 하이라이트 효과 - 단락 단위 */
+    .paragraph { 
+        padding: 15px; 
+        margin-bottom: 20px; 
+        border-radius: 8px; 
+        transition: all 0.3s ease; 
+        border-left: 4px solid transparent;
+        cursor: pointer;
+        user-select: none;
+        background: transparent;
+    }
+    .paragraph.active { 
+        background: #fff3cd !important; 
+        border-left-color: #ffc107; 
+        box-shadow: 0 2px 8px rgba(255,193,7,0.3); 
+    }
+    .paragraph.passed { opacity: 0.5; }
+    .paragraph:hover:not(.active) { background: #f8f9fa; }
+    .instruction { 
+        font-size: 0.8em; 
+        color: #888; 
+        margin-bottom: 5px; 
+        font-style: italic; 
+    }
+
+    @keyframes pulse { 0% {box-shadow: 0 0 0 0 #dc354540;} 70% {box-shadow: 0 0 0 10px transparent;} }
+</style>
+</head>
+<body>
+
+    <!-- 1. 목록 화면 -->
+    <div id="list-view">
+        <div class="header">
+            <h1>내 원고 보관함</h1>
+            <button id="btn-new">+ 새 원고</button>
+        </div>
+        <ul class="script-list" id="script-list-container">
+            <li style="text-align:center; color:#888; padding:20px;">불러오는 중...</li>
+        </ul>
+    </div>
+
+    <!-- 2. 프롬프터 화면 -->
+    <div id="prompter-view">
+        <div id="controls">
+            <div style="display:flex; align-items:center;">
+                <button id="btn-back">← 목록</button>
+                <button id="btn-reset">초기화</button>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div class="font-controls">
+                    <button class="btn-font" id="btn-dec">-</button>
+                    <button class="btn-font" id="btn-inc">+</button>
+                </div>
+                <button id="btn-edit">수정</button>
+            </div>
+        </div>
+        <div id="script-container"></div>
+    </div>
+
+    <!-- 3. 편집기 화면 (모달) -->
+    <div id="editor-modal">
+        <h3>원고 작성/수정</h3>
+        <input type="text" id="editor-title" placeholder="원고 제목을 입력하세요 (예: 149번 연설)">
+        <textarea id="editor-content" placeholder="여기에 원고 내용을 입력하세요."></textarea>
+        <div class="edit-btns">
+            <button id="btn-cancel">취소</button>
+            <button id="btn-save">저장하기</button>
+        </div>
+    </div>
+
+    <!-- 파이어베이스 SDK 및 로직 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBoEKTcBVRqsrWeSNEOd_2nDQGiZxYqo3U",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.firebasestorage.app",
+            messagingSenderId: "798065461606",
+            appId: "1:798065461606:web:c8587cf10077c804f360a7",
+            measurementId: "G-TNZYEM90TP"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- DOM 요소 ---
+        const listView = document.getElementById('list-view');
+        const prompterView = document.getElementById('prompter-view');
+        const editorModal = document.getElementById('editor-modal');
+        const listContainer = document.getElementById('script-list-container');
+        const scriptContainer = document.getElementById('script-container');
+
+        const editorTitle = document.getElementById('editor-title');
+        const editorContent = document.getElementById('editor-content');
+
+        // 상태 변수
+        let currentDocId = null;
+        let currentScriptData = {};
+
+        // --- 1. 원고 목록 불러오기 ---
+        const q = query(collection(db, "scripts"), orderBy("createdAt", "desc"));
+        
+        let isFirstLoad = true;
+        
+        onSnapshot(q, (snapshot) => {
+            if (!isFirstLoad && snapshot.docChanges().length === 0) return;
+            
+            if (isFirstLoad) {
+                listContainer.innerHTML = "";
+                if (snapshot.empty) {
+                    listContainer.innerHTML = "<li style='text-align:center; padding:20px; color:#999;'>저장된 원고가 없습니다.<br>새 원고를 만들어보세요.</li>";
+                    isFirstLoad = false;
+                    return;
+                }
+
+                snapshot.forEach((docSnap) => {
+                    renderScriptItem(docSnap);
+                });
+                isFirstLoad = false;
+            } else {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        renderScriptItem(change.doc, true);
+                    } else if (change.type === "modified") {
+                        updateScriptItem(change.doc);
+                    } else if (change.type === "removed") {
+                        removeScriptItem(change.doc.id);
+                    }
+                });
+            }
+        }, (error) => {
+            console.error("목록 불러오기 오류:", error);
+            listContainer.innerHTML = "<li style='text-align:center; padding:20px; color:#dc2626;'>오류가 발생했습니다.<br>새로고침해주세요.</li>";
+        });
+
+        function renderScriptItem(docSnap, prepend = false) {
+            const data = docSnap.data();
+            const li = document.createElement('li');
+            li.className = 'script-item';
+            li.dataset.id = docSnap.id;
+            
+            const preview = data.content ? data.content.substring(0, 30) + "..." : "내용 없음";
+
+            li.innerHTML = `
+                <div class="script-info" style="flex-grow:1;">
+                    <h3>${data.title || "제목 없음"}</h3>
+                    <p>${preview}</p>
+                </div>
+                <button class="btn-delete" data-id="${docSnap.id}">삭제</button>
+            `;
+
+            li.querySelector('.script-info').onclick = () => openPrompter(docSnap.id, data);
+            
+            li.querySelector('.btn-delete').onclick = (e) => {
+                e.stopPropagation();
+                if(confirm(`'${data.title}' 원고를 삭제하시겠습니까?`)) {
+                    deleteDoc(doc(db, "scripts", docSnap.id));
+                }
+            };
+
+            if (prepend && listContainer.firstChild) {
+                listContainer.insertBefore(li, listContainer.firstChild);
+            } else {
+                listContainer.appendChild(li);
+            }
+        }
+
+        function updateScriptItem(docSnap) {
+            const data = docSnap.data();
+            const existingItem = listContainer.querySelector(`[data-id="${docSnap.id}"]`);
+            if (existingItem) {
+                const preview = data.content ? data.content.substring(0, 30) + "..." : "내용 없음";
+                existingItem.querySelector('h3').textContent = data.title || "제목 없음";
+                existingItem.querySelector('p').textContent = preview;
+            }
+        }
+
+        function removeScriptItem(docId) {
+            const existingItem = listContainer.querySelector(`[data-id="${docId}"]`);
+            if (existingItem) {
+                existingItem.style.transition = 'opacity 0.3s';
+                existingItem.style.opacity = '0';
+                setTimeout(() => existingItem.remove(), 300);
+            }
+        }
+
+        // --- 2. 화면 전환 로직 ---
+        function openPrompter(id, data) {
+            currentDocId = id;
+            currentScriptData = data;
+            
+            listView.classList.add('hidden');
+            prompterView.style.display = 'block';
+            
+            renderScript(data.content);
+            window.scrollTo(0, 0);
+        }
+
+        document.getElementById('btn-back').onclick = () => {
+            prompterView.style.display = 'none';
+            listView.classList.remove('hidden');
+            currentDocId = null;
+            resetHighlight();
+        };
+
+        // --- 3. 새 원고 / 수정 / 저장 로직 ---
+        
+        document.getElementById('btn-new').onclick = () => {
+            currentDocId = null;
+            editorTitle.value = "";
+            editorContent.value = "";
+            editorModal.style.display = 'flex';
+        };
+
+        document.getElementById('btn-edit').onclick = () => {
+            editorTitle.value = currentScriptData.title || "";
+            editorContent.value = currentScriptData.content || "";
+            editorModal.style.display = 'flex';
+        };
+
+        document.getElementById('btn-cancel').onclick = () => {
+            editorModal.style.display = 'none';
+        };
+
+        document.getElementById('btn-save').onclick = async () => {
+            const title = editorTitle.value.trim();
+            const content = editorContent.value;
+
+            if (!title) { alert("제목을 입력해주세요."); return; }
+
+            try {
+                if (currentDocId) {
+                    await updateDoc(doc(db, "scripts", currentDocId), {
+                        title: title,
+                        content: content,
+                        updatedAt: serverTimestamp()
+                    });
+                    currentScriptData = { title, content };
+                    renderScript(content);
+                } else {
+                    await addDoc(collection(db, "scripts"), {
+                        title: title,
+                        content: content,
+                        createdAt: serverTimestamp()
+                    });
+                }
+                editorModal.style.display = 'none';
+            } catch (e) {
+                console.error("Error:", e);
+                alert("저장 중 오류가 발생했습니다.");
+            }
+        };
+
+        // --- 4. 프롬프터 렌더링 및 기능 (터치 기반) ---
+        let paragraphElements = [];
+        let currentParagraphIndex = -1;
+        let isStarted = false; // 프롬프터 시작 여부
+
+        document.getElementById('btn-reset').onclick = () => {
+            resetHighlight();
+        };
+
+        let fontSize = 26;
+        document.getElementById('btn-inc').onclick = () => { fontSize+=2; scriptContainer.style.fontSize = fontSize+'px'; };
+        document.getElementById('btn-dec').onclick = () => { if(fontSize>14) fontSize-=2; scriptContainer.style.fontSize = fontSize+'px'; };
+
+        // 스크린 터치로 다음 문단
+        scriptContainer.addEventListener('click', (e) => {
+            // 문단을 클릭한 경우
+            if(e.target.classList.contains('paragraph') && e.target.dataset.idx !== undefined) {
+                const idx = parseInt(e.target.dataset.idx);
+                
+                // 초기화 상태일 때만 문단 직접 선택 가능
+                if(!isStarted) {
+                    currentParagraphIndex = idx;
+                    isStarted = true;
+                    updateHighlight();
+                } else {
+                    // 이미 시작된 경우 다음 문단으로
+                    handleNextParagraph();
+                }
+            } else {
+                // 빈 공간 클릭 시 다음 문단으로
+                handleNextParagraph();
+            }
+        });
+
+        function handleNextParagraph() {
+            if(currentParagraphIndex < paragraphElements.length - 1) {
+                currentParagraphIndex++;
+                updateHighlight();
+            }
+        }
+
+        function renderScript(text) {
+            scriptContainer.innerHTML = '';
+            paragraphElements = [];
+            currentParagraphIndex = -1;
+            isStarted = false;
+            if(!text) return;
+
+            const paragraphs = text.split('\n');
+            
+            paragraphs.forEach((para, idx) => {
+                if(!para.trim()) { 
+                    scriptContainer.appendChild(document.createElement('br')); 
+                    return; 
+                }
+                
+                const div = document.createElement('div');
+                div.className = 'paragraph';
+                
+                if(para.includes('(') && para.includes(')')) {
+                    div.innerHTML = `<span class="instruction">${para}</span>`;
+                    div.style.cursor = 'default';
+                    div.style.pointerEvents = 'none';
+                } else {
+                    div.textContent = para;
+                    div.dataset.idx = paragraphElements.length;
+                    paragraphElements.push(div);
+                }
+                
+                scriptContainer.appendChild(div);
+            });
+        }
+
+        function resetHighlight() {
+            currentParagraphIndex = -1;
+            isStarted = false;
+            paragraphElements.forEach(para => {
+                para.classList.remove('active', 'passed');
+            });
+        }
+
+        function updateHighlight() {
+            paragraphElements.forEach((para, i) => {
+                para.classList.remove('active', 'passed');
+                if(i === currentParagraphIndex) {
+                    para.classList.add('active');
+                    // 상단으로 스크롤 (80px는 컨트롤바 높이)
+                    const rect = para.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const targetPosition = rect.top + scrollTop - 100;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                } else if(i < currentParagraphIndex) {
+                    para.classList.add('passed');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
