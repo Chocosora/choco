@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>설비 작업 주소록</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 폰트: Pretendard -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
-    <!-- Import Map -->
     <script type="importmap">
     {
         "imports": {
@@ -24,7 +21,6 @@
     }
     </script>
 
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
@@ -51,7 +47,6 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        // Edit2 (연필 아이콘) 추가됨
         import { Calendar, MapPin, Navigation, Save, Trash2, Wand2, Loader2, Wrench, CheckCircle2, ClipboardList, CalendarClock, AlertCircle, Edit2, X } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getDatabase, ref, push, onValue, remove, set } from 'firebase/database';
@@ -121,7 +116,7 @@
             const [jobs, setJobs] = useState({});
             const [currentDateView, setCurrentDateView] = useState(new Date());
             
-            // [추가] 수정 모드 상태 관리
+            // 수정 모드 상태 관리
             const [editingId, setEditingId] = useState(null);
             const inputSectionRef = useRef(null);
 
@@ -209,7 +204,7 @@
 
             const changeMonth = (offset) => setCurrentDateView(new Date(currentDateView.setMonth(currentDateView.getMonth() + offset)));
 
-            // --- [수정됨] 저장 및 수정 로직 ---
+            // --- 저장 및 수정 로직 ---
             const handleSaveJob = () => {
                 if (!parsedAddress) return alert("주소를 입력해주세요.");
                 
@@ -239,7 +234,7 @@
                 }
             };
 
-            // --- [추가] 수정 시작 로직 ---
+            // --- 수정 시작 로직 ---
             const handleEditStart = (job) => {
                 setEditingId(job.key);
                 setRawInput(''); // AI 분석용 텍스트는 초기화 (혼동 방지)
@@ -268,18 +263,33 @@
                 }
             };
 
+            // --- [수정된 지도 실행 함수] ---
             const openMap = (type, address) => {
-                let url = '';
                 const encodedAddr = encodeURIComponent(address);
+                // 모바일 기기 체크
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-                if (type === 'naver') url = `https://map.naver.com/v5/search/${encodedAddr}`;
+                if (type === 'naver') {
+                    if (isMobile) {
+                        // 모바일에서는 네이버지도 앱 URL Scheme 사용 (nmap://)
+                        // 이 방식은 iOS/Android에서 앱을 직접 호출하여 검색어를 전달합니다.
+                        window.location.href = `nmap://search?query=${encodedAddr}&appname=com.plumber.addressbook`;
+                    } else {
+                        // PC에서는 웹사이트 열기
+                        window.open(`https://map.naver.com/v5/search/${encodedAddr}`, '_blank');
+                    }
+                } 
                 else if (type === 'tmap') {
-                    url = isMobile ? `tmap://search?name=${encodedAddr}` : '';
-                    if (!isMobile) return alert("티맵은 모바일에서만 가능합니다.");
-                } else if (type === 'kakao') url = `https://map.kakao.com/link/search/${encodedAddr}`;
-                
-                window.open(url, '_blank') || (window.location.href = url);
+                    if (isMobile) {
+                        window.location.href = `tmap://search?name=${encodedAddr}`;
+                    } else {
+                        alert("티맵은 모바일에서만 가능합니다.");
+                    }
+                } 
+                else if (type === 'kakao') {
+                    const url = `https://map.kakao.com/link/search/${encodedAddr}`;
+                    window.open(url, '_blank') || (window.location.href = url);
+                }
             };
 
             return (
