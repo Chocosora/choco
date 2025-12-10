@@ -115,7 +115,7 @@
             justify-content: space-between;
             align-items: flex-start;
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 30px; /* 엠프 공간 확보를 위해 여백 증가 */
             width: 100%;
         }
         .special-area {
@@ -123,24 +123,25 @@
             border: 2px solid #ddd;
             border-radius: 6px;
             padding: 10px;
-            padding-bottom: 45px;
+            padding-bottom: 45px; /* 엠프 박스 들어갈 공간 */
             position: relative;
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
         }
+        /* --- 수정된 엠프 스타일 --- */
         .amp-label {
             position: absolute;
             bottom: 5px;
             left: 50%;
             transform: translateX(-50%);
-            background: #444;
+            background: #444; /* 더 진한 색 */
             color: white;
             padding: 8px 0;
-            width: 90%;
+            width: 90%; /* 박스를 꽉 차게 */
             border-radius: 5px;
-            font-size: 15px;
+            font-size: 15px; /* 글씨 크기 확대 */
             font-weight: bold;
             text-align: center;
             border: 2px solid #222;
@@ -203,7 +204,7 @@
             font-size: 9px;
         }
 
-        /* 메모장 스타일 */
+        /* --- 메모장 스타일 --- */
         .memo-container {
             width: 100%;
             margin-bottom: 10px;
@@ -243,7 +244,7 @@
             background-color: #fff;
         }
 
-        /* 모달 및 버튼 */
+        /* --- 모달 및 버튼 --- */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: white; margin: 15% auto; padding: 20px; border: 2px solid #ccc; border-radius: 8px; width: 90%; max-width: 350px; text-align: center; }
         .modal input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
@@ -252,18 +253,6 @@
         .btn:hover { background: #f0f0f0; }
         .btn-save { background: #333; color: white; border-color: #333; }
         .btn-mark { background: #ff6666; color: white; border-color: #ff6666; }
-
-        /* 여기부터가 핵심 수정 부분 (다른 건 안 건드림) */
-        #right-section {
-            align-items: flex-start !important;  /* 1번 줄부터 좌/중과 딱 맞춤 */
-        }
-
-        /* 우측 3번 줄의 기둥을 오른쪽 끝으로 완전 밀어붙임 → 좌석 안 밀림 */
-        #right-section .row:nth-child(8) .pillar {  /* 8번째 row가 3번 줄 */
-            margin-left: auto;
-            margin-right: 0;
-        }
-        /* 여기까지 */
 
         @media (max-width: 1024px) {
             .container { padding: 10px; }
@@ -279,7 +268,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
-    <!-- HTML 구조는 100% 그대로 -->
     <div class="container">
         <div class="special-section">
             <div class="special-area">
@@ -347,25 +335,30 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        
+        // 데이터 경로를 분리하여 성능 최적화
         const seatsRef = db.ref('seatingChart/dunchon2f/seats');
         const memoRef = db.ref('seatingChart/dunchon2f/memo');
 
         let currentSeat = null;
 
         function createSeats() {
+            // 왼쪽 청중석
             const leftSection = document.getElementById('left-section');
             for (let row = 13; row >= 12; row--) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                rowDiv.style.height = '42px';
+                rowDiv.style.height = '42px'; 
                 leftSection.appendChild(rowDiv);
             }
+            
             for (let row = 11; row >= 1; row--) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-
+                
                 const pillarSpace = document.createElement('div');
                 pillarSpace.className = 'pillar-space';
+                
                 if (row === 3 || row === 8 || row === 9) {
                     const pillar = document.createElement('div');
                     pillar.className = 'pillar';
@@ -373,65 +366,73 @@
                     pillarSpace.appendChild(pillar);
                 }
                 rowDiv.appendChild(pillarSpace);
-
+                
                 const rowLabel = document.createElement('div');
                 rowLabel.className = 'row-label';
                 rowLabel.textContent = row;
                 rowDiv.appendChild(rowLabel);
-
+                
                 for (let seat = 1; seat <= 4; seat++) {
                     createSeatElement(rowDiv, `L${row}-${seat}`);
                 }
                 leftSection.appendChild(rowDiv);
             }
 
+            // 중앙 청중석
             const centerSection = document.getElementById('center-section');
             for (let row = 13; row >= 1; row--) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
+                
                 const rowLabel = document.createElement('div');
                 rowLabel.className = 'row-label';
                 rowLabel.textContent = row;
                 rowDiv.appendChild(rowLabel);
+                
                 for (let seat = 1; seat <= 5; seat++) {
                     createSeatElement(rowDiv, `C${row}-${seat}`);
                 }
                 centerSection.appendChild(rowDiv);
             }
 
+            // 오른쪽 청중석
             const rightSection = document.getElementById('right-section');
-
-            // 메모장 먼저 추가 (위에 배치)
+            
+            // --- 메모장 ---
             const memoContainer = document.createElement('div');
             memoContainer.className = 'memo-container';
+            
             const memoTitle = document.createElement('div');
             memoTitle.className = 'memo-title';
             memoTitle.textContent = '실시간 전달 사항';
             memoContainer.appendChild(memoTitle);
+
             const memoArea = document.createElement('textarea');
             memoArea.className = 'memo-area';
             memoArea.id = 'right-memo';
-            memoArea.placeholder = '내용을 입력하세요';
+            memoArea.placeholder = '내용을 입력하세요'; 
+            
+            // 입력 시 데이터 전송
             memoArea.addEventListener('input', function() {
                 memoRef.set(this.value);
             });
             memoContainer.appendChild(memoArea);
             rightSection.appendChild(memoContainer);
 
-            // 실제 좌석 8~1줄 생성
+            // 8~1줄 실제 좌석
             for (let row = 8; row >= 1; row--) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-
+                
                 const rowLabel = document.createElement('div');
                 rowLabel.className = 'row-label';
                 rowLabel.textContent = row;
                 rowDiv.appendChild(rowLabel);
-
+                
                 for (let seat = 1; seat <= 4; seat++) {
                     createSeatElement(rowDiv, `R${row}-${seat}`);
                 }
-
+                
                 if (row === 3) {
                     const pillar = document.createElement('div');
                     pillar.className = 'pillar';
@@ -441,29 +442,34 @@
                 rightSection.appendChild(rowDiv);
             }
 
+            // 확성부 & 안내부
             const broadcastSection = document.getElementById('broadcast-section');
             for (let seat = 1; seat <= 4; seat++) createSeatElement(broadcastSection, `B${seat}`);
 
             const infoSection = document.getElementById('info-section');
             for (let seat = 1; seat <= 4; seat++) createSeatElement(infoSection, `I${seat}`);
 
+            // --- 마이크 섹션 ---
             const micSection = document.getElementById('mic-section');
+            
+            // 마이크 좌
             const micLContainer = document.createElement('div');
             micLContainer.className = 'mic-container';
             const micLLabel = document.createElement('div');
             micLLabel.className = 'mic-label';
             micLLabel.textContent = '마이크 (좌)';
             micLContainer.appendChild(micLLabel);
-            createSeatElement(micLContainer, 'MicL');
+            createSeatElement(micLContainer, 'MicL'); 
             micSection.appendChild(micLContainer);
 
+            // 마이크 우
             const micRContainer = document.createElement('div');
             micRContainer.className = 'mic-container';
             const micRLabel = document.createElement('div');
             micRLabel.className = 'mic-label';
             micRLabel.textContent = '마이크 (우)';
             micRContainer.appendChild(micRLabel);
-            createSeatElement(micRContainer, 'MicR');
+            createSeatElement(micRContainer, 'MicR'); 
             micSection.appendChild(micRContainer);
         }
 
@@ -472,23 +478,63 @@
             seatDiv.className = 'seat';
             seatDiv.id = id;
             seatDiv.onclick = () => openModal(id);
-            seatDiv.oncontextmenu = (e) => {
-                e.preventDefault();
-                toggleUnusedDirect(id);
+            seatDiv.oncontextmenu = (e) => { 
+                e.preventDefault(); 
+                toggleUnusedDirect(id); 
             };
             parent.appendChild(seatDiv);
         }
 
-        // 나머지 함수들 (openModal, saveName 등)은 기존과 동일
-        function openModal(seatId) { /* ... 기존 그대로 ... */ }
-        function closeModal() { document.getElementById('nameModal').style.display = 'none'; currentSeat = null; }
-        function saveName() { /* ... */ }
-        function clearName() { /* ... */ }
-        function toggleUnused() { /* ... */ }
-        function toggleUnusedDirect(seatId) { /* ... */ }
+        function openModal(seatId) {
+            currentSeat = seatId;
+            const modal = document.getElementById('nameModal');
+            const input = document.getElementById('nameInput');
+            
+            // 개별 좌석 데이터 조회 (전체 로드 X)
+            db.ref(`seatingChart/dunchon2f/seats/${seatId}/name`).once('value', (snapshot) => {
+                input.value = snapshot.val() || '';
+            });
+            
+            modal.style.display = 'block';
+            input.focus();
+        }
+
+        function closeModal() {
+            document.getElementById('nameModal').style.display = 'none';
+            currentSeat = null;
+        }
+
+        function saveName() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (currentSeat) {
+                if (name) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).set({ name: name, unused: false });
+                else db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
+            }
+            closeModal();
+        }
+
+        function clearName() {
+            if (currentSeat) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
+            closeModal();
+        }
+
+        function toggleUnused() {
+            if (currentSeat) toggleUnusedDirect(currentSeat);
+            closeModal();
+        }
+
+        function toggleUnusedDirect(seatId) {
+            db.ref(`seatingChart/dunchon2f/seats/${seatId}/unused`).once('value', (snapshot) => {
+                const isUnused = snapshot.val();
+                if (isUnused) db.ref(`seatingChart/dunchon2f/seats/${seatId}`).remove();
+                else db.ref(`seatingChart/dunchon2f/seats/${seatId}`).set({ unused: true });
+            });
+        }
+
         function updateSeatDisplay(seatId, seatInfo) {
             const seatElement = document.getElementById(seatId);
             if (!seatElement) return;
+
             if (seatInfo && seatInfo.unused) {
                 seatElement.textContent = 'X';
                 seatElement.classList.add('unused');
@@ -502,16 +548,23 @@
             }
         }
 
+        // --- Firebase Listener 분리 (핵심) ---
+        
+        // 1. 좌석 변경 리스너
         seatsRef.on('value', (snapshot) => {
             const seats = snapshot.val() || {};
+            // 좌석만 업데이트 (메모장 건드리지 않음)
             document.querySelectorAll('.seat').forEach(seat => {
                 updateSeatDisplay(seat.id, seats[seat.id]);
             });
         });
 
+        // 2. 메모장 전용 리스너 (실시간성 강화)
         memoRef.on('value', (snapshot) => {
             const memoText = snapshot.val() || "";
             const memoEl = document.getElementById('right-memo');
+            
+            // 내가 타이핑 중이 아닐 때만 업데이트 (커서 튐 방지)
             if (document.activeElement !== memoEl) {
                 memoEl.value = memoText;
             }
