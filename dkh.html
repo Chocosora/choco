@@ -5,299 +5,207 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>둔촌회관 2층 배치도</title>
     <style>
-        /* 전체적인 여백을 없애고 화면에 꽉 차게 설정 */
+        /* 기본 초기화 및 꽉 찬 화면 설정 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: #f5f5f5;
-            height: 100%; /* 높이를 100%로 설정 */
-            width: 100%;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start; /* 위쪽부터 채우기 */
+            width: 100vw;
+            height: 100vh; /* 화면 높이 100% 고정 */
             overflow: hidden; /* 스크롤 방지 */
+            display: flex;
+            justify-content: center;
         }
+
         .container {
             background: white;
-            border: none; /* 테두리 제거 */
-            border-radius: 0; /* 둥근 모서리 제거 */
-            padding: 5px 10px; /* 최소한의 패딩 */
             width: 100%;
-            max-width: 100%;
-            height: 100%; /* 컨테이너 높이 100% */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* 내부 요소들을 위아래로 분산 */
-        }
-        .seating-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-            /* margin-bottom 제거하여 상하 간격 최소화 */
-            width: 100%;
-            flex-grow: 1; /* 남은 공간을 채우도록 설정 */
-        }
-        
-        /* 기둥 및 기둥 공간 스타일 */
-        .pillar {
-            width: 40px;
-            height: 30px;
-            background: #888;
-            border: 2px solid #666;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 10px;
-            user-select: none;
-        }
-        .pillar-space {
-            width: 48px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 섹션 및 제목 스타일 */
-        .section {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            flex: 1;
-            min-width: 0;
-        }
-        .section-title {
-            text-align: center;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 4px;
-            font-size: 13px;
-        }
-        .row {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            height: 36px;
-        }
-        #broadcast-section, #info-section { justify-content: center; }
-
-        /* 좌석 스타일 */
-        .seat {
-            width: 60px;
-            height: 30px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            white-space: nowrap;
-            padding: 2px;
-            touch-action: manipulation;
-        }
-        .seat:hover { border-color: #999; transform: scale(1.05); }
-        .seat.occupied { background: #e8e8e8; border-color: #999; color: #333; }
-        .seat.unused { background: #ffcccc; border-color: #ff6666; color: #ff0000; font-size: 18px; }
-
-        /* 통로 스타일 */
-        .aisle {
-            width: 12px;
             height: 100%;
-            background: #f8f8f8;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 상-중-하 배치 균등 분할 */
         }
-        
-        /* 상단 특별 구역 스타일 */
+
+        /* --- 상단: 확성부/마이크/안내부 --- */
         .special-section {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 15px;
-            margin-bottom: 5px; /* 하단 여백 최소화 */
-            width: 100%;
-            flex-shrink: 0; /* 높이가 줄어들지 않도록 설정 */
+            gap: 10px;
+            height: 15%; /* 상단 영역 높이 비율 */
+            min-height: 90px;
         }
         .special-area {
             background: #f8f8f8;
             border: 2px solid #ddd;
-            border-radius: 6px;
-            padding: 8px;
-            padding-bottom: 35px;
-            position: relative;
+            border-radius: 8px;
+            padding: 5px;
             flex: 1;
-            min-width: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            position: relative;
         }
-
-        /* 엠프 라벨 스타일 */
-        .amp-label {
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #444;
-            color: white;
-            padding: 4px 0;
-            width: 258px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            border: 2px solid #222;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        /* 특별 구역 제목 스타일 */
         .special-title {
             text-align: center;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 5px;
-            font-size: 12px;
+            margin-bottom: 4px;
         }
-        
-        /* 마이크 섹션 스타일 */
         .mic-section {
             display: flex;
-            flex-direction: row;
-            gap: 15px;
-            align-items: center;
             justify-content: center;
-            flex: 1;
-            min-width: 0;
+            gap: 15px;
+            flex: 0.8;
+            align-items: center;
         }
         .mic-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
         }
-        .mic-label {
+        .mic-label { font-size: 11px; font-weight: bold; }
+        
+        /* 엠프 박스 스타일 */
+        .amp-label {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background: #444;
+            color: white;
+            text-align: center;
             font-size: 11px;
             font-weight: bold;
-            color: #333;
+            padding: 4px 0;
+            border-radius: 4px;
         }
 
-        /* 연단 스타일 */
-        .stage-container {
+        /* --- 중단: 좌석 영역 --- */
+        .seating-area {
             display: flex;
-            justify-content: center;
-            margin-top: 5px; /* 상단 여백 최소화 */
-            flex-shrink: 0;
-            padding-bottom: 5px; /* 하단 여백 최소화 */
+            justify-content: space-between;
+            flex: 1; /* 남는 공간 모두 차지 */
+            margin: 10px 0;
+            overflow: hidden;
         }
-        .stage {
-            background: #e0e0e0;
-            height: 30px;
-            width: 200px;
-            border: 2px solid #ccc;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #333;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        
-        /* 줄 번호 라벨 스타일 */
-        .row-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 18px;
-            height: 22px;
-            background: #f0f0f0;
-            color: #666;
-            font-weight: bold;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            margin-right: 4px;
-            font-size: 9px;
-        }
-
-        /* 메모장 스타일 */
-        .memo-container {
-            width: 100%;
-            margin-bottom: 5px;
-            padding: 0 5px;
+        .section {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            flex: 1;
         }
-        .memo-title {
+        .section-title {
+            text-align: center;
             font-size: 13px;
             font-weight: bold;
-            color: #333;
-            margin-bottom: 3px;
-            text-align: center;
+            margin-bottom: 5px;
         }
+        
+        /* 통로 */
+        .aisle { width: 15px; }
+
+        /* 좌석 행 스타일 */
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 4px;
+            height: 32px; /* 좌석 높이 고정 */
+        }
+
+        /* 좌석 개별 스타일 */
+        .seat {
+            width: 100%; /* 부모 너비에 맞춤 */
+            max-width: 55px; /* 최대 너비 제한 */
+            height: 30px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 2px;
+            white-space: nowrap;
+        }
+        .seat.occupied { background: #e8e8e8; border-color: #999; }
+        .seat.unused { background: #ffcccc; border-color: #ff6666; color: red; font-size: 16px; }
+
+        .pillar {
+            width: 35px; height: 30px;
+            background: #888; color: white;
+            font-size: 10px; display: flex;
+            align-items: center; justify-content: center;
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+        .row-label {
+            width: 18px; font-size: 9px;
+            text-align: center; color: #666;
+            margin-right: 2px;
+        }
+
+        /* 우측 섹션 레이아웃 (메모장 + 좌석 하단 정렬) */
+        #right-column {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        /* 우측 좌석 컨테이너: 하단 정렬 */
+        #right-section-seats {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* 좌석을 바닥으로 밀어버림 */
+        }
+        /* 메모장 컨테이너: 상단 남는 공간 차지 */
+        .memo-container {
+            flex: 1; /* 남는 공간 채우기 */
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+            min-height: 0; /* Flexbox 축소 허용 */
+        }
+        .memo-title { font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 2px; }
         .memo-area {
             width: 100%;
-            height: 60px; /* 높이를 더 줄여서 공간 확보 */
+            height: 100%; /* 부모 높이만큼 꽉 채움 */
+            resize: none;
             border: 2px solid #81d4fa;
             border-radius: 6px;
-            padding: 5px;
+            background: #e1f5fe;
+            padding: 8px;
             font-size: 16px;
-            font-family: inherit;
             font-weight: bold;
-            color: #333;
-            resize: none;
-            background-color: #e1f5fe;
-        }
-        .memo-area::placeholder {
-            color: #999;
-            font-weight: normal;
-            font-size: 13px;
-        }
-        .memo-area:focus {
-            outline: none;
-            border-color: #0288d1;
-            background-color: #fff;
         }
 
-        /* 모달 및 버튼 스타일 */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: white; margin: 15% auto; padding: 20px; border: 2px solid #ccc; border-radius: 8px; width: 90%; max-width: 350px; text-align: center; }
-        .modal input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
-        .modal-buttons { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-        .btn { padding: 10px 20px; border: 2px solid #ccc; border-radius: 5px; background: white; cursor: pointer; font-size: 13px; font-weight: bold; color: #333; }
-        .btn:hover { background: #f0f0f0; }
-        .btn-save { background: #333; color: white; border-color: #333; }
+        /* --- 하단: 연단 --- */
+        .stage-area {
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .stage {
+            width: 200px; height: 35px;
+            background: #e0e0e0; border: 2px solid #ccc;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: #333;
+        }
+
+        /* 모달 스타일 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .modal-content { background: white; width: 300px; margin: 20% auto; padding: 20px; border-radius: 10px; text-align: center; }
+        .modal input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        .btn-group { display: flex; gap: 5px; justify-content: center; }
+        .btn { padding: 8px 15px; border: 1px solid #ccc; border-radius: 4px; background: white; cursor: pointer; font-weight: bold; }
+        .btn-save { background: #333; color: white; }
         .btn-mark { background: #ff6666; color: white; border-color: #ff6666; }
 
-        /* 아이패드 및 태블릿 최적화 */
-        @media (max-width: 1024px) {
-            .container { padding: 5px; }
-            .seat { width: 55px; height: 28px; font-size: 14px; }
-            .amp-label { width: 235px; padding: 3px 0; font-size: 11px; }
-            .pillar { width: 35px; height: 28px; }
-            .pillar-space { width: 43px; height: 28px; }
-            .row { height: 32px; gap: 5px; }
-            .aisle { width: 8px; }
-            .memo-area { font-size: 15px; height: 50px; } /* 메모장 높이 더 축소 */
-            .section-title { font-size: 12px; margin-bottom: 2px; }
-            .special-section { gap: 10px; margin-bottom: 5px; }
-            .stage { height: 28px; }
-        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -307,15 +215,24 @@
         <div class="special-section">
             <div class="special-area">
                 <div class="special-title">확성부</div>
-                <div class="row" id="broadcast-section"></div>
+                <div class="row" id="broadcast-section" style="justify-content: center; height: 100%; align-items: center;"></div>
                 <div class="amp-label">엠 프</div>
             </div>
 
-            <div class="mic-section" id="mic-section"></div>
+            <div class="mic-section">
+                <div class="mic-container">
+                    <div class="mic-label">마이크 (좌)</div>
+                    <div id="mic-left-container"></div>
+                </div>
+                <div class="mic-container">
+                    <div class="mic-label">마이크 (우)</div>
+                    <div id="mic-right-container"></div>
+                </div>
+            </div>
 
             <div class="special-area">
                 <div class="special-title">안내부</div>
-                <div class="row" id="info-section"></div>
+                <div class="row" id="info-section" style="justify-content: center; height: 100%; align-items: center;"></div>
             </div>
         </div>
 
@@ -326,29 +243,34 @@
             </div>
 
             <div class="aisle"></div>
+
             <div class="section">
                 <div class="section-title">청중석 (중)</div>
                 <div id="center-section"></div>
             </div>
 
             <div class="aisle"></div>
-            <div class="section">
+
+            <div class="section" id="right-column">
                 <div class="section-title">청중석 (우)</div>
-                <div id="right-memo-container"></div>
-                <div id="right-section"></div>
+                <div class="memo-container">
+                    <div class="memo-title">실시간 전달 사항</div>
+                    <textarea id="right-memo" class="memo-area" placeholder="내용을 입력하세요"></textarea>
+                </div>
+                <div id="right-section-seats"></div>
             </div>
         </div>
 
-        <div class="stage-container">
+        <div class="stage-area">
             <div class="stage">연단</div>
         </div>
     </div>
 
     <div id="nameModal" class="modal">
         <div class="modal-content">
-            <h3>좌석 정보 입력</h3>
-            <input type="text" id="nameInput" placeholder="이름을 입력하세요" maxlength="20">
-            <div class="modal-buttons">
+            <h3>좌석 정보</h3>
+            <input type="text" id="nameInput" placeholder="이름 입력" maxlength="10">
+            <div class="btn-group">
                 <button class="btn btn-save" onclick="saveName()">저장</button>
                 <button class="btn btn-mark" onclick="toggleUnused()">X 표시</button>
                 <button class="btn" onclick="clearName()">삭제</button>
@@ -369,243 +291,165 @@
             measurementId: "G-4FYC7HVNNV"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.database();
-        
         const seatsRef = db.ref('seatingChart/dunchon2f/seats');
         const memoRef = db.ref('seatingChart/dunchon2f/memo');
 
         let currentSeat = null;
 
-        function createSeats() {
-            // 왼쪽 청중석
-            const leftSection = document.getElementById('left-section');
-            for (let row = 13; row >= 12; row--) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                leftSection.appendChild(rowDiv);
-            }
-            
-            for (let row = 11; row >= 1; row--) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                
-                const pillarSpace = document.createElement('div');
-                pillarSpace.className = 'pillar-space';
-                
-                if (row === 3 || row === 8 || row === 9) {
-                    const pillar = document.createElement('div');
-                    pillar.className = 'pillar';
-                    pillar.textContent = '기둥';
-                    pillarSpace.appendChild(pillar);
-                }
-                rowDiv.appendChild(pillarSpace);
-                
-                const rowLabel = document.createElement('div');
-                rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
-                rowDiv.appendChild(rowLabel);
-                
-                for (let seat = 1; seat <= 4; seat++) {
-                    createSeatElement(rowDiv, `L${row}-${seat}`);
-                }
-                leftSection.appendChild(rowDiv);
-            }
-
-            // 중앙 청중석
-            const centerSection = document.getElementById('center-section');
-            for (let row = 13; row >= 1; row--) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                
-                const rowLabel = document.createElement('div');
-                rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
-                rowDiv.appendChild(rowLabel);
-                
-                for (let seat = 1; seat <= 5; seat++) {
-                    createSeatElement(rowDiv, `C${row}-${seat}`);
-                }
-                centerSection.appendChild(rowDiv);
-            }
-
-            // 오른쪽 청중석
-            const rightSection = document.getElementById('right-section');
-            const rightMemoContainer = document.getElementById('right-memo-container');
-            
-            // --- 메모장 ---
-            const memoContainer = document.createElement('div');
-            memoContainer.className = 'memo-container';
-            
-            const memoTitle = document.createElement('div');
-            memoTitle.className = 'memo-title';
-            memoTitle.textContent = '실시간 전달 사항';
-            memoContainer.appendChild(memoTitle);
-
-            const memoArea = document.createElement('textarea');
-            memoArea.className = 'memo-area';
-            memoArea.id = 'right-memo';
-            memoArea.placeholder = '내용을 입력하세요'; 
-            
-            // 입력 시 데이터 전송
-            memoArea.addEventListener('input', function() {
-                memoRef.set(this.value);
-            });
-            memoContainer.appendChild(memoArea);
-            rightMemoContainer.appendChild(memoContainer); // 메모장을 별도 컨테이너에 추가
-
-            // 8~1줄 실제 좌석
-            for (let row = 8; row >= 1; row--) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                
-                const rowLabel = document.createElement('div');
-                rowLabel.className = 'row-label';
-                rowLabel.textContent = row;
-                rowDiv.appendChild(rowLabel);
-                
-                for (let seat = 1; seat <= 4; seat++) {
-                    createSeatElement(rowDiv, `R${row}-${seat}`);
-                }
-                
-                if (row === 3) {
-                    const pillar = document.createElement('div');
-                    pillar.className = 'pillar';
-                    pillar.textContent = '기둥';
-                    rowDiv.appendChild(pillar);
-                }
-                rightSection.appendChild(rowDiv);
-            }
-
-            // 확성부 & 안내부
-            const broadcastSection = document.getElementById('broadcast-section');
-            for (let seat = 1; seat <= 4; seat++) createSeatElement(broadcastSection, `B${seat}`);
-
-            const infoSection = document.getElementById('info-section');
-            for (let seat = 1; seat <= 4; seat++) createSeatElement(infoSection, `I${seat}`);
-
-            // --- 마이크 섹션 ---
-            const micSection = document.getElementById('mic-section');
-            
-            // 마이크 좌
-            const micLContainer = document.createElement('div');
-            micLContainer.className = 'mic-container';
-            const micLLabel = document.createElement('div');
-            micLLabel.className = 'mic-label';
-            micLLabel.textContent = '마이크 (좌)';
-            micLContainer.appendChild(micLLabel);
-            createSeatElement(micLContainer, 'MicL'); 
-            micSection.appendChild(micLContainer);
-
-            // 마이크 우
-            const micRContainer = document.createElement('div');
-            micRContainer.className = 'mic-container';
-            const micRLabel = document.createElement('div');
-            micRLabel.className = 'mic-label';
-            micRLabel.textContent = '마이크 (우)';
-            micRContainer.appendChild(micRLabel);
-            createSeatElement(micRContainer, 'MicR'); 
-            micSection.appendChild(micRContainer);
-        }
-
         function createSeatElement(parent, id) {
-            const seatDiv = document.createElement('div');
-            seatDiv.className = 'seat';
-            seatDiv.id = id;
-            seatDiv.onclick = () => openModal(id);
-            seatDiv.oncontextmenu = (e) => { 
-                e.preventDefault(); 
-                toggleUnusedDirect(id); 
-            };
-            parent.appendChild(seatDiv);
+            const seat = document.createElement('div');
+            seat.className = 'seat';
+            seat.id = id;
+            seat.onclick = () => openModal(id);
+            seat.oncontextmenu = (e) => { e.preventDefault(); toggleUnusedDirect(id); };
+            parent.appendChild(seat);
         }
 
-        function openModal(seatId) {
-            currentSeat = seatId;
+        function createRow(container, rowNum, seatsCount, prefix, hasPillar) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row';
+
+            // 기둥 (좌측 섹션용)
+            if (hasPillar && prefix === 'L') {
+                const pillar = document.createElement('div');
+                pillar.className = 'pillar';
+                pillar.textContent = '기둥';
+                rowDiv.appendChild(pillar);
+            }
+
+            // 행 번호
+            const label = document.createElement('div');
+            label.className = 'row-label';
+            label.textContent = rowNum;
+            rowDiv.appendChild(label);
+
+            // 좌석 생성
+            for (let i = 1; i <= seatsCount; i++) {
+                createSeatElement(rowDiv, `${prefix}${rowNum}-${i}`);
+            }
+
+            // 기둥 (우측 섹션용)
+            if (hasPillar && prefix === 'R') {
+                const pillar = document.createElement('div');
+                pillar.className = 'pillar';
+                pillar.textContent = '기둥';
+                rowDiv.appendChild(pillar);
+            }
+
+            container.appendChild(rowDiv);
+        }
+
+        function init() {
+            // 좌측 (13~1)
+            const leftEl = document.getElementById('left-section');
+            for(let r=13; r>=1; r--) {
+                const hasPillar = (r===3 || r===8 || r===9);
+                createRow(leftEl, r, 4, 'L', hasPillar);
+            }
+
+            // 중앙 (13~1)
+            const centerEl = document.getElementById('center-section');
+            for(let r=13; r>=1; r--) {
+                createRow(centerEl, r, 5, 'C', false);
+            }
+
+            // 우측 (8~1) - 하단 정렬을 위해 Flex-end 컨테이너에 추가
+            const rightEl = document.getElementById('right-section-seats');
+            for(let r=8; r>=1; r--) {
+                const hasPillar = (r===3);
+                createRow(rightEl, r, 4, 'R', hasPillar);
+            }
+
+            // 상단 특수 좌석
+            const broadcastEl = document.getElementById('broadcast-section');
+            for(let i=1; i<=4; i++) createSeatElement(broadcastEl, `B${i}`);
+            
+            const infoEl = document.getElementById('info-section');
+            for(let i=1; i<=4; i++) createSeatElement(infoEl, `I${i}`);
+
+            createSeatElement(document.getElementById('mic-left-container'), 'MicL');
+            createSeatElement(document.getElementById('mic-right-container'), 'MicR');
+
+            // 리스너 등록
+            seatsRef.on('value', snap => {
+                const data = snap.val() || {};
+                document.querySelectorAll('.seat').forEach(el => {
+                    const info = data[el.id];
+                    if (info && info.unused) {
+                        el.textContent = 'X';
+                        el.className = 'seat unused';
+                    } else if (info && info.name) {
+                        el.textContent = info.name;
+                        el.className = 'seat occupied';
+                    } else {
+                        el.textContent = '';
+                        el.className = 'seat';
+                    }
+                });
+            });
+
+            memoRef.on('value', snap => {
+                const val = snap.val() || "";
+                const el = document.getElementById('right-memo');
+                if (document.activeElement !== el) el.value = val;
+            });
+
+            document.getElementById('right-memo').addEventListener('input', (e) => {
+                memoRef.set(e.target.value);
+            });
+        }
+
+        // 모달 관련 함수
+        function openModal(id) {
+            currentSeat = id;
             const modal = document.getElementById('nameModal');
             const input = document.getElementById('nameInput');
-            
-            db.ref(`seatingChart/dunchon2f/seats/${seatId}/name`).once('value', (snapshot) => {
-                input.value = snapshot.val() || '';
+            db.ref(`seatingChart/dunchon2f/seats/${id}/name`).once('value', s => {
+                input.value = s.val() || '';
             });
-            
             modal.style.display = 'block';
             input.focus();
         }
-
         function closeModal() {
             document.getElementById('nameModal').style.display = 'none';
             currentSeat = null;
         }
-
         function saveName() {
             const name = document.getElementById('nameInput').value.trim();
-            if (currentSeat) {
-                if (name) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).set({ name: name, unused: false });
-                else db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
-            }
+            if(!currentSeat) return;
+            if(name) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).set({name, unused:false});
+            else db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
             closeModal();
         }
-
-        function clearName() {
-            if (currentSeat) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
-            closeModal();
-        }
-
         function toggleUnused() {
-            if (currentSeat) toggleUnusedDirect(currentSeat);
+            if(!currentSeat) return;
+            toggleUnusedDirect(currentSeat);
             closeModal();
         }
-
-        function toggleUnusedDirect(seatId) {
-            db.ref(`seatingChart/dunchon2f/seats/${seatId}/unused`).once('value', (snapshot) => {
-                const isUnused = snapshot.val();
-                if (isUnused) db.ref(`seatingChart/dunchon2f/seats/${seatId}`).remove();
-                else db.ref(`seatingChart/dunchon2f/seats/${seatId}`).set({ unused: true });
+        function clearName() {
+            if(currentSeat) db.ref(`seatingChart/dunchon2f/seats/${currentSeat}`).remove();
+            closeModal();
+        }
+        function toggleUnusedDirect(id) {
+            const ref = db.ref(`seatingChart/dunchon2f/seats/${id}`);
+            ref.child('unused').once('value', s => {
+                if(s.val()) ref.remove();
+                else ref.set({unused:true});
             });
         }
-
-        function updateSeatDisplay(seatId, seatInfo) {
-            const seatElement = document.getElementById(seatId);
-            if (!seatElement) return;
-
-            if (seatInfo && seatInfo.unused) {
-                seatElement.textContent = 'X';
-                seatElement.classList.add('unused');
-                seatElement.classList.remove('occupied');
-            } else {
-                const name = seatInfo ? seatInfo.name : '';
-                seatElement.textContent = name || '';
-                seatElement.classList.remove('unused');
-                if (name) seatElement.classList.add('occupied');
-                else seatElement.classList.remove('occupied');
-            }
-        }
-
-        // --- Firebase Listener ---
-        seatsRef.on('value', (snapshot) => {
-            const seats = snapshot.val() || {};
-            document.querySelectorAll('.seat').forEach(seat => {
-                updateSeatDisplay(seat.id, seats[seat.id]);
-            });
+        document.getElementById('nameModal').addEventListener('click', e => {
+            if(e.target.id === 'nameModal') closeModal();
+        });
+        document.getElementById('nameInput').addEventListener('keypress', e => {
+            if(e.key === 'Enter') saveName();
         });
 
-        memoRef.on('value', (snapshot) => {
-            const memoText = snapshot.val() || "";
-            const memoEl = document.getElementById('right-memo');
-            if (document.activeElement !== memoEl) {
-                memoEl.value = memoText;
-            }
-        });
-
-        document.getElementById('nameInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') saveName();
-        });
-        document.getElementById('nameModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-
-        createSeats();
+        // 실행
+        init();
     </script>
 </body>
 </html>
