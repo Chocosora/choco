@@ -10,7 +10,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
             min-height: 100vh;
-            padding: 10px;
+            padding: 5px; /* 패딩 축소 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -20,7 +20,7 @@
             background: white;
             border: 2px solid #ddd;
             border-radius: 10px;
-            padding: 15px;
+            padding: 10px; /* 내부 패딩 축소 */
             width: 100%;
             max-width: 100%;
         }
@@ -28,15 +28,15 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px; /* 간격 축소 */
+            margin-bottom: 5px;
             width: 100%;
         }
         
         /* 기둥 스타일 */
         .pillar {
             width: 40px;
-            height: 35px;
+            height: 30px; /* 높이 축소 */
             background: #888;
             border: 2px solid #666;
             border-radius: 6px;
@@ -50,7 +50,7 @@
         }
         .pillar-space {
             width: 48px;
-            height: 35px;
+            height: 30px; /* 높이 축소 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,7 +59,7 @@
         .section {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px; /* 줄 간격 더 축소 */
             flex: 1;
             min-width: 0;
         }
@@ -67,20 +67,20 @@
             text-align: center;
             font-weight: bold;
             color: #333;
-            margin-bottom: 6px;
-            font-size: 14px;
+            margin-bottom: 4px;
+            font-size: 13px;
         }
         .row {
             display: flex;
             gap: 6px;
             align-items: center;
-            height: 42px;
+            height: 36px; /* 줄 높이 축소 (42px -> 36px) */
         }
         #broadcast-section, #info-section { justify-content: center; }
 
         .seat {
             width: 60px;
-            height: 35px;
+            height: 30px; /* 좌석 높이 축소 (35px -> 30px) */
             background: white;
             border: 2px solid #ccc;
             border-radius: 5px;
@@ -88,7 +88,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px; /* 폰트 약간 축소 */
             font-weight: bold;
             color: #333;
             text-align: center;
@@ -96,7 +96,7 @@
             position: relative;
             overflow: hidden;
             white-space: nowrap;
-            padding: 3px;
+            padding: 2px;
             touch-action: manipulation;
         }
         .seat:hover { border-color: #999; transform: scale(1.05); }
@@ -104,7 +104,7 @@
         .seat.unused { background: #ffcccc; border-color: #ff6666; color: #ff0000; font-size: 18px; }
 
         .aisle {
-            width: 15px;
+            width: 12px;
             height: 100%;
             background: #f8f8f8;
             border: 1px solid #e0e0e0;
@@ -114,51 +114,58 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 20px;
-            margin-bottom: 30px; /* 엠프 공간 확보를 위해 여백 증가 */
+            gap: 15px;
+            margin-bottom: 15px; /* 하단 여백 축소 */
             width: 100%;
         }
         .special-area {
             background: #f8f8f8;
             border: 2px solid #ddd;
             border-radius: 6px;
-            padding: 10px;
-            padding-bottom: 45px; /* 엠프 박스 들어갈 공간 */
+            padding: 8px;
+            padding-bottom: 35px; /* 엠프 공간 (높이 줄임) */
             position: relative;
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
+            align-items: center; /* 내부 요소 중앙 정렬 */
         }
-        /* --- 수정된 엠프 스타일 --- */
+
+        /* --- 엠프 스타일 수정 --- */
         .amp-label {
             position: absolute;
             bottom: 5px;
+            /* 좌우 중앙 정렬은 부모의 flex align-items로 보조하거나 transform 유지 */
             left: 50%;
             transform: translateX(-50%);
-            background: #444; /* 더 진한 색 */
+            
+            background: #444;
             color: white;
-            padding: 8px 0;
-            width: 90%; /* 박스를 꽉 차게 */
-            border-radius: 5px;
-            font-size: 15px; /* 글씨 크기 확대 */
+            padding: 4px 0; /* 패딩을 줄여 높이 축소 (50% 느낌) */
+            
+            /* 너비 계산: (좌석폭 60 * 4개) + (간격 6 * 3개) + (좌석테두리보정 등) = 240 + 18 = 258px */
+            width: 258px; 
+            
+            border-radius: 4px;
+            font-size: 12px; /* 폰트 크기 축소 */
             font-weight: bold;
             text-align: center;
             border: 2px solid #222;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .special-title {
             text-align: center;
             font-weight: bold;
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             font-size: 12px;
         }
         .mic-section {
             display: flex;
             flex-direction: row;
-            gap: 20px;
+            gap: 15px;
             align-items: center;
             justify-content: center;
             flex: 1;
@@ -168,75 +175,75 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 3px;
         }
         .mic-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #333;
         }
 
         .stage {
             background: #e0e0e0;
-            height: 35px;
-            width: 250px;
+            height: 30px; /* 높이 축소 */
+            width: 200px;
             border: 2px solid #ccc;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #333;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
         }
         .row-label {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 20px;
-            height: 25px;
+            width: 18px;
+            height: 22px;
             background: #f0f0f0;
             color: #666;
             font-weight: bold;
             border: 1px solid #ccc;
             border-radius: 3px;
-            margin-right: 6px;
+            margin-right: 4px;
             font-size: 9px;
         }
 
-        /* --- 메모장 스타일 --- */
+        /* --- 메모장 스타일 (높이 축소) --- */
         .memo-container {
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             padding: 0 5px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         .memo-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             text-align: center;
         }
         .memo-area {
             width: 100%;
-            height: 160px;
+            height: 85px; /* 높이 대폭 축소 (160 -> 85) */
             border: 2px solid #81d4fa;
             border-radius: 6px;
-            padding: 10px;
-            font-size: 18px;
+            padding: 5px;
+            font-size: 16px;
             font-family: inherit;
             font-weight: bold;
             color: #333;
-            resize: vertical;
+            resize: none; /* 아이패드에서 리사이즈 핸들 제거 */
             background-color: #e1f5fe;
         }
         .memo-area::placeholder {
             color: #999;
             font-weight: normal;
-            font-size: 14px;
+            font-size: 13px;
         }
         .memo-area:focus {
             outline: none;
@@ -254,14 +261,22 @@
         .btn-save { background: #333; color: white; border-color: #333; }
         .btn-mark { background: #ff6666; color: white; border-color: #ff6666; }
 
+        /* 아이패드 및 태블릿 최적화 */
         @media (max-width: 1024px) {
-            .container { padding: 10px; }
-            .seat { width: 55px; height: 32px; font-size: 14px; }
-            .pillar { width: 35px; height: 32px; }
-            .pillar-space { width: 43px; height: 32px; }
-            .row { height: 38px; gap: 5px; }
-            .aisle { width: 10px; }
-            .memo-area { font-size: 16px; height: 140px; }
+            .container { padding: 5px; }
+            /* 좌석 크기 축소에 따른 엠프 너비 자동 조절 필요 */
+            .seat { width: 55px; height: 28px; font-size: 14px; }
+            
+            /* 엠프 너비 재계산: (55 * 4) + (5 * 3) = 220 + 15 = 235px */
+            .amp-label { width: 235px; padding: 3px 0; font-size: 11px; }
+            
+            .pillar { width: 35px; height: 28px; }
+            .pillar-space { width: 43px; height: 28px; }
+            .row { height: 32px; gap: 5px; }
+            .aisle { width: 8px; }
+            .memo-area { font-size: 15px; height: 75px; } /* 메모장 더 축소 */
+            .section-title { font-size: 12px; margin-bottom: 2px; }
+            .special-section { gap: 10px; margin-bottom: 10px; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -303,7 +318,7 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: center; margin-top: 15px;">
+        <div style="display: flex; justify-content: center; margin-top: 10px;">
             <div class="stage">연단</div>
         </div>
     </div>
@@ -336,7 +351,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         
-        // 데이터 경로를 분리하여 성능 최적화
+        // 데이터 경로
         const seatsRef = db.ref('seatingChart/dunchon2f/seats');
         const memoRef = db.ref('seatingChart/dunchon2f/memo');
 
@@ -348,7 +363,6 @@
             for (let row = 13; row >= 12; row--) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                rowDiv.style.height = '42px'; 
                 leftSection.appendChild(rowDiv);
             }
             
@@ -490,7 +504,6 @@
             const modal = document.getElementById('nameModal');
             const input = document.getElementById('nameInput');
             
-            // 개별 좌석 데이터 조회 (전체 로드 X)
             db.ref(`seatingChart/dunchon2f/seats/${seatId}/name`).once('value', (snapshot) => {
                 input.value = snapshot.val() || '';
             });
@@ -548,23 +561,17 @@
             }
         }
 
-        // --- Firebase Listener 분리 (핵심) ---
-        
-        // 1. 좌석 변경 리스너
+        // --- Firebase Listener ---
         seatsRef.on('value', (snapshot) => {
             const seats = snapshot.val() || {};
-            // 좌석만 업데이트 (메모장 건드리지 않음)
             document.querySelectorAll('.seat').forEach(seat => {
                 updateSeatDisplay(seat.id, seats[seat.id]);
             });
         });
 
-        // 2. 메모장 전용 리스너 (실시간성 강화)
         memoRef.on('value', (snapshot) => {
             const memoText = snapshot.val() || "";
             const memoEl = document.getElementById('right-memo');
-            
-            // 내가 타이핑 중이 아닐 때만 업데이트 (커서 튐 방지)
             if (document.activeElement !== memoEl) {
                 memoEl.value = memoText;
             }
