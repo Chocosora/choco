@@ -2,41 +2,50 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>둔촌회관 2층 배치도</title>
     <style>
+        /* 전체적인 여백을 없애고 화면에 꽉 차게 설정 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            min-height: 100vh;
-            padding: 5px; /* 패딩 축소 */
+            height: 100%; /* 높이를 100%로 설정 */
+            width: 100%;
+            padding: 0;
+            margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* 위쪽부터 채우기 */
+            overflow: hidden; /* 스크롤 방지 */
         }
         .container {
             background: white;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            padding: 10px; /* 내부 패딩 축소 */
+            border: none; /* 테두리 제거 */
+            border-radius: 0; /* 둥근 모서리 제거 */
+            padding: 5px 10px; /* 최소한의 패딩 */
             width: 100%;
             max-width: 100%;
+            height: 100%; /* 컨테이너 높이 100% */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 내부 요소들을 위아래로 분산 */
         }
         .seating-area {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 8px; /* 간격 축소 */
-            margin-bottom: 5px;
+            gap: 8px;
+            /* margin-bottom 제거하여 상하 간격 최소화 */
             width: 100%;
+            flex-grow: 1; /* 남은 공간을 채우도록 설정 */
         }
         
-        /* 기둥 스타일 */
+        /* 기둥 및 기둥 공간 스타일 */
         .pillar {
             width: 40px;
-            height: 30px; /* 높이 축소 */
+            height: 30px;
             background: #888;
             border: 2px solid #666;
             border-radius: 6px;
@@ -50,16 +59,17 @@
         }
         .pillar-space {
             width: 48px;
-            height: 30px; /* 높이 축소 */
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        /* 섹션 및 제목 스타일 */
         .section {
             display: flex;
             flex-direction: column;
-            gap: 2px; /* 줄 간격 더 축소 */
+            gap: 2px;
             flex: 1;
             min-width: 0;
         }
@@ -74,13 +84,14 @@
             display: flex;
             gap: 6px;
             align-items: center;
-            height: 36px; /* 줄 높이 축소 (42px -> 36px) */
+            height: 36px;
         }
         #broadcast-section, #info-section { justify-content: center; }
 
+        /* 좌석 스타일 */
         .seat {
             width: 60px;
-            height: 30px; /* 좌석 높이 축소 (35px -> 30px) */
+            height: 30px;
             background: white;
             border: 2px solid #ccc;
             border-radius: 5px;
@@ -88,7 +99,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px; /* 폰트 약간 축소 */
+            font-size: 16px;
             font-weight: bold;
             color: #333;
             text-align: center;
@@ -103,6 +114,7 @@
         .seat.occupied { background: #e8e8e8; border-color: #999; color: #333; }
         .seat.unused { background: #ffcccc; border-color: #ff6666; color: #ff0000; font-size: 18px; }
 
+        /* 통로 스타일 */
         .aisle {
             width: 12px;
             height: 100%;
@@ -110,51 +122,50 @@
             border: 1px solid #e0e0e0;
             border-radius: 4px;
         }
+        
+        /* 상단 특별 구역 스타일 */
         .special-section {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 15px;
-            margin-bottom: 15px; /* 하단 여백 축소 */
+            margin-bottom: 5px; /* 하단 여백 최소화 */
             width: 100%;
+            flex-shrink: 0; /* 높이가 줄어들지 않도록 설정 */
         }
         .special-area {
             background: #f8f8f8;
             border: 2px solid #ddd;
             border-radius: 6px;
             padding: 8px;
-            padding-bottom: 35px; /* 엠프 공간 (높이 줄임) */
+            padding-bottom: 35px;
             position: relative;
             flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            align-items: center; /* 내부 요소 중앙 정렬 */
+            align-items: center;
         }
 
-        /* --- 엠프 스타일 수정 --- */
+        /* 엠프 라벨 스타일 */
         .amp-label {
             position: absolute;
             bottom: 5px;
-            /* 좌우 중앙 정렬은 부모의 flex align-items로 보조하거나 transform 유지 */
             left: 50%;
             transform: translateX(-50%);
-            
             background: #444;
             color: white;
-            padding: 4px 0; /* 패딩을 줄여 높이 축소 (50% 느낌) */
-            
-            /* 너비 계산: (좌석폭 60 * 4개) + (간격 6 * 3개) + (좌석테두리보정 등) = 240 + 18 = 258px */
-            width: 258px; 
-            
+            padding: 4px 0;
+            width: 258px;
             border-radius: 4px;
-            font-size: 12px; /* 폰트 크기 축소 */
+            font-size: 12px;
             font-weight: bold;
             text-align: center;
             border: 2px solid #222;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
+        /* 특별 구역 제목 스타일 */
         .special-title {
             text-align: center;
             font-weight: bold;
@@ -162,6 +173,8 @@
             margin-bottom: 5px;
             font-size: 12px;
         }
+        
+        /* 마이크 섹션 스타일 */
         .mic-section {
             display: flex;
             flex-direction: row;
@@ -183,9 +196,17 @@
             color: #333;
         }
 
+        /* 연단 스타일 */
+        .stage-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 5px; /* 상단 여백 최소화 */
+            flex-shrink: 0;
+            padding-bottom: 5px; /* 하단 여백 최소화 */
+        }
         .stage {
             background: #e0e0e0;
-            height: 30px; /* 높이 축소 */
+            height: 30px;
             width: 200px;
             border: 2px solid #ccc;
             border-radius: 6px;
@@ -196,6 +217,8 @@
             font-size: 14px;
             font-weight: bold;
         }
+        
+        /* 줄 번호 라벨 스타일 */
         .row-label {
             display: flex;
             align-items: center;
@@ -211,7 +234,7 @@
             font-size: 9px;
         }
 
-        /* --- 메모장 스타일 (높이 축소) --- */
+        /* 메모장 스타일 */
         .memo-container {
             width: 100%;
             margin-bottom: 5px;
@@ -229,7 +252,7 @@
         }
         .memo-area {
             width: 100%;
-            height: 85px; /* 높이 대폭 축소 (160 -> 85) */
+            height: 60px; /* 높이를 더 줄여서 공간 확보 */
             border: 2px solid #81d4fa;
             border-radius: 6px;
             padding: 5px;
@@ -237,7 +260,7 @@
             font-family: inherit;
             font-weight: bold;
             color: #333;
-            resize: none; /* 아이패드에서 리사이즈 핸들 제거 */
+            resize: none;
             background-color: #e1f5fe;
         }
         .memo-area::placeholder {
@@ -251,7 +274,7 @@
             background-color: #fff;
         }
 
-        /* --- 모달 및 버튼 --- */
+        /* 모달 및 버튼 스타일 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: white; margin: 15% auto; padding: 20px; border: 2px solid #ccc; border-radius: 8px; width: 90%; max-width: 350px; text-align: center; }
         .modal input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
@@ -264,19 +287,16 @@
         /* 아이패드 및 태블릿 최적화 */
         @media (max-width: 1024px) {
             .container { padding: 5px; }
-            /* 좌석 크기 축소에 따른 엠프 너비 자동 조절 필요 */
             .seat { width: 55px; height: 28px; font-size: 14px; }
-            
-            /* 엠프 너비 재계산: (55 * 4) + (5 * 3) = 220 + 15 = 235px */
             .amp-label { width: 235px; padding: 3px 0; font-size: 11px; }
-            
             .pillar { width: 35px; height: 28px; }
             .pillar-space { width: 43px; height: 28px; }
             .row { height: 32px; gap: 5px; }
             .aisle { width: 8px; }
-            .memo-area { font-size: 15px; height: 75px; } /* 메모장 더 축소 */
+            .memo-area { font-size: 15px; height: 50px; } /* 메모장 높이 더 축소 */
             .section-title { font-size: 12px; margin-bottom: 2px; }
-            .special-section { gap: 10px; margin-bottom: 10px; }
+            .special-section { gap: 10px; margin-bottom: 5px; }
+            .stage { height: 28px; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -314,11 +334,12 @@
             <div class="aisle"></div>
             <div class="section">
                 <div class="section-title">청중석 (우)</div>
+                <div id="right-memo-container"></div>
                 <div id="right-section"></div>
             </div>
         </div>
 
-        <div style="display: flex; justify-content: center; margin-top: 10px;">
+        <div class="stage-container">
             <div class="stage">연단</div>
         </div>
     </div>
@@ -351,7 +372,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         
-        // 데이터 경로
         const seatsRef = db.ref('seatingChart/dunchon2f/seats');
         const memoRef = db.ref('seatingChart/dunchon2f/memo');
 
@@ -411,6 +431,7 @@
 
             // 오른쪽 청중석
             const rightSection = document.getElementById('right-section');
+            const rightMemoContainer = document.getElementById('right-memo-container');
             
             // --- 메모장 ---
             const memoContainer = document.createElement('div');
@@ -431,7 +452,7 @@
                 memoRef.set(this.value);
             });
             memoContainer.appendChild(memoArea);
-            rightSection.appendChild(memoContainer);
+            rightMemoContainer.appendChild(memoContainer); // 메모장을 별도 컨테이너에 추가
 
             // 8~1줄 실제 좌석
             for (let row = 8; row >= 1; row--) {
