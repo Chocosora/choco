@@ -152,26 +152,25 @@
         .mic-section {
             display: flex;
             flex-direction: row;
-            gap: 15px;
+            gap: 20px;
             align-items: center;
             justify-content: center;
             flex: 1;
             min-width: 0;
         }
-        .mic-position {
-            background: #f0f0f0;
-            border: 2px solid #ccc;
-            color: #333;
-            padding: 10px;
-            border-radius: 6px;
-            text-align: center;
-            font-weight: bold;
-            min-width: 100px;
-            cursor: pointer;
-            flex: 1;
-            max-width: 140px;
-            touch-action: manipulation;
+        /* 마이크 컨테이너 스타일 추가 */
+        .mic-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
         }
+        .mic-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
         .stage {
             background: #e0e0e0;
             height: 35px;
@@ -272,16 +271,8 @@
                 <div class="amp-label">엠프</div>
             </div>
 
-            <div class="mic-section">
-                <div class="mic-position" onclick="editMic('left')">
-                    마이크 (좌)<br>
-                    <span id="mic-left-name" style="cursor: pointer; text-decoration: underline;">담당자 미정</span>
+            <div class="mic-section" id="mic-section">
                 </div>
-                <div class="mic-position" onclick="editMic('right')">
-                    마이크 (우)<br>
-                    <span id="mic-right-name" style="cursor: pointer; text-decoration: underline;">담당자 미정</span>
-                </div>
-            </div>
 
             <div class="special-area">
                 <div class="special-title">안내부</div>
@@ -401,21 +392,18 @@
             // 오른쪽 청중석
             const rightSection = document.getElementById('right-section');
             
-            // --- 메모장 추가 (제목 포함) ---
+            // --- 메모장 ---
             const memoContainer = document.createElement('div');
             memoContainer.className = 'memo-container';
             
-            // 제목 (고정 텍스트)
             const memoTitle = document.createElement('div');
             memoTitle.className = 'memo-title';
             memoTitle.textContent = '실시간 전달 사항';
             memoContainer.appendChild(memoTitle);
 
-            // 입력창
             const memoArea = document.createElement('textarea');
             memoArea.className = 'memo-area';
             memoArea.id = 'right-memo';
-            // 안내 문구에서 (자동저장) 제거
             memoArea.placeholder = '내용을 입력하세요'; 
             
             memoArea.addEventListener('input', function() {
@@ -453,6 +441,29 @@
 
             const infoSection = document.getElementById('info-section');
             for (let seat = 1; seat <= 4; seat++) createSeatElement(infoSection, `I${seat}`);
+
+            // --- 마이크 섹션 (좌석형으로 변경) ---
+            const micSection = document.getElementById('mic-section');
+            
+            // 마이크 좌
+            const micLContainer = document.createElement('div');
+            micLContainer.className = 'mic-container';
+            const micLLabel = document.createElement('div');
+            micLLabel.className = 'mic-label';
+            micLLabel.textContent = '마이크 (좌)';
+            micLContainer.appendChild(micLLabel);
+            createSeatElement(micLContainer, 'MicL'); // ID: MicL
+            micSection.appendChild(micLContainer);
+
+            // 마이크 우
+            const micRContainer = document.createElement('div');
+            micRContainer.className = 'mic-container';
+            const micRLabel = document.createElement('div');
+            micRLabel.className = 'mic-label';
+            micRLabel.textContent = '마이크 (우)';
+            micRContainer.appendChild(micRLabel);
+            createSeatElement(micRContainer, 'MicR'); // ID: MicR
+            micSection.appendChild(micRContainer);
         }
 
         function createSeatElement(parent, id) {
@@ -527,17 +538,10 @@
             }
         }
 
-        function editMic(position) {
-            const currentName = document.getElementById(`mic-${position}-name`).textContent;
-            const name = prompt(`마이크 (${position === 'left' ? '좌' : '우'}) 담당자:`, currentName === '담당자 미정' ? '' : currentName);
-            if (name !== null) db.ref(`seatingChart/dunchon2f/mics/${position}`).set(name.trim());
-        }
-
         // --- Firebase Listener ---
         dbRef.on('value', (snapshot) => {
             const data = snapshot.val() || {};
             const seats = data.seats || {};
-            const mics = data.mics || {};
             const memoText = data.memo || ""; 
 
             // 메모장 업데이트
@@ -546,13 +550,10 @@
                 memoEl.value = memoText;
             }
 
-            // 좌석 업데이트
+            // 좌석 업데이트 (마이크 포함 - MicL, MicR도 seats에 포함됨)
             document.querySelectorAll('.seat').forEach(seat => {
                 updateSeatDisplay(seat.id, seats[seat.id]);
             });
-
-            document.getElementById('mic-left-name').textContent = mics.left || '담당자 미정';
-            document.getElementById('mic-right-name').textContent = mics.right || '담당자 미정';
         });
 
         document.getElementById('nameInput').addEventListener('keypress', function(e) {
