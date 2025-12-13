@@ -35,18 +35,19 @@
             width: 100%;
         }
         
-        /* --- [수정됨] 청중석 영역 하단 정렬 오버라이드 --- */
+        /* 청중석 영역 하단 정렬 (우측 메모장 높이 차이 보정) */
         .seating-area {
-            align-items: flex-end; /* 높이가 다른 우측 구역을 위해 아래쪽 기준으로 정렬 맞춰줌 */
+            align-items: flex-end; 
         }
 
+        /* --- [수정] 통로 너비 대폭 축소 --- */
         .aisle {
-            width: 15px;
+            width: 5px; /* 15px -> 5px */
             flex-shrink: 0;
             background: #f8f8f8;
             border: 1px solid #e0e0e0;
             border-radius: 4px;
-            margin: 0 5px;
+            margin: 0 2px; /* 여백 축소 */
         }
         .special-section .aisle {
             background: transparent;
@@ -73,10 +74,36 @@
             gap: 3px;
         }
 
-        /* --- 스타일 상세 --- */
+        /* --- [수정] 좌석 및 요소 크기 확대 --- */
+        .seat {
+            width: 68px; /* 58px -> 68px (확대) */
+            height: 36px; /* 31px -> 36px (확대) */
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px; /* 17px -> 19px (글자 확대) */
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 0px; /* 패딩 제거하여 글자 공간 확보 */
+            touch-action: manipulation;
+        }
+        .seat:hover { border-color: #999; transform: scale(1.05); }
+        .seat.occupied { background: #e8e8e8; border-color: #999; color: #333; }
+        .seat.unused { background: #ffcccc; border-color: #ff6666; color: #ff0000; font-size: 20px; }
+
+        /* 기둥 스타일 (높이 맞춤) */
         .pillar {
             width: 40px;
-            height: 31px;
+            height: 36px; /* 좌석 높이에 맞춤 */
             background: #888;
             border: 2px solid #666;
             border-radius: 6px;
@@ -85,17 +112,17 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 11px;
             user-select: none;
         }
+        /* 투명 기둥 (자리 맞춤용) */
         .pillar-placeholder {
             width: 40px;
-            height: 31px;
+            height: 36px;
         }
-
         .pillar-space {
             width: 48px;
-            height: 31px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -108,39 +135,16 @@
             margin-bottom: 4px;
             font-size: 13px;
         }
+        
+        /* 줄 높이 확대 */
         .row {
             display: flex;
             gap: 5px;
             align-items: center;
-            height: 37px;
+            height: 42px; /* 37px -> 42px */
             justify-content: center;
         }
         #left-section .row, #right-section .row { justify-content: center; }
-
-        .seat {
-            width: 58px;
-            height: 31px;
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 17px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            white-space: nowrap;
-            padding: 2px;
-            touch-action: manipulation;
-        }
-        .seat:hover { border-color: #999; transform: scale(1.05); }
-        .seat.occupied { background: #e8e8e8; border-color: #999; color: #333; }
-        .seat.unused { background: #ffcccc; border-color: #ff6666; color: #ff0000; font-size: 18px; }
 
         /* 상단 박스 스타일 */
         .special-area {
@@ -148,7 +152,7 @@
             border: 2px solid #ddd;
             border-radius: 6px;
             padding: 8px;
-            padding-bottom: 40px;
+            padding-bottom: 45px; /* 엠프 라벨 공간 */
             position: relative;
         }
 
@@ -162,7 +166,7 @@
             padding: 6px 0;
             width: 90%;
             border-radius: 5px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
             text-align: center;
             border: 2px solid #222;
@@ -174,7 +178,7 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 6px;
-            font-size: 12px;
+            font-size: 13px;
         }
         
         .mic-section {
@@ -191,14 +195,14 @@
             gap: 3px;
         }
         .mic-label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             color: #333;
         }
 
         .stage {
             background: #e0e0e0;
-            height: 30px;
+            height: 32px;
             width: 250px;
             border: 2px solid #ccc;
             border-radius: 6px;
@@ -206,7 +210,7 @@
             align-items: center;
             justify-content: center;
             color: #333;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
         }
         .row-label {
@@ -214,17 +218,17 @@
             align-items: center;
             justify-content: center;
             width: 18px;
-            height: 22px;
+            height: 24px;
             background: #f0f0f0;
             color: #666;
             font-weight: bold;
             border: 1px solid #ccc;
             border-radius: 3px;
             margin-right: 4px;
-            font-size: 9px;
+            font-size: 10px;
         }
 
-        /* --- 메모장 스타일 --- */
+        /* --- 메모장 스타일 (높이 조정) --- */
         .memo-container {
             width: 100%;
             margin-bottom: 8px;
@@ -242,11 +246,11 @@
         }
         .memo-area {
             width: 100%;
-            height: 130px;
+            height: 145px; /* 좌석 크기에 맞춰 높이 약간 증가 */
             border: 2px solid #81d4fa;
             border-radius: 6px;
             padding: 8px;
-            font-size: 16px;
+            font-size: 18px;
             font-family: inherit;
             font-weight: bold;
             color: #333;
@@ -257,7 +261,7 @@
         .memo-area::placeholder {
             color: #999;
             font-weight: normal;
-            font-size: 13px;
+            font-size: 14px;
         }
         .memo-area:focus {
             outline: none;
@@ -297,12 +301,13 @@
 
         @media (max-width: 1024px) {
             .container { padding: 5px; }
-            .seat { width: 50px; height: 28px; font-size: 13px; }
-            .pillar { width: 32px; height: 28px; }
-            .pillar-space { width: 40px; height: 28px; }
-            .row { height: 34px; gap: 4px; }
-            .aisle { width: 8px; }
-            .memo-area { font-size: 14px; height: 110px; }
+            /* 모바일에서도 조금 더 크게 */
+            .seat { width: 54px; height: 30px; font-size: 15px; }
+            .pillar { width: 34px; height: 30px; }
+            .pillar-space { width: 42px; height: 30px; }
+            .row { height: 36px; gap: 4px; }
+            .aisle { width: 4px; }
+            .memo-area { font-size: 16px; height: 120px; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
