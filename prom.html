@@ -97,7 +97,6 @@
 </head>
 <body>
 
-    <!-- 1. 목록 화면 -->
     <div id="list-view">
         <div class="header">
             <h1>내 원고 보관함</h1>
@@ -108,7 +107,6 @@
         </ul>
     </div>
 
-    <!-- 2. 프롬프터 화면 -->
     <div id="prompter-view">
         <div id="controls">
             <div style="display:flex; align-items:center;">
@@ -126,7 +124,6 @@
         <div id="script-container"></div>
     </div>
 
-    <!-- 3. 편집기 화면 (모달) -->
     <div id="editor-modal">
         <h3>원고 작성/수정</h3>
         <input type="text" id="editor-title" placeholder="원고 제목을 입력하세요 (예: 149번 연설)">
@@ -137,7 +134,6 @@
         </div>
     </div>
 
-    <!-- 파이어베이스 SDK 및 로직 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } 
@@ -338,23 +334,19 @@
         document.getElementById('btn-inc').onclick = () => { fontSize+=2; scriptContainer.style.fontSize = fontSize+'px'; };
         document.getElementById('btn-dec').onclick = () => { if(fontSize>14) fontSize-=2; scriptContainer.style.fontSize = fontSize+'px'; };
 
-        // 스크린 터치로 다음 문단
+        // [수정된 부분] 스크린 터치 및 문단 선택 로직
         scriptContainer.addEventListener('click', (e) => {
-            // 문단을 클릭한 경우
+            // 1. 특정 문단을 직접 클릭한 경우 (점프)
             if(e.target.classList.contains('paragraph') && e.target.dataset.idx !== undefined) {
                 const idx = parseInt(e.target.dataset.idx);
                 
-                // 초기화 상태일 때만 문단 직접 선택 가능
-                if(!isStarted) {
-                    currentParagraphIndex = idx;
-                    isStarted = true;
-                    updateHighlight();
-                } else {
-                    // 이미 시작된 경우 다음 문단으로
-                    handleNextParagraph();
-                }
-            } else {
-                // 빈 공간 클릭 시 다음 문단으로
+                // 언제든지 해당 문단으로 점프하여 활성화
+                currentParagraphIndex = idx;
+                isStarted = true;
+                updateHighlight();
+            } 
+            // 2. 빈 공간을 클릭한 경우 (다음 문단으로 진행)
+            else {
                 handleNextParagraph();
             }
         });
@@ -411,7 +403,7 @@
                 para.classList.remove('active', 'passed');
                 if(i === currentParagraphIndex) {
                     para.classList.add('active');
-                    // 상단으로 스크롤 (80px는 컨트롤바 높이)
+                    // 상단으로 스크롤 (화면 중앙보다는 약간 위쪽이 읽기 편함)
                     const rect = para.getBoundingClientRect();
                     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                     const targetPosition = rect.top + scrollTop - 100;
