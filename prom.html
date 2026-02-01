@@ -85,13 +85,7 @@
     }
     .paragraph.passed { opacity: 0.5; }
     .paragraph:hover:not(.active) { background: #f8f9fa; }
-    .instruction { 
-        font-size: 0.8em; 
-        color: #888; 
-        margin-bottom: 5px; 
-        font-style: italic; 
-    }
-
+    
     @keyframes pulse { 0% {box-shadow: 0 0 0 0 #dc354540;} 70% {box-shadow: 0 0 0 10px transparent;} }
 </style>
 </head>
@@ -334,7 +328,7 @@
         document.getElementById('btn-inc').onclick = () => { fontSize+=2; scriptContainer.style.fontSize = fontSize+'px'; };
         document.getElementById('btn-dec').onclick = () => { if(fontSize>14) fontSize-=2; scriptContainer.style.fontSize = fontSize+'px'; };
 
-        // [수정된 부분] 스크린 터치 및 문단 선택 로직
+        // 스크린 터치 및 문단 선택 로직
         scriptContainer.addEventListener('click', (e) => {
             // 1. 특정 문단을 직접 클릭한 경우 (점프)
             if(e.target.classList.contains('paragraph') && e.target.dataset.idx !== undefined) {
@@ -358,6 +352,7 @@
             }
         }
 
+        // [수정됨] 성구 등 괄호가 있어도 무조건 일반 문단으로 처리
         function renderScript(text) {
             scriptContainer.innerHTML = '';
             paragraphElements = [];
@@ -376,15 +371,10 @@
                 const div = document.createElement('div');
                 div.className = 'paragraph';
                 
-                if(para.includes('(') && para.includes(')')) {
-                    div.innerHTML = `<span class="instruction">${para}</span>`;
-                    div.style.cursor = 'default';
-                    div.style.pointerEvents = 'none';
-                } else {
-                    div.textContent = para;
-                    div.dataset.idx = paragraphElements.length;
-                    paragraphElements.push(div);
-                }
+                // 괄호 체크 로직(if문)을 제거하고 무조건 일반 처리
+                div.textContent = para;
+                div.dataset.idx = paragraphElements.length;
+                paragraphElements.push(div);
                 
                 scriptContainer.appendChild(div);
             });
