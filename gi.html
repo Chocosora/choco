@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <!-- 모바일에서 전체 화면을 띄우고 핀치 줌 가능하도록 설정 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>강일 회중 집단 관리</title>
   <style>
@@ -220,6 +219,40 @@
       font-size: 14px;
       font-weight: bold;
     }
+
+    /* 대기 구역 추가 스타일 */
+    .neutral-zone {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e9ecef;
+      border: 2px dashed #adb5bd;
+      border-radius: 6px;
+    }
+    
+    .neutral-zone h3 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #495057;
+    }
+
+    #neutral-members {
+      min-height: 60px;
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+      padding: 10px;
+    }
+
+    #neutral-members .member {
+      margin: 0;
+      width: auto;
+      min-width: 140px;
+    }
     
     /* 집단별 색상 */
     .love { background-color: #FF9999; }
@@ -251,7 +284,6 @@
   </div>
   
   <div class="container">
-    <!-- 사랑 집단 -->
     <div class="group" data-group="love">
       <div class="group-header">
         <h2 class="group-name">사랑 집단</h2>
@@ -279,7 +311,6 @@
       </div>
     </div>
     
-    <!-- 기쁨 집단 -->
     <div class="group" data-group="joy">
       <div class="group-header">
         <h2 class="group-name">기쁨 집단</h2>
@@ -307,7 +338,6 @@
       </div>
     </div>
     
-    <!-- 평화 집단 -->
     <div class="group" data-group="peace">
       <div class="group-header">
         <h2 class="group-name">평화 집단</h2>
@@ -335,7 +365,6 @@
       </div>
     </div>
     
-    <!-- 선함 집단 -->
     <div class="group" data-group="goodness">
       <div class="group-header">
         <h2 class="group-name">선함 집단</h2>
@@ -363,7 +392,6 @@
       </div>
     </div>
     
-    <!-- 믿음 집단 -->
     <div class="group" data-group="faith">
       <div class="group-header">
         <h2 class="group-name">믿음 집단</h2>
@@ -441,6 +469,11 @@
       </div>
     </div>
     <p class="total-count">총 인원: <span id="total-members">0</span>명</p>
+
+    <div class="neutral-zone">
+      <h3>대기 / 중립 구역 (<span id="neutral-count">0</span>명)</h3>
+      <div class="members" id="neutral-members" data-group="neutral"></div>
+    </div>
   </div>
 
   <script type="module">
@@ -503,6 +536,18 @@
                 }
               }
             });
+
+            // 중립 구역 동기화 추가
+            const neutralContainer = document.getElementById('neutral-members');
+            while (neutralContainer.firstChild) neutralContainer.removeChild(neutralContainer.firstChild);
+            if (data['neutral'] && data['neutral'].members) {
+              data['neutral'].members.forEach(memberData => {
+                if (memberData && memberData.name) {
+                  addMember(neutralContainer, memberData.name, 'neutral', memberData.status);
+                }
+              });
+            }
+
             updateCounts();
           }
         });
@@ -539,6 +584,17 @@
             }))
           };
         });
+
+        // 중립 구역 데이터 저장 추가
+        const neutralMembers = document.getElementById('neutral-members').querySelectorAll('.member');
+        allGroupsData['neutral'] = {
+          members: Array.from(neutralMembers).map(member => ({
+            name: member.getAttribute('data-name'),
+            group: 'neutral',
+            addedDate: date,
+            status: member.querySelector('.status-select').value || '전'
+          }))
+        };
 
         set(ref(database, 'groups'), allGroupsData)
           .catch((error) => {
@@ -829,6 +885,25 @@
           document.getElementById(`${group}-elder-count`).textContent = groupElderCount;
           document.getElementById(`${group}-servant-count`).textContent = groupServantCount;
           document.getElementById(`${group}-pioneer-count`).textContent = groupPioneerCount;
+        });
+
+        // 중립 구역 카운트 추가 계산
+        const neutralMembers = document.getElementById('neutral-members').querySelectorAll('.member');
+        document.getElementById('neutral-count').textContent = neutralMembers.length;
+        
+        neutralMembers.forEach(member => {
+          const name = member.getAttribute('data-name');
+          const status = member.querySelector('.status-select').value;
+
+          if (!uniqueMembers.has(name)) {
+            uniqueMembers.add(name);
+            totalMembers++;
+          }
+
+          if (status === '장' || status === '장파') elderCount++;
+          if (status === '종' || status === '종파') servantCount++;
+          if (status === '파' || status === '장파' || status === '종파') pioneerCount++;
+          if (status === '전') publisherCount++;
         });
 
         document.getElementById('total-members').textContent = totalMembers;
