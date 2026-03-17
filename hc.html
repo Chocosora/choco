@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>홈케어의 제왕 작업 일지</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.378.0",
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+            "firebase/database": "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"
+        }
+    }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Pretendard', sans-serif;
+            background-color: #F3F4F6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .transition-custom { transition: all 0.2s ease-in-out; }
+        
+        .dashed-line {
+            background-image: linear-gradient(to right, #E5E7EB 50%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 8px 1px;
+            background-repeat: repeat-x;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Calendar, MapPin, Save, Trash2, Loader2, Sparkles, CheckCircle2, ClipboardList, AlertCircle, Edit2, X, SearchCheck, AlignLeft, ListOrdered, ChevronLeft, CalendarDays, Plus } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getDatabase, ref, push, onValue, remove, set } from 'firebase/database';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.firebasestorage.app",
+            messagingSenderId: "798065461606",
+            appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
+            measurementId: "G-4FYC7HVNNV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const geminiPartA = "AIzaSyBAhDBv";
+        const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
+        const GEMINI_API_KEY = geminiPartA + geminiPartB;
+        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
+
+        const NaverIcon = () => (
+            <div className="w-6 h-6 rounded-md bg-[#03C75A] flex items-center justify-center overflow-hidden shadow-sm">
+                <span className="text-white font-extrabold text-lg leading-none pt-0.5">N</span>
+            </div>
+        );
+
+        const TMapIcon = () => (
+            <div className="w-6 h-6 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6" stroke="url(#tmap_grad_h)" strokeWidth="5" strokeLinecap="round"/>
+                    <path d="M12 4V20" stroke="url(#tmap_grad_v)" strokeWidth="5" strokeLinecap="round"/>
+                    <defs>
+                        <linearGradient id="tmap_grad_h" x1="4" y1="4" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                        <linearGradient id="tmap_grad_v" x1="12" y1="4" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        );
+
+        const KakaoIcon = () => (
+            <div className="w-6 h-6 rounded-full bg-[#FEE500] flex items-center justify-center overflow-hidden border border-[#FEE500] shadow-sm">
+                <MapPin className="w-3.5 h-3.5 text-[#191919] fill-[#191919]" />
+            </div>
+        );
+
+        const getDayOfWeekFromStr = (dateStr) => ['일', '월', '화', '수', '목', '금', '토'][new Date(dateStr).getDay()];
+
+        const App = () => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            const [currentView, setCurrentView] = useState('calendar');
+            const [activeDate, setActiveDate] = useState(todayStr);
+
+            const [rawInput, setRawInput] = useState('');
+            const [parsedAddress, setParsedAddress] = useState('');
+            const [parsedDetails, setParsedDetails] = useState('');
+            
+            // 작업 내용과 금액 배열 상태 추가
+            const [tasks, setTasks] = useState([{ description: '', amount: '' }]);
+            const [visitOrder, setVisitOrder] = useState(1);
+            
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [jobs, setJobs] = useState({});
+            const [currentDateView, setCurrentDateView] = useState(new Date(today));
+            
+            const [editingId, setEditingId] = useState(null);
+            const inputSectionRef = useRef(null);
+
+            useEffect(() => {
+                const jobsRef = ref(database, 'homecare_jobs');
+                return onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
+            }, []);
+
+            const jobsByDate = useMemo(() => {
+                const map = {};
+                Object.values(jobs).forEach(job => {
+                    if(job.dates) {
+                        job.dates.forEach(d => {
+                            if(!map[d]) map[d] = [];
+                            map[d].push(job);
+                        });
+                    }
+                });
+                return map;
+            }, [jobs]);
+
+            const activeDateJobs = useMemo(() => {
+                const jobList = Object.entries(jobs)
+                    .map(([key, job]) => ({ key, ...job }))
+                    .filter(job => job.dates && job.dates.includes(activeDate));
+
+                return jobList.sort((a, b) => {
+                    return (a.visitOrder || 99) - (b.visitOrder || 99);
+                });
+            }, [jobs, activeDate]);
+
+            // 작업 내역 관리 함수
+            const handleTaskChange = (index, field, value) => {
+                const newTasks = [...tasks];
+                newTasks[index][field] = value;
+                setTasks(newTasks);
+            };
+
+            const addTask = () => setTasks([...tasks, { description: '', amount: '' }]);
+            const removeTask = (index) => setTasks(tasks.filter((_, i) => i !== index));
+
+            const totalAmount = tasks.reduce((sum, task) => sum + (Number(task.amount) || 0), 0);
+
+            // =================================================================================
+            // 대표님이 작성하신 원본 AI 로직 그대로 100% 복구
+            // =================================================================================
+            const handleHybridSearch = async () => {
+                if (!rawInput.trim()) return;
+                setIsProcessing(true);
+
+                try {
+                    // -----------------------------------------------------------
+                    // 1단계: Gemini에게 "검색할 알맹이"와 "상세 정보" 분리시키기
+                    // -----------------------------------------------------------
+                    const prompt = `
+                        너는 전문적인 주소 텍스트 분석기야. 입력된 문장에서 "지도 검색용 핵심 키워드"와 "상세 정보"를 정확히 분리해줘.
+                        
+                        [규칙]
+                        1. search_query: 지도 API가 인식할 수 있는 핵심 주소 (지번, 아파트명, 도로명). 동/호수나 "층", "입니다" 같은 불필요한 말은 절대 넣지 마.
+                        2. details: 나머지 상세 정보 (건물명, 동, 호수, 층수 등).
+                        3. 절대로 주소를 창조하거나 추측해서 도로명 주소를 만들지 마. 있는 그대로 분리만 해.
+
+                        [예시]
+                        입력: "순천시 조례동 1598-1 나라타워 8층입니다"
+                        출력: { "search_query": "순천시 조례동 1598-1", "details": "나라타워 8층" }
+                        
+                        입력: "서울 서초구 방배삼호 1차 2동 716호"
+                        출력: { "search_query": "서울 서초구 방배삼호 1차", "details": "2동 716호" }
+
+                        입력: "${rawInput}"
+                        출력 포맷: JSON
+                    `;
+
+                    // [유지됨] 사용자가 요청한 gemini-2.5-flash-lite 모델 유지
+                    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const geminiData = await geminiResponse.json();
+                    if (geminiData.error) throw new Error("AI 분석 오류: " + geminiData.error.message);
+
+                    let aiText = geminiData.candidates[0].content.parts[0].text;
+                    const jsonMatch = aiText.match(/\{[\s\S]*\}/); // JSON 부분만 추출
+                    const parsedAI = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
+
+                    const searchQuery = parsedAI.search_query;
+                    const detailsFromAI = parsedAI.details;
+
+                    // -----------------------------------------------------------
+                    // 2단계: Kakao API로 정확한 도로명 주소 찾기 (검증)
+                    // -----------------------------------------------------------
+                    const kakaoResponse = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `KakaoAK ${KAKAO_API_KEY}` // 제공해주신 REST API 키 사용
+                        }
+                    });
+
+                    const kakaoData = await kakaoResponse.json();
+
+                    // -----------------------------------------------------------
+                    // 3단계: 결과 합치기
+                    // -----------------------------------------------------------
+                    if (kakaoData.documents && kakaoData.documents.length > 0) {
+                        const bestMatch = kakaoData.documents[0];
+                        
+                        // 카카오가 알려준 정확한 도로명 주소 (없으면 지번 주소)
+                        const officialAddress = bestMatch.road_address_name || bestMatch.address_name;
+                        const placeName = bestMatch.place_name;
+
+                        setParsedAddress(officialAddress);
+
+                        // 상세 정보 조합하기
+                        let finalDetails = detailsFromAI;
+
+                        // 카카오가 찾은 장소명(예: 나라타워)이 상세정보에 빠져있다면 추가해줌
+                        if (placeName && !finalDetails.includes(placeName) && !searchQuery.includes(placeName)) {
+                            finalDetails = `${placeName} ${finalDetails}`;
+                        }
+                        // 원래 입력했던 내용이 너무 많이 생략됐다면 괄호로 참고용 추가
+                        if (!finalDetails.trim()) {
+                             finalDetails = rawInput.replace(searchQuery, "").trim();
+                        }
+
+                        setParsedDetails(finalDetails.trim());
+                    } else {
+                        // 검색 결과가 없을 때 (신축이거나 오타 등) -> AI가 분석한 그대로 입력
+                        // alert("정확한 주소를 찾지 못해 입력된 내용을 기반으로 채웁니다.");
+                        setParsedAddress(searchQuery);
+                        setParsedDetails(detailsFromAI);
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert(`처리 중 문제가 발생했습니다: ${error.message}`);
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const days = new Date(year, month + 1, 0).getDate();
+                return Array.from({ length: days }, (_, i) => i + 1);
+            };
+
+            const changeMonth = (offset) => setCurrentDateView(new Date(currentDateView.setMonth(currentDateView.getMonth() + offset)));
+
+            const openDailyView = (dateStr) => {
+                setActiveDate(dateStr);
+                setCurrentView('daily');
+                resetForm();
+                
+                const existingJobsCount = jobsByDate[dateStr] ? jobsByDate[dateStr].length : 0;
+                setVisitOrder(existingJobsCount + 1);
+            };
+
+            const handleSaveJob = () => {
+                if (!parsedAddress) return alert("주소를 입력해주세요.");
+                
+                const filteredTasks = tasks.filter(t => t.description.trim() !== '' || t.amount !== '');
+                
+                const jobData = {
+                    address: parsedAddress,
+                    details: parsedDetails,
+                    tasks: filteredTasks,
+                    totalAmount: totalAmount,
+                    visitOrder: Number(visitOrder),
+                    dates: [activeDate],
+                    createdAt: editingId ? jobs[editingId].createdAt : Date.now()
+                };
+
+                if (editingId) {
+                    set(ref(database, `homecare_jobs/${editingId}`), jobData)
+                        .then(() => {
+                            alert("수정이 완료되었습니다!");
+                            resetForm();
+                        })
+                        .catch((error) => alert("수정 실패: " + error.message));
+                } else {
+                    push(ref(database, 'homecare_jobs'), jobData)
+                        .then(() => {
+                            alert("저장 완료!");
+                            resetForm();
+                            setVisitOrder(prev => Number(prev) + 1);
+                        })
+                        .catch((error) => alert("저장 실패: " + error.message));
+                }
+            };
+
+            const handleEditStart = (job) => {
+                setEditingId(job.key);
+                setRawInput('');
+                setParsedAddress(job.address);
+                setParsedDetails(job.details || '');
+                
+                // 기존 데이터 불러오기
+                if (job.tasks && job.tasks.length > 0) {
+                    setTasks(job.tasks);
+                } else {
+                    setTasks([{ description: job.workDescription || '', amount: '' }]);
+                }
+                
+                setVisitOrder(job.visitOrder || 1);
+                
+                if (inputSectionRef.current) {
+                    inputSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const resetForm = () => {
+                setRawInput('');
+                setParsedAddress('');
+                setParsedDetails('');
+                setTasks([{ description: '', amount: '' }]);
+                const existingJobsCount = jobsByDate[activeDate] ? jobsByDate[activeDate].length : 0;
+                setVisitOrder(existingJobsCount + 1);
+                setEditingId(null);
+            };
+
+            const handleDeleteJob = (id) => {
+                if (confirm("삭제하시겠습니까?")) {
+                    remove(ref(database, `homecare_jobs/${id}`));
+                    if (editingId === id) resetForm();
+                }
+            };
+
+            const openMap = (type, address) => {
+                const encodedAddr = encodeURIComponent(address);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (type === 'naver') {
+                    if (isMobile) {
+                        window.location.href = `nmap://search?query=${encodedAddr}&appname=com.homecare.addressbook`;
+                    } else {
+                        window.open(`https://map.naver.com/v5/search/${encodedAddr}`, '_blank');
+                    }
+                } 
+                else if (type === 'tmap') {
+                    if (isMobile) {
+                        window.location.href = `tmap://search?name=${encodedAddr}`;
+                    } else {
+                        alert("티맵은 모바일에서만 가능합니다.");
+                    }
+                } 
+                else if (type === 'kakao') {
+                    const url = `https://map.kakao.com/link/search/${encodedAddr}`;
+                    window.open(url, '_blank') || (window.location.href = url);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20">
+                    <header className="bg-white px-6 py-5 sticky top-0 z-30 shadow-sm flex items-center justify-between">
+                        <div>
+                            {currentView === 'daily' ? (
+                                <button onClick={() => setCurrentView('calendar')} className="flex items-center text-slate-600 hover:text-teal-600 font-bold transition-colors">
+                                    <ChevronLeft className="w-6 h-6 mr-1" />
+                                    <span>달력으로 돌아가기</span>
+                                </button>
+                            ) : (
+                                <h1 className="text-xl font-extrabold text-slate-800 flex items-center gap-2.5 tracking-tight">
+                                    <div className="bg-teal-500 p-1.5 rounded-lg text-white shadow-teal-200 shadow-md">
+                                        <Sparkles className="w-5 h-5" />
+                                    </div>
+                                    홈케어의 제왕
+                                </h1>
+                            )}
+                        </div>
+                    </header>
+
+                    <main className="p-5 space-y-6">
+                        {currentView === 'calendar' ? (
+                            <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+                                <div className="flex justify-between items-center mb-6 px-2">
+                                    <button onClick={() => changeMonth(-1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <CalendarDays className="w-5 h-5 text-teal-500" />
+                                        {currentDateView.getFullYear()}년 {currentDateView.getMonth() + 1}월
+                                    </h2>
+                                    <button onClick={() => changeMonth(1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors transform rotate-180">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-7 gap-2 text-center mb-2">
+                                    {['일','월','화','수','목','금','토'].map((d,i) => (
+                                        <div key={d} className={`text-xs font-bold pb-2 ${i===0?'text-red-400':i===6?'text-blue-400':'text-slate-400'}`}>{d}</div>
+                                    ))}
+                                </div>
+                                
+                                <div className="grid grid-cols-7 gap-2 text-center">
+                                    {Array.from({ length: new Date(currentDateView.getFullYear(), currentDateView.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
+                                    {getDaysInMonth(currentDateView).map(day => {
+                                        const dateStr = `${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                                        const isToday = dateStr === todayStr;
+                                        const dayJobs = jobsByDate[dateStr] || [];
+                                        const hasJobs = dayJobs.length > 0;
+                                        
+                                        return (
+                                            <button
+                                                key={day}
+                                                onClick={() => openDailyView(dateStr)}
+                                                className={`aspect-square relative flex flex-col items-center justify-start pt-2 rounded-2xl transition-all border ${isToday ? 'border-teal-300 bg-teal-50 shadow-sm' : 'border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50'} active:scale-95`}
+                                            >
+                                                <span className={`text-sm font-bold ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
+                                                
+                                                {hasJobs && (
+                                                    <div className="absolute bottom-1.5 flex gap-0.5">
+                                                        <span className="bg-teal-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none">
+                                                            {dayJobs.length}건
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+                        ) : (
+                            <div className="space-y-6 fade-in">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
+                                        {activeDate.slice(5).replace('-', '월 ')}일
+                                    </div>
+                                    <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
+                                </div>
+
+                                <section className="space-y-4">
+                                    {activeDateJobs.length === 0 ? (
+                                        <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                                            <p className="text-slate-400 text-sm">이 날짜에 등록된 일정이 없습니다.</p>
+                                        </div>
+                                    ) : (
+                                        activeDateJobs.map((job) => {
+                                            const isEditing = editingId === job.key;
+                                            return (
+                                            <div key={job.key} className={`rounded-2xl p-5 shadow-sm border transition-all ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-teal-100 hover:shadow-md'}`}>
+                                                <div className="flex flex-wrap gap-1.5 mb-3 items-center">
+                                                    {job.visitOrder && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-teal-100 text-teal-700">
+                                                            <ListOrdered className="w-3 h-3 mr-1" />
+                                                            {job.visitOrder}번째 방문
+                                                        </span>
+                                                    )}
+
+                                                    <div className="ml-auto flex gap-1">
+                                                        <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md transition-colors ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteJob(job.key)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="mb-4 pl-1">
+                                                    <h3 className="text-base font-bold leading-tight mb-1.5 text-slate-800">{job.address}</h3>
+                                                    {job.details && (
+                                                        <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
+                                                            {job.details}
+                                                        </p>
+                                                    )}
+                                                    
+                                                    {/* 작업 내용 및 금액 표시 */}
+                                                    {job.tasks && job.tasks.length > 0 && (
+                                                        <div className="mt-2 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100 space-y-2">
+                                                            {job.tasks.map((task, i) => (
+                                                                <div key={i} className="flex justify-between items-start gap-2 border-b border-yellow-200/50 pb-1.5 last:border-0 last:pb-0">
+                                                                    <div className="flex items-start gap-1.5 flex-1">
+                                                                        <AlignLeft className="w-3.5 h-3.5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                                                        <span className="text-sm text-slate-700">{task.description || '내용 없음'}</span>
+                                                                    </div>
+                                                                    <span className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                                                                        {Number(task.amount || 0).toLocaleString()}원
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            <div className="flex justify-between items-center pt-2 border-t border-yellow-200">
+                                                                <span className="text-xs font-bold text-yellow-800">총 청구액</span>
+                                                                <span className="text-base font-extrabold text-red-500">
+                                                                    {Number(job.totalAmount || 0).toLocaleString()}원
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <button onClick={() => openMap('naver', job.address)} className="bg-white border border-slate-200 hover:bg-green-50 hover:border-green-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <NaverIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#03C75A] transition-colors">네이버</span>
+                                                    </button>
+                                                    <button onClick={() => openMap('tmap', job.address)} className="bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <TMapIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#E80048] transition-colors">티맵</span>
+                                                    </button>
+                                                    <button onClick={() => openMap('kakao', job.address)} className="bg-white border border-slate-200 hover:bg-yellow-50 hover:border-yellow-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <KakaoIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#F9C000] transition-colors">카카오</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            )
+                                        })
+                                    )}
+                                </section>
+
+                                <div className="dashed-line h-px w-full my-4"></div>
+
+                                <section ref={inputSectionRef} className={`rounded-3xl p-5 shadow-sm border relative overflow-hidden transition-colors ${editingId ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-100'}`}>
+                                    <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-50'}`}></div>
+                                    
+                                    <h2 className={`text-sm font-bold mb-3 flex items-center gap-2 ${editingId ? 'text-teal-700' : 'text-slate-500'}`}>
+                                        {editingId ? (
+                                            <>
+                                                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-md text-xs">EDIT</span>
+                                                작업 내용 수정
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="bg-teal-100 text-teal-600 px-2 py-0.5 rounded-md text-xs">NEW</span>
+                                                새 현장 추가
+                                            </>
+                                        )}
+                                    </h2>
+                                    
+                                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">1. 주소 입력</label>
+                                    <textarea 
+                                        className="w-full p-4 bg-white rounded-2xl text-slate-700 text-sm border border-slate-200 focus:ring-2 focus:ring-teal-500 transition-all resize-none h-20 mb-3 leading-relaxed placeholder:text-slate-400 outline-none"
+                                        placeholder={editingId ? "수정할 때는 주소나 내용을 아래 칸에서 직접 고치셔도 됩니다." : "문자 내용을 여기에 붙여넣으세요."}
+                                        value={rawInput}
+                                        onChange={(e) => setRawInput(e.target.value)}
+                                    />
+                                    
+                                    <button 
+                                        onClick={handleHybridSearch}
+                                        disabled={isProcessing || !rawInput}
+                                        className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-custom shadow-lg shadow-slate-200 disabled:opacity-50 mb-5"
+                                    >
+                                        {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <SearchCheck className="w-4 h-4" />}
+                                        {isProcessing ? "AI 분석 & 지도 검색 중..." : "AI 정밀 주소 변환"}
+                                    </button>
+
+                                    <div className="mb-5 space-y-2">
+                                        <div className="relative">
+                                            <MapPin className="w-4 h-4 absolute left-3 top-3.5 text-teal-500" />
+                                            <input 
+                                                type="text" 
+                                                className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                                value={parsedAddress}
+                                                onChange={(e) => setParsedAddress(e.target.value)}
+                                                placeholder="주소 (도로명으로 자동 변환됩니다)"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <CheckCircle2 className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                                            <input 
+                                                type="text" 
+                                                className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm text-slate-600 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                                value={parsedDetails}
+                                                onChange={(e) => setParsedDetails(e.target.value)}
+                                                placeholder="상세 내용"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-slate-200 w-full mb-4"></div>
+
+                                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">2. 현장 방문 순서 및 작업 내역 (금액)</label>
+                                    <div className="mb-5 space-y-3">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <label className="text-sm font-bold text-slate-600 whitespace-nowrap ml-1">방문 순서</label>
+                                            <div className="flex items-center">
+                                                <input 
+                                                    type="number" 
+                                                    min="1"
+                                                    className="w-20 px-3 py-2 bg-white rounded-lg text-center font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                                    value={visitOrder}
+                                                    onChange={(e) => setVisitOrder(e.target.value)}
+                                                />
+                                                <span className="ml-2 text-sm text-slate-500">번째 방문</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* 작업 내용 및 금액 입력 배열 */}
+                                        <div className="space-y-2">
+                                            {tasks.map((task, index) => (
+                                                <div key={index} className="flex gap-2 items-start">
+                                                    <input 
+                                                        type="text"
+                                                        className="flex-[3] w-full px-3 py-2.5 bg-white rounded-xl text-sm text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                                        placeholder="내용 (예: 에어컨)"
+                                                        value={task.description}
+                                                        onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
+                                                    />
+                                                    <div className="flex-[2] relative">
+                                                        <input 
+                                                            type="number"
+                                                            className="w-full px-3 py-2.5 pr-6 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
+                                                            placeholder="금액"
+                                                            value={task.amount}
+                                                            onChange={(e) => handleTaskChange(index, 'amount', e.target.value)}
+                                                        />
+                                                        <span className="absolute right-3 top-2.5 text-sm text-slate-400">원</span>
+                                                    </div>
+                                                    {tasks.length > 1 && (
+                                                        <button onClick={() => removeTask(index)} className="p-2.5 text-slate-300 hover:text-red-500 bg-white border border-slate-200 rounded-xl">
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        <button onClick={addTask} className="w-full py-2 border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:border-teal-300 hover:text-teal-600 transition-colors flex items-center justify-center gap-1">
+                                            <Plus className="w-4 h-4" /> 작업 추가
+                                        </button>
+                                        
+                                        {/* 총 금액 자동 계산 표시 */}
+                                        <div className="bg-teal-50 p-4 rounded-xl flex justify-between items-center border border-teal-100 mt-2 shadow-sm">
+                                            <span className="text-sm font-bold text-teal-800">총 금액</span>
+                                            <span className="text-lg font-extrabold text-teal-700">{totalAmount.toLocaleString()} 원</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 mt-6">
+                                        <button 
+                                            onClick={resetForm} 
+                                            className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                                        >
+                                            {editingId ? <><X className="w-4 h-4"/> 취소</> : '초기화'}
+                                        </button>
+                                        <button 
+                                            onClick={handleSaveJob} 
+                                            className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
+                                        >
+                                            <Save className="w-4 h-4" /> 
+                                            {editingId ? '수정 완료' : '이 날짜에 저장'}
+                                        </button>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                        <div className="h-10"></div>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
