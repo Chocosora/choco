@@ -46,7 +46,7 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { Calendar, MapPin, Save, Trash2, Loader2, Sparkles, CheckCircle2, ClipboardList, AlertCircle, Edit2, X, SearchCheck, AlignLeft, ListOrdered, ChevronLeft, CalendarDays, Plus } from 'lucide-react';
+        import { MapPin, Save, Trash2, Loader2, Sparkles, CheckCircle2, ClipboardList, AlertCircle, Edit2, X, SearchCheck, AlignLeft, ListOrdered, ChevronLeft, CalendarDays, Plus } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getDatabase, ref, push, onValue, remove, set } from 'firebase/database';
 
@@ -114,7 +114,6 @@
             const [parsedAddress, setParsedAddress] = useState('');
             const [parsedDetails, setParsedDetails] = useState('');
             
-            // 작업 내용과 금액 배열 상태 추가
             const [tasks, setTasks] = useState([{ description: '', amount: '' }]);
             const [visitOrder, setVisitOrder] = useState(1);
             
@@ -153,7 +152,6 @@
                 });
             }, [jobs, activeDate]);
 
-            // 작업 내역 관리 함수
             const handleTaskChange = (index, field, value) => {
                 const newTasks = [...tasks];
                 newTasks[index][field] = value;
@@ -165,17 +163,11 @@
 
             const totalAmount = tasks.reduce((sum, task) => sum + (Number(task.amount) || 0), 0);
 
-            // =================================================================================
-            // 대표님이 작성하신 원본 AI 로직 그대로 100% 복구
-            // =================================================================================
             const handleHybridSearch = async () => {
                 if (!rawInput.trim()) return;
                 setIsProcessing(true);
 
                 try {
-                    // -----------------------------------------------------------
-                    // 1단계: Gemini에게 "검색할 알맹이"와 "상세 정보" 분리시키기
-                    // -----------------------------------------------------------
                     const prompt = `
                         너는 전문적인 주소 텍스트 분석기야. 입력된 문장에서 "지도 검색용 핵심 키워드"와 "상세 정보"를 정확히 분리해줘.
                         
@@ -195,7 +187,6 @@
                         출력 포맷: JSON
                     `;
 
-                    // [유지됨] 사용자가 요청한 gemini-2.5-flash-lite 모델 유지
                     const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -206,52 +197,39 @@
                     if (geminiData.error) throw new Error("AI 분석 오류: " + geminiData.error.message);
 
                     let aiText = geminiData.candidates[0].content.parts[0].text;
-                    const jsonMatch = aiText.match(/\{[\s\S]*\}/); // JSON 부분만 추출
+                    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
                     const parsedAI = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
 
                     const searchQuery = parsedAI.search_query;
                     const detailsFromAI = parsedAI.details;
 
-                    // -----------------------------------------------------------
-                    // 2단계: Kakao API로 정확한 도로명 주소 찾기 (검증)
-                    // -----------------------------------------------------------
                     const kakaoResponse = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}`, {
                         method: 'GET',
                         headers: {
-                            'Authorization': `KakaoAK ${KAKAO_API_KEY}` // 제공해주신 REST API 키 사용
+                            'Authorization': `KakaoAK ${KAKAO_API_KEY}`
                         }
                     });
 
                     const kakaoData = await kakaoResponse.json();
 
-                    // -----------------------------------------------------------
-                    // 3단계: 결과 합치기
-                    // -----------------------------------------------------------
                     if (kakaoData.documents && kakaoData.documents.length > 0) {
                         const bestMatch = kakaoData.documents[0];
-                        
-                        // 카카오가 알려준 정확한 도로명 주소 (없으면 지번 주소)
                         const officialAddress = bestMatch.road_address_name || bestMatch.address_name;
                         const placeName = bestMatch.place_name;
 
                         setParsedAddress(officialAddress);
 
-                        // 상세 정보 조합하기
                         let finalDetails = detailsFromAI;
 
-                        // 카카오가 찾은 장소명(예: 나라타워)이 상세정보에 빠져있다면 추가해줌
                         if (placeName && !finalDetails.includes(placeName) && !searchQuery.includes(placeName)) {
                             finalDetails = `${placeName} ${finalDetails}`;
                         }
-                        // 원래 입력했던 내용이 너무 많이 생략됐다면 괄호로 참고용 추가
                         if (!finalDetails.trim()) {
                              finalDetails = rawInput.replace(searchQuery, "").trim();
                         }
 
                         setParsedDetails(finalDetails.trim());
                     } else {
-                        // 검색 결과가 없을 때 (신축이거나 오타 등) -> AI가 분석한 그대로 입력
-                        // alert("정확한 주소를 찾지 못해 입력된 내용을 기반으로 채웁니다.");
                         setParsedAddress(searchQuery);
                         setParsedDetails(detailsFromAI);
                     }
@@ -321,7 +299,6 @@
                 setParsedAddress(job.address);
                 setParsedDetails(job.details || '');
                 
-                // 기존 데이터 불러오기
                 if (job.tasks && job.tasks.length > 0) {
                     setTasks(job.tasks);
                 } else {
@@ -379,19 +356,19 @@
             return (
                 <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20">
                     <header className="bg-white px-6 py-5 sticky top-0 z-30 shadow-sm flex items-center justify-between">
-                        <div>
+                        <div className="flex items-center gap-3">
                             {currentView === 'daily' ? (
                                 <button onClick={() => setCurrentView('calendar')} className="flex items-center text-slate-600 hover:text-teal-600 font-bold transition-colors">
                                     <ChevronLeft className="w-6 h-6 mr-1" />
                                     <span>달력으로 돌아가기</span>
                                 </button>
                             ) : (
-                                <h1 className="text-xl font-extrabold text-slate-800 flex items-center gap-2.5 tracking-tight">
-                                    <div className="bg-teal-500 p-1.5 rounded-lg text-white shadow-teal-200 shadow-md">
-                                        <Sparkles className="w-5 h-5" />
-                                    </div>
-                                    홈케어의 제왕
-                                </h1>
+                                <>
+                                    <img src="https://raw.githubusercontent.com/Chocosora/choco/main/hc.png" alt="홈케어의 제왕 로고" className="w-8 h-8 flex-shrink-0" />
+                                    <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">
+                                        홈케어의 제왕
+                                    </h1>
+                                </>
                             )}
                         </div>
                     </header>
@@ -491,7 +468,6 @@
                                                         </p>
                                                     )}
                                                     
-                                                    {/* 작업 내용 및 금액 표시 */}
                                                     {job.tasks && job.tasks.length > 0 && (
                                                         <div className="mt-2 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100 space-y-2">
                                                             {job.tasks.map((task, i) => (
@@ -612,14 +588,13 @@
                                             </div>
                                         </div>
                                         
-                                        {/* 작업 내용 및 금액 입력 배열 */}
                                         <div className="space-y-2">
                                             {tasks.map((task, index) => (
                                                 <div key={index} className="flex gap-2 items-start">
                                                     <input 
                                                         type="text"
                                                         className="flex-[3] w-full px-3 py-2.5 bg-white rounded-xl text-sm text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                                                        placeholder="내용 (예: 에어컨)"
+                                                        placeholder="내용 (예: 에어컨 완전 분해)"
                                                         value={task.description}
                                                         onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
                                                     />
@@ -646,7 +621,6 @@
                                             <Plus className="w-4 h-4" /> 작업 추가
                                         </button>
                                         
-                                        {/* 총 금액 자동 계산 표시 */}
                                         <div className="bg-teal-50 p-4 rounded-xl flex justify-between items-center border border-teal-100 mt-2 shadow-sm">
                                             <span className="text-sm font-bold text-teal-800">총 금액</span>
                                             <span className="text-lg font-extrabold text-teal-700">{totalAmount.toLocaleString()} 원</span>
