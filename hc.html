@@ -23,7 +23,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=faf0b7f3e2f5b11fa2f1bf1d492e3b2b&libraries=services"></script>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=1044466cf7b359e0990ac70c600f9641&libraries=services"></script>
 
     <style>
         body { 
@@ -35,6 +35,663 @@
         .transition-custom { transition: all 0.2s ease-in-out; }
         
         .dashed-line {
+            background-image: linear-gradient(to right, #E5E7EB 50%, rgba(255,255,255,0) 0%);
+            background-position: bottom;
+            background-size: 8px 1px;
+            background-repeat: repeat-x;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, Navigation, Home } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getDatabase, ref, push, onValue, remove, set, update } from 'firebase/database';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.firebasestorage.app",
+            messagingSenderId: "798065461606",
+            appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
+            measurementId: "G-4FYC7HVNNV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const geminiPartA = "AIzaSyBAhDBv";
+        const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
+        const GEMINI_API_KEY = geminiPartA + geminiPartB;
+        
+        // 새로운 REST API 키 적용
+        const KAKAO_API_KEY = "f0b61cdb7e7ff5d10ca0ac951e2cefbf";
+        const MY_HOME_ADDRESS = "경기도 남양주시 다산동 6109";
+
+        const NaverIcon = () => (
+            <div className="w-6 h-6 rounded-md bg-[#03C75A] flex items-center justify-center overflow-hidden shadow-sm">
+                <span className="text-white font-extrabold text-lg leading-none pt-0.5">N</span>
+            </div>
+        );
+
+        const TMapIcon = () => (
+            <div className="w-6 h-6 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6" stroke="url(#tmap_grad_h)" strokeWidth="5" strokeLinecap="round"/>
+                    <path d="M12 4V20" stroke="url(#tmap_grad_v)" strokeWidth="5" strokeLinecap="round"/>
+                    <defs>
+                        <linearGradient id="tmap_grad_h" x1="4" y1="4" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                        <linearGradient id="tmap_grad_v" x1="12" y1="4" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        );
+
+        const KakaoIcon = () => (
+            <div className="w-6 h-6 rounded-full bg-[#FEE500] flex items-center justify-center overflow-hidden border border-[#FEE500] shadow-sm">
+                <MapPin className="w-3.5 h-3.5 text-[#191919] fill-[#191919]" />
+            </div>
+        );
+
+        const getDayOfWeekFromStr = (dateStr) => ['일', '월', '화', '수', '목', '금', '토'][new Date(dateStr).getDay()];
+
+        const formatAmountStr = (amt) => {
+            const num = Number(amt) || 0;
+            if (num === 0) return '0원';
+            const calc = num / 10000;
+            return Number.isInteger(calc) ? calc + '만' : calc.toFixed(1) + '만';
+        };
+
+        const App = () => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            const [currentView, setCurrentView] = useState('calendar');
+            const [activeDate, setActiveDate] = useState(todayStr);
+
+            const [rawInput, setRawInput] = useState('');
+            const [parsedAddress, setParsedAddress] = useState('');
+            const [parsedDetails, setParsedDetails] = useState('');
+            const [phoneNumber, setPhoneNumber] = useState(''); 
+            
+            const [tasks, setTasks] = useState([{ description: '', amount: '', materialCost: '' }]);
+            const [visitTime, setVisitTime] = useState('09:00');
+            
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [jobs, setJobs] = useState({});
+            const [currentDateView, setCurrentDateView] = useState(new Date(today));
+            
+            const [editingId, setEditingId] = useState(null);
+            const [smsModal, setSmsModal] = useState(null); 
+            const [timeModalOpen, setTimeModalOpen] = useState(false);
+
+            const inputSectionRef = useRef(null);
+            const mapContainer = useRef(null);
+
+            useEffect(() => {
+                const jobsRef = ref(database, 'homecare_jobs');
+                return onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
+            }, []);
+
+            const jobsByDate = useMemo(() => {
+                const map = {};
+                Object.values(jobs).forEach(job => {
+                    if(job.dates) {
+                        job.dates.forEach(d => {
+                            if(!map[d]) map[d] = [];
+                            map[d].push(job);
+                        });
+                    }
+                });
+                return map;
+            }, [jobs]);
+
+            const activeDateJobs = useMemo(() => {
+                const jobList = Object.entries(jobs)
+                    .map(([key, job]) => ({ key, ...job }))
+                    .filter(job => job.dates && job.dates.includes(activeDate));
+
+                return jobList.sort((a, b) => {
+                    const timeA = a.visitTime || '23:59';
+                    const timeB = b.visitTime || '23:59';
+                    return timeA.localeCompare(timeB);
+                });
+            }, [jobs, activeDate]);
+
+            useEffect(() => {
+                if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
+
+                const initMap = () => {
+                    if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+                        setTimeout(initMap, 100);
+                        return;
+                    }
+
+                    window.kakao.maps.load(() => {
+                        const container = mapContainer.current;
+                        if (!container) return; 
+
+                        const options = { center: new window.kakao.maps.LatLng(37.5665, 126.9780), level: 8 };
+                        const map = new window.kakao.maps.Map(container, options);
+                        const geocoder = new window.kakao.maps.services.Geocoder();
+                        const bounds = new window.kakao.maps.LatLngBounds();
+
+                        const loadRoute = async () => {
+                            const points = [];
+                            
+                            for (let i = 0; i < activeDateJobs.length; i++) {
+                                const job = activeDateJobs[i];
+                                const result = await new Promise((resolve) => {
+                                    geocoder.addressSearch(job.address, (res, status) => {
+                                        if (status === window.kakao.maps.services.Status.OK) resolve(res[0]);
+                                        else resolve(null);
+                                    });
+                                });
+
+                                if (result) {
+                                    const coords = new window.kakao.maps.LatLng(result.y, result.x);
+                                    points.push(coords);
+                                    bounds.extend(coords);
+
+                                    const content = `<div style="background:#0D9488; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${i+1}</div>`;
+                                    new window.kakao.maps.CustomOverlay({ map, position: coords, content, yAnchor: 1 }).setMap(map);
+                                }
+                            }
+
+                            const homeResult = await new Promise((resolve) => {
+                                geocoder.addressSearch(MY_HOME_ADDRESS, (res, status) => {
+                                    if (status === window.kakao.maps.services.Status.OK) resolve(res[0]);
+                                    else resolve(null);
+                                });
+                            });
+
+                            if (homeResult) {
+                                const homeCoords = new window.kakao.maps.LatLng(homeResult.y, homeResult.x);
+                                points.push(homeCoords);
+                                bounds.extend(homeCoords);
+
+                                const homeContent = `<div style="background:#1E293B; color:white; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`;
+                                new window.kakao.maps.CustomOverlay({ map, position: homeCoords, content: homeContent, yAnchor: 1 }).setMap(map);
+                            }
+
+                            if (points.length > 1) {
+                                const polyline = new window.kakao.maps.Polyline({
+                                    path: points,
+                                    strokeWeight: 3,
+                                    strokeColor: '#0D9488',
+                                    strokeOpacity: 0.6,
+                                    strokeStyle: 'dashed'
+                                });
+                                polyline.setMap(map);
+                                map.setBounds(bounds);
+                            } else if (points.length === 1) {
+                                map.setCenter(points[0]);
+                                map.setLevel(5);
+                            }
+                        };
+
+                        loadRoute();
+                    });
+                };
+
+                initMap();
+            }, [currentView, activeDateJobs]);
+
+            const handleTaskChange = (index, field, value) => {
+                const newTasks = [...tasks];
+                newTasks[index][field] = value;
+                setTasks(newTasks);
+            };
+
+            const addTask = () => setTasks([...tasks, { description: '', amount: '', materialCost: '' }]);
+            const removeTask = (index) => setTasks(tasks.filter((_, i) => i !== index));
+
+            const displayWorkCost = tasks.reduce((sum, task) => sum + (Number(task.amount) || 0), 0) * 10000;
+            const displayMaterialCost = tasks.reduce((sum, task) => sum + (Number(task.materialCost) || 0), 0) * 10000;
+            const netIncome = displayWorkCost - displayMaterialCost;
+
+            const handleHybridSearch = async () => {
+                if (!rawInput.trim()) return;
+                setIsProcessing(true);
+
+                try {
+                    const prompt = `
+                        너는 전문적인 주소 텍스트 분석기야. 입력된 문장에서 "지도 검색용 핵심 키워드"와 "상세 정보"를 정확히 분리해줘.
+                        1. search_query: 핵심 주소.
+                        2. details: 나머지 상세 정보.
+                        입력: "${rawInput}"
+                        출력 포맷: JSON
+                    `;
+
+                    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const geminiData = await geminiResponse.json();
+                    let aiText = geminiData.candidates[0].content.parts[0].text;
+                    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+                    const parsedAI = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
+
+                    const kakaoResponse = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(parsedAI.search_query)}`, {
+                        method: 'GET',
+                        headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+                    });
+
+                    const kakaoData = await kakaoResponse.json();
+
+                    if (kakaoData.documents && kakaoData.documents.length > 0) {
+                        const match = kakaoData.documents[0];
+                        setParsedAddress(match.road_address_name || match.address_name);
+                        setParsedDetails(parsedAI.details || "");
+                    } else {
+                        setParsedAddress(parsedAI.search_query);
+                        setParsedDetails(parsedAI.details);
+                    }
+
+                } catch (error) {
+                    alert(`처리 중 문제가 발생했습니다: ${error.message}`);
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const changeMonth = (offset) => setCurrentDateView(new Date(currentDateView.setMonth(currentDateView.getMonth() + offset)));
+
+            const openDailyView = (dateStr) => {
+                setActiveDate(dateStr);
+                setCurrentView('daily');
+                resetForm();
+            };
+
+            const handleStatusChange = (jobId, newStatus) => {
+                update(ref(database, `homecare_jobs/${jobId}`), { status: newStatus });
+            };
+
+            const handleCancelReasonChange = (jobId, reason) => {
+                update(ref(database, `homecare_jobs/${jobId}`), { cancelReason: reason });
+            };
+
+            const handleSaveJob = () => {
+                if (!parsedAddress) return alert("주소를 입력해주세요.");
+                const filteredTasks = tasks.filter(t => (t.description || '').trim() !== '' || t.amount !== '' || t.materialCost !== '');
+                
+                const jobData = {
+                    address: parsedAddress,
+                    details: parsedDetails,
+                    phoneNumber: phoneNumber,
+                    tasks: filteredTasks,
+                    totalAmount: displayWorkCost, 
+                    totalMaterialCost: displayMaterialCost,
+                    netIncome: netIncome,
+                    visitTime: visitTime,
+                    dates: [activeDate],
+                    status: editingId ? (jobs[editingId].status || 'pending') : 'pending',
+                    cancelReason: editingId ? (jobs[editingId].cancelReason || '') : '',
+                    createdAt: editingId ? jobs[editingId].createdAt : Date.now()
+                };
+
+                if (editingId) {
+                    set(ref(database, `homecare_jobs/${editingId}`), jobData)
+                        .then(() => { alert("수정이 완료되었습니다!"); resetForm(); });
+                } else {
+                    push(ref(database, 'homecare_jobs'), jobData)
+                        .then(() => { alert("저장 완료!"); resetForm(); });
+                }
+            };
+
+            const handleEditStart = (job) => {
+                setEditingId(job.key);
+                setParsedAddress(job.address);
+                setParsedDetails(job.details || '');
+                setPhoneNumber(job.phoneNumber || ''); 
+                if (job.tasks) setTasks(job.tasks.map(t => ({ description: t.description || '', amount: t.amount || '', materialCost: t.materialCost || '' })));
+                setVisitTime(job.visitTime || '09:00');
+                if (inputSectionRef.current) inputSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            const resetForm = () => {
+                setRawInput(''); 
+                setParsedAddress(''); 
+                setParsedDetails(''); 
+                setPhoneNumber(''); 
+                setTasks([{ description: '', amount: '', materialCost: '' }]); 
+                setVisitTime('09:00'); 
+                setEditingId(null);
+            };
+
+            const handleDeleteJob = (id) => {
+                if (confirm("삭제하시겠습니까?")) remove(ref(database, `homecare_jobs/${id}`));
+            };
+
+            const openMap = (type, address) => {
+                const encodedAddr = encodeURIComponent(address);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (type === 'naver') {
+                    if (isMobile) window.location.href = `nmap://search?query=${encodedAddr}&appname=com.homecare.addressbook`;
+                    else window.open(`https://map.naver.com/v5/search/${encodedAddr}`, '_blank');
+                } 
+                else if (type === 'tmap') {
+                    if (isMobile) window.location.href = `tmap://search?name=${encodedAddr}`;
+                    else alert("티맵은 모바일에서만 가능합니다.");
+                } 
+                else if (type === 'kakao') {
+                    window.open(`https://map.kakao.com/link/search/${encodedAddr}`, '_blank');
+                }
+            };
+
+            const getSmsTemplates = (job) => {
+                const dateObj = new Date(activeDate);
+                const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}(${['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()]})`;
+                const startTime = job.visitTime || '09:00';
+                const [h, m] = startTime.split(':').map(Number);
+                const et = new Date(); et.setHours(h, m + 30);
+                const formattedTimeRange = `${startTime} ~ ${String(et.getHours()).padStart(2,'0')}:${String(et.getMinutes()).padStart(2,'0')}`;
+                
+                let regionStr = '지역';
+                if (job.address) {
+                    const parts = job.address.split(' ');
+                    const target = parts.find(p => p.endsWith('구') || p.endsWith('시'));
+                    if (target) regionStr = target.slice(0, -1);
+                }
+
+                const fullAddress = `${job.address || ''} ${job.details || ''}`.trim();
+
+                const template1 = `안녕하세요, 하수구의 제왕입니다.\n예약 확인 차 안내 문자 드립니다.\n문자를 확인하셨다면 짧게라도 회신 부탁드립니다.\n\n일시: ${formattedDate} ${formattedTimeRange} 사이\n주소: ${fullAddress}\n남겨주신 주소가 정확한지 다시 한번 확인 부탁드립니다.\n\n원활한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n(이미 보내주셨다면 생략하셔도 괜찮습니다.)\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n${formattedDate.split('(')[1].replace(')','')}요일에 뵙겠습니다. 감사합니다.`;
+
+                const template2 = `안녕하세요, 하수구의 제왕입니다.\n방문을 위해 예약 확정 안내 문자 드립니다.\n\n일시: ${formattedDate} ${formattedTimeRange} 사이\n원활한 방문을 위해 고객님 댁의 정확한 상세 주소(동, 호수 포함)를 이 문자로 회신해 주시기 바랍니다.\n\n신속한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n${formattedDate.split('(')[1].replace(')','')}요일에 뵙겠습니다. 감사합니다.`;
+
+                const template3 = `안녕하세요, 고객님.\n하수구의 제왕 박시언 팀장입니다.\n\n방금 고객님께 연락드렸으나 통화가 어려워\n문자로 먼저 안내드립니다.\n\n편하신 시간에 회신 주시거나\n부재중 전화 확인 후 연락 주시면 감사하겠습니다.\n\n확인되는 대로 신속히 안내드리겠습니다.\n감사합니다.`;
+
+                const template4 = `고객님, 오늘 막힌 하수구는 시원하게 잘 해결해 드렸습니다!\n믿고 맡겨주셔서 감사합니다.\n\n작업 결과에 만족하셨다면, 앞서 약속해주신 구글 리뷰 작성을 조심스럽게 부탁드리고자 합니다.\n아래 내용을 참고해 작성해 주시면 저희가 지역 내에서 더 신뢰받는 업체로 성장하는 데 큰 도움이 됩니다.\n\n[리뷰 작성 팁!]\n✔ 검색 키워드 포함\n'${regionStr} 하수구 업체 하수구의제왕' 문구를 포함해 주시면 정말 감사하겠습니다.\n(예: 송파 하수구 업체 하수구의제왕 덕분에 해결했어요!)\n\n✔ 느낀 점 공유\n저희의 친절함이나 전문적인 작업 과정에 대해 짧게 언급해 주시면 저희 팀원들에게 큰 격려가 됩니다.\n\n[리뷰 작성 링크]\nhttps://g.page/r/Cbpx5qL6PxIsEBM/review\n\n혹시 이용 중 불편하신 점이 있었다면 언제든 말씀해 주세요.\n늘 전문성을 바탕으로 책임감 있게 사후 관리까지 책임지는 하수구의제왕이 되겠습니다.\n감사합니다!`;
+
+                return [
+                    { title: '방문 전날', body: template1 },
+                    { title: '예약 확정', body: template2 },
+                    { title: '부재중', body: template3 },
+                    { title: '리뷰 작성 요청', body: template4 }
+                ];
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20 relative">
+                    <header className="bg-white px-5 py-4 sticky top-0 z-30 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            {currentView === 'daily' ? (
+                                <button onClick={() => setCurrentView('calendar')} className="flex items-center text-slate-600 hover:text-teal-600 font-bold transition-colors">
+                                    <ChevronLeft className="w-6 h-6 mr-1" />
+                                    <span>달력으로 돌아가기</span>
+                                </button>
+                            ) : (
+                                <>
+                                    <img src="https://raw.githubusercontent.com/Chocosora/choco/main/hc.png" alt="로고" className="w-12 h-12 object-contain" />
+                                    <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight ml-1">홈케어의 제왕</h1>
+                                </>
+                            )}
+                        </div>
+                    </header>
+
+                    <main className="p-5 space-y-6">
+                        {currentView === 'calendar' ? (
+                            <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
+                                <div className="flex justify-between items-center mb-6 px-2">
+                                    <button onClick={() => changeMonth(-1)} className="text-slate-400 p-2 rounded-xl"><ChevronLeft className="w-5 h-5" /></button>
+                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><CalendarDays className="w-5 h-5 text-teal-500" />{currentDateView.getFullYear()}년 {currentDateView.getMonth() + 1}월</h2>
+                                    <button onClick={() => changeMonth(1)} className="text-slate-400 p-2 rounded-xl rotate-180"><ChevronLeft className="w-5 h-5" /></button>
+                                </div>
+                                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                                    {['일','월','화','수','목','금','토'].map((d,i) => (<div key={d} className={`text-[11px] font-bold ${i===0?'text-red-400':i===6?'text-blue-400':'text-slate-400'}`}>{d}</div>))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-1 text-center">
+                                    {Array.from({ length: new Date(currentDateView.getFullYear(), currentDateView.getMonth(), 1).getDay() }).map((_, i) => <div key={`empty-${i}`} />)}
+                                    {Array.from({ length: new Date(currentDateView.getFullYear(), currentDateView.getMonth() + 1, 0).getDate() }, (_, i) => i + 1).map(day => {
+                                        const dateStr = `${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                                        const dayJobs = jobsByDate[dateStr] || [];
+                                        return (
+                                            <div key={day} onClick={() => openDailyView(dateStr)} className={`cursor-pointer flex flex-col items-center pt-1.5 pb-1 rounded-[10px] border min-h-[85px] ${dateStr === todayStr ? 'border-teal-400 bg-teal-50' : 'border-slate-200 bg-white'}`}>
+                                                <span className="text-[12px] font-bold mb-1">{day}</span>
+                                                {dayJobs.length > 0 && (
+                                                    <div className="flex flex-col gap-[3px] w-full px-1">
+                                                        {dayJobs.sort((a,b) => (a.visitTime||'23:59').localeCompare(b.visitTime||'23:59')).map((job, idx) => (
+                                                            <div key={idx} className="flex items-center justify-center gap-1 bg-slate-50 rounded py-[2px] border border-slate-100 w-full">
+                                                                <div className={`w-1 h-1 rounded-full ${job.status === 'completed' ? 'bg-teal-500' : 'bg-slate-300'}`}></div>
+                                                                <span className="text-[8px] font-extrabold text-slate-700">{formatAmountStr(job.netIncome || job.totalAmount)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        ) : (
+                            <div className="space-y-6 fade-in">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold">{activeDate.slice(5).replace('-', '월 ')}일 ({getDayOfWeekFromStr(activeDate)})</div>
+                                </div>
+
+                                {/* 동선 지도 섹션 */}
+                                {activeDateJobs.length > 0 && (
+                                    <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+                                        <div className="flex items-center gap-2 text-slate-800 font-bold text-sm ml-1">
+                                            <Navigation className="w-4 h-4 text-teal-600" /> 오늘의 방문 동선 (순서대로)
+                                        </div>
+                                        <div id="map" ref={mapContainer}></div>
+                                        <div className="flex flex-wrap gap-2 text-[11px] font-medium text-slate-500">
+                                            {activeDateJobs.map((j, idx) => (
+                                                <span key={idx} className="flex items-center gap-1">
+                                                    <span className="w-4 h-4 bg-teal-600 text-white flex items-center justify-center rounded-full text-[9px]">{idx+1}</span>
+                                                    {j.address.split(' ').slice(1,3).join(' ')}
+                                                    {idx < activeDateJobs.length && <span className="text-slate-300 ml-1">→</span>}
+                                                </span>
+                                            ))}
+                                            <span className="flex items-center gap-1">
+                                                <span className="w-4 h-4 bg-slate-800 text-white flex items-center justify-center rounded-sm"><Home className="w-2.5 h-2.5" /></span>
+                                                우리집 복귀
+                                            </span>
+                                        </div>
+                                    </section>
+                                )}
+
+                                <section className="space-y-4">
+                                    {activeDateJobs.length === 0 ? (
+                                        <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 text-sm">일정이 없습니다.</div>
+                                    ) : (
+                                        activeDateJobs.map((job) => (
+                                            <div key={job.key} className={`rounded-2xl p-5 shadow-sm border transition-all bg-white ${job.status === 'completed' ? 'opacity-85 border-teal-100' : 'border-slate-100'}`}>
+                                                <div className="flex items-center gap-1.5 mb-3">
+                                                    <span className="px-2 py-1 rounded-md text-xs font-bold bg-teal-100 text-teal-700 flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" />{job.visitTime}
+                                                    </span>
+                                                    <div className="ml-auto flex gap-1">
+                                                        <button onClick={() => handleEditStart(job)} className="p-1.5 text-slate-400 hover:text-teal-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                                                        <button onClick={() => handleDeleteJob(job.key)} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
+                                                    </div>
+                                                </div>
+                                                <h3 className="font-bold text-slate-800 mb-1">{job.address}</h3>
+                                                {job.details && <p className="text-sm text-slate-500 mb-3">{job.details}</p>}
+                                                {job.phoneNumber && (
+                                                    <div className="flex items-center gap-2 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                                        <Phone className="w-4 h-4 text-slate-400" />
+                                                        <span className="text-sm font-bold text-slate-700 flex-1">{job.phoneNumber}</span>
+                                                        <a href={`tel:${job.phoneNumber}`} className="p-2 bg-green-100 text-green-700 rounded-lg"><Phone className="w-4 h-4" /></a>
+                                                        <button onClick={() => setSmsModal(job)} className="p-2 bg-blue-100 text-blue-700 rounded-lg"><MessageSquare className="w-4 h-4" /></button>
+                                                    </div>
+                                                )}
+                                                <div className="flex bg-slate-100 p-1 rounded-xl mb-3">
+                                                    {['pending', 'completed', 'cancelled'].map(s => (
+                                                        <button key={s} onClick={() => handleStatusChange(job.key, s)} className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${job.status === s ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400'}`}>
+                                                            {s === 'pending' ? '작업 전' : s === 'completed' ? '완료' : '취소'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                {job.status === 'cancelled' && (
+                                                    <div className="mb-3">
+                                                        <input type="text" placeholder="취소 사유 입력" className="w-full p-2.5 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200 outline-none" defaultValue={job.cancelReason || ''} onBlur={(e) => handleCancelReasonChange(job.key, e.target.value)} />
+                                                    </div>
+                                                )}
+                                                {job.tasks && job.tasks.length > 0 && (
+                                                    <div className="mt-3 bg-yellow-50 p-3 rounded-lg border border-yellow-100 space-y-1">
+                                                        {job.tasks.map((t, idx) => (
+                                                            <div key={idx} className="flex justify-between text-xs text-slate-700">
+                                                                <span>• {t.description}</span>
+                                                                <span className="font-bold">{((Number(t.amount)||0)*10000).toLocaleString()}원</span>
+                                                            </div>
+                                                        ))}
+                                                        <div className="pt-2 border-t border-yellow-200 flex justify-between font-bold text-teal-700"><span>순수입</span><span>{(job.netIncome || 0).toLocaleString()}원</span></div>
+                                                    </div>
+                                                )}
+                                                <div className="grid grid-cols-3 gap-2 mt-4">
+                                                    <button onClick={() => openMap('naver', job.address)} className="py-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1"><NaverIcon /><span className="text-[10px] font-bold text-slate-500">네이버</span></button>
+                                                    <button onClick={() => openMap('tmap', job.address)} className="py-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1"><TMapIcon /><span className="text-[10px] font-bold text-slate-500">티맵</span></button>
+                                                    <button onClick={() => openMap('kakao', job.address)} className="py-2 border border-slate-200 rounded-xl flex flex-col items-center gap-1"><KakaoIcon /><span className="text-[10px] font-bold text-slate-500">카카오</span></button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </section>
+
+                                {activeDateJobs.length > 0 && (
+                                    <div className="bg-slate-800 rounded-3xl p-5 shadow-lg space-y-3">
+                                        <div className="flex justify-between items-center"><h3 className="text-white font-bold text-sm flex items-center gap-2"><FileText className="w-4 h-4 text-teal-400" />업무보고 요약</h3><button onClick={() => {
+                                            const completed = activeDateJobs.filter(j => j.status === 'completed');
+                                            const totalRev = completed.reduce((sum, j) => sum + (j.totalAmount || 0), 0);
+                                            const totalMat = completed.reduce((sum, j) => sum + (j.totalMaterialCost || 0), 0);
+                                            const fee = (totalRev - totalMat) * 0.3;
+                                            const text = `일일 매출: ${totalRev.toLocaleString()}원\n총 자재비: ${totalMat.toLocaleString()}원\n수수료(30%): ${fee.toLocaleString()}원`;
+                                            navigator.clipboard.writeText(text).then(() => alert("복사되었습니다!"));
+                                        }} className="bg-teal-500 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> 복사</button></div>
+                                        <div className="bg-slate-900 rounded-2xl p-4 text-slate-300 text-xs leading-relaxed">
+                                            {(() => {
+                                                const completed = activeDateJobs.filter(j => j.status === 'completed');
+                                                const totalRev = completed.reduce((sum, j) => sum + (j.totalAmount || 0), 0);
+                                                const totalMat = completed.reduce((sum, j) => sum + (j.totalMaterialCost || 0), 0);
+                                                return `■ 일일 매출: ${totalRev.toLocaleString()}원\n■ 총 자재비: ${totalMat.toLocaleString()}원\n■ 수수료(30%): ${((totalRev - totalMat) * 0.3).toLocaleString()}원`;
+                                            })()}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="dashed-line h-px w-full my-6"></div>
+
+                                <section ref={inputSectionRef} className={`rounded-3xl p-5 shadow-sm border relative transition-colors ${editingId ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-100'}`}>
+                                    <h2 className="text-sm font-bold mb-3 flex items-center gap-2 text-slate-600">
+                                        <span className={`px-2 py-0.5 rounded-md text-xs text-white ${editingId ? 'bg-teal-600' : 'bg-teal-400'}`}>{editingId ? 'EDIT' : 'NEW'}</span>
+                                        현장 정보 입력
+                                    </h2>
+                                    <textarea className="w-full p-4 bg-white rounded-2xl text-sm border border-slate-200 focus:ring-2 focus:ring-teal-500 h-20 mb-3 outline-none" placeholder="문자 내용을 붙여넣으세요" value={rawInput} onChange={(e) => setRawInput(e.target.value)} />
+                                    <button onClick={handleHybridSearch} disabled={isProcessing || !rawInput} className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 mb-5">
+                                        {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <SearchCheck className="w-4 h-4" />} AI 주소 변환
+                                    </button>
+                                    <div className="space-y-2 mb-5">
+                                        <input type="text" className="w-full px-4 py-3 bg-white rounded-xl text-sm border border-slate-200 font-bold" value={parsedAddress} onChange={(e) => setParsedAddress(e.target.value)} placeholder="주소" />
+                                        <input type="text" className="w-full px-4 py-3 bg-white rounded-xl text-sm border border-slate-200" value={parsedDetails} onChange={(e) => setParsedDetails(e.target.value)} placeholder="상세 내용" />
+                                        <input type="tel" className="w-full px-4 py-3 bg-white rounded-xl text-sm border border-slate-200 font-bold" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="고객 연락처" />
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <label className="text-sm font-bold text-slate-600 ml-1">방문 시간</label>
+                                        <button type="button" onClick={() => setTimeModalOpen(true)} className="px-4 py-2 bg-white rounded-xl font-bold border border-slate-200 flex items-center gap-2"><Clock className="w-4 h-4 text-teal-500" />{visitTime}</button>
+                                    </div>
+                                    <div className="space-y-3 mb-5">
+                                        {tasks.map((task, idx) => (
+                                            <div key={idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl relative space-y-2">
+                                                <input type="text" className="w-full px-3 py-2 bg-white rounded-lg text-sm border border-slate-200" placeholder="작업 내용" value={task.description} onChange={(e) => handleTaskChange(idx, 'description', e.target.value)} />
+                                                <div className="flex gap-2">
+                                                    <div className="flex-1 relative"><input type="number" step="0.1" className="w-full px-3 py-2 pr-8 bg-white rounded-lg text-sm font-bold text-right border border-slate-200" placeholder="작업비" value={task.amount} onChange={(e) => handleTaskChange(idx, 'amount', e.target.value)} /><span className="absolute right-3 top-2 text-xs text-slate-400">만</span></div>
+                                                    <div className="flex-1 relative"><input type="number" step="0.1" className="w-full px-3 py-2 pr-8 bg-white rounded-lg text-sm font-bold text-right border border-slate-200" placeholder="자재비" value={task.materialCost} onChange={(e) => handleTaskChange(idx, 'materialCost', e.target.value)} /><span className="absolute right-3 top-2 text-xs text-slate-400">만</span></div>
+                                                </div>
+                                                {tasks.length > 1 && <button onClick={() => removeTask(idx)} className="absolute -top-2 -right-2 p-1 bg-white border border-slate-200 rounded-full shadow-sm text-slate-400"><X className="w-3.5 h-3.5" /></button>}
+                                            </div>
+                                        ))}
+                                        <button onClick={addTask} className="w-full py-2 border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-sm font-bold flex items-center justify-center gap-1"><Plus className="w-4 h-4" /> 내역 추가</button>
+                                    </div>
+                                    <div className="bg-teal-50 p-4 rounded-xl space-y-1 border border-teal-100 mb-6">
+                                        <div className="flex justify-between text-sm text-slate-600"><span>총 매출</span><span>{displayWorkCost.toLocaleString()}원</span></div>
+                                        <div className="flex justify-between text-sm text-red-500"><span>총 자재비</span><span>- {displayMaterialCost.toLocaleString()}원</span></div>
+                                        <div className="pt-2 border-t border-teal-200 flex justify-between font-extrabold text-teal-700 text-base"><span>총 순수입</span><span>{netIncome.toLocaleString()}원</span></div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={resetForm} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm">초기화</button>
+                                        <button onClick={handleSaveJob} className="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-teal-100">저장하기</button>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* 타임 피커 모달 */}
+                    {timeModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex flex-col justify-end backdrop-blur-sm transition-opacity">
+                            <div className="bg-white rounded-t-3xl p-5 pb-8 animate-slide-up shadow-2xl">
+                                <div className="flex justify-between items-center mb-5"><h3 className="text-lg font-extrabold text-slate-800">예약 시간 선택</h3><button onClick={() => setTimeModalOpen(false)} className="p-1.5 text-slate-400 bg-slate-100 rounded-full"><X className="w-5 h-5" /></button></div>
+                                <div className="grid grid-cols-4 gap-2 mb-6">
+                                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map(t => (
+                                        <button key={t} onClick={() => { setVisitTime(t); setTimeModalOpen(false); }} className={`py-2.5 rounded-xl font-bold text-sm transition-all ${visitTime === t ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-100 text-slate-700'}`}>{t}</button>
+                                    ))}
+                                </div>
+                                <div className="pt-5 border-t border-slate-100 flex gap-3">
+                                    <input type="time" className="flex-1 px-4 py-3 bg-slate-50 rounded-xl font-bold border border-slate-200 outline-none focus:ring-1 focus:ring-teal-500" value={visitTime} onChange={e => setVisitTime(e.target.value)} />
+                                    <button onClick={() => setTimeModalOpen(false)} className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-sm">확인</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 문자 메시지 모달 */}
+                    {smsModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm">
+                            <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl animate-slide-up">
+                                <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-bold text-slate-800">안내 문자 선택</h3><button onClick={() => setSmsModal(null)} className="p-1 text-slate-400 bg-slate-100 rounded-full"><X className="w-5 h-5" /></button></div>
+                                <div className="space-y-3 h-[400px] overflow-y-auto pr-1">
+                                    {getSmsTemplates(smsModal).map((template, idx) => (
+                                        <button key={idx} onClick={() => {
+                                            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                                            window.location.href = `sms:${smsModal.phoneNumber}${isIOS ? '&' : '?'}body=${encodeURIComponent(template.body)}`;
+                                            setSmsModal(null);
+                                        }} className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-teal-400 hover:bg-teal-50 transition-all group">
+                                            <div className="font-bold text-slate-700 mb-1 group-hover:text-teal-700">{template.title}</div>
+                                            <div className="text-[10px] text-slate-500 whitespace-pre-line leading-relaxed">{template.body}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>        .dashed-line {
             background-image: linear-gradient(to right, #E5E7EB 50%, rgba(255,255,255,0) 0%);
             background-position: bottom;
             background-size: 8px 1px;
