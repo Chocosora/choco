@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>홈케어의 제왕 매출 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--surface3:#2e2e2e;
+    --border:#333;--accent:#f5a623;--green:#4caf6e;--red:#e05252;--blue:#5b8af0;
+    --text:#f0f0f0;--text2:#999;--text3:#555;--radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--accent);letter-spacing:1.5px;line-height:1.2;}
+  .logo span{color:var(--text2);font-size:10px;font-family:'Noto Sans KR',sans-serif;font-weight:300;display:block;letter-spacing:0;}
+  .sync-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:rgba(76,175,110,0.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(76,175,110,0.2);}
+  .sync-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;}
+  .nav::-webkit-scrollbar{display:none;}
+  .nav-btn{flex:none;padding:12px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;font-family:'Noto Sans KR',sans-serif;}
+  .nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .nav-btn:hover{color:var(--text);}
+
+  .main{padding:16px;max-width:900px;margin:0 auto;}
+  .section{display:none;}.section.active{display:block;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;}
+  .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .kpi-card.revenue::before{background:var(--green);}
+  .kpi-card.expense::before{background:var(--red);}
+  .kpi-card.profit::before{background:var(--accent);}
+  .kpi-card.drive::before{background:var(--blue);}
+  .kpi-label{font-size:11px;color:var(--text2);margin-bottom:6px;}
+  .kpi-value{font-size:20px;font-weight:700;}
+  .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px;}
+
+  .month-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+  .month-bar-title{font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:500;}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .bar-label{font-size:11px;color:var(--text2);width:40px;}
+  .bar-track{flex:1;background:var(--surface3);border-radius:4px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;transition:width 0.8s ease;}
+  .bar-fill.green{background:var(--green);}
+  .bar-fill.red{background:var(--red);}
+  .bar-amount{font-size:11px;color:var(--text);width:80px;text-align:right;}
+
+  .recent-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
+  .recent-header{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);font-weight:500;display:flex;justify-content:space-between;align-items:center;}
+  .recent-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;animation:fadeIn 0.3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  .recent-item:last-child{border-bottom:none;}
+  .ri-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .ri-info{flex:1;min-width:0;}
+  .ri-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ri-meta{font-size:11px;color:var(--text2);margin-top:2px;}
+  .ri-amount{font-size:13px;font-weight:700;white-space:nowrap;}
+  .empty-state{padding:40px;text-align:center;color:var(--text3);font-size:13px;}
+
+  .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+  .form-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.full{grid-column:1/-1;}
+  label{font-size:11px;color:var(--text2);font-weight:500;}
+  input,select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color 0.2s;width:100%;}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+  select option{background:var(--surface2);}
+  textarea{resize:none;height:70px;}
+
+  .btn{padding:10px 16px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-primary:hover{background:#ffc04a;transform:translateY(-1px);}
+  .btn-edit{background:rgba(91,138,240,0.15);color:var(--blue);border:1px solid rgba(91,138,240,0.3);}
+  .btn-edit:hover{background:rgba(91,138,240,0.25);}
+  .btn-danger{background:rgba(224,82,82,0.15);color:var(--red);border:1px solid rgba(224,82,82,0.3);}
+  .btn-danger:hover{background:rgba(224,82,82,0.25);}
+  .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--surface3);}
+  .btn-full{width:100%;justify-content:center;margin-top:14px;}
+  .btn-sm{padding:5px 9px;font-size:10px;}
+  .btn-row{display:flex;gap:6px;}
+
+  .drive-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  .drive-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
+  .drive-stat-val{font-size:18px;font-weight:700;color:var(--blue);}
+  .drive-stat-label{font-size:11px;color:var(--text2);margin-top:4px;}
+  .ratio-bar{height:12px;background:var(--surface3);border-radius:6px;overflow:hidden;margin:8px 0;}
+  .ratio-fill{height:100%;background:linear-gradient(90deg,var(--blue),#7ba8ff);border-radius:6px;transition:width 0.8s ease;}
+  .ratio-label{font-size:11px;color:var(--text2);display:flex;justify-content:space-between;}
+
+  .payment-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+  .payment-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+  .payment-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+  .payment-info{flex:1;}
+  .payment-name{font-size:13px;font-weight:600;}
+  .payment-type{font-size:11px;color:var(--text2);margin-top:2px;}
+  .add-payment-form{background:var(--surface2);border:1px dashed var(--border);border-radius:10px;padding:14px;margin-top:8px;}
+  .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .color-chip{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:transform 0.15s;}
+  .color-chip.selected{border-color:white;transform:scale(1.15);}
+  .icon-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .icon-chip{width:36px;height:36px;border-radius:8px;background:var(--surface3);border:2px solid transparent;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+  .icon-chip.selected{border-color:var(--accent);background:rgba(245,166,35,0.1);}
+  .setting-section-title{font-size:12px;color:var(--text2);font-weight:600;margin:20px 0 10px;letter-spacing:0.5px;}
+
+  .month-selector{display:flex;align-items:center;gap:8px;}
+  .month-selector button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+  .month-selector span{font-size:13px;font-weight:500;}
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .section-title{font-size:16px;font-weight:700;}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal-box{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:24px;padding-bottom:40px;border:1px solid var(--border);transform:translateY(100%);transition:transform 0.3s ease;max-height:90vh;overflow-y:auto;}
+  .modal-overlay.open .modal-box{transform:translateY(0);}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+  .modal-footer{display:flex;gap:10px;margin-top:16px;}
+  .modal-footer .btn{flex:1;justify-content:center;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);padding:12px 20px;border-radius:10px;font-size:13px;box-shadow:0 8px 32px rgba(0,0,0,0.5);transition:transform 0.3s ease;z-index:999;display:flex;align-items:center;gap:8px;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.success{border-color:var(--green);}
+  .toast.error{border-color:var(--red);}
+
+  /* A4 화이트 리포트 스타일 */
+  .paper-report {
+    background: #ffffff;
+    color: #000000;
+    padding: 30px 20px;
+    border-radius: 4px;
+    margin-top: 20px;
+    font-family: 'Noto Sans KR', sans-serif;
+    overflow-x: auto;
+  }
+  .paper-report * { color: #000000; }
+  .paper-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+  
+  .paper-summary { border: 2px solid #333; padding: 15px; margin-bottom: 24px; font-weight: 600; font-size: 14px; }
+  .paper-summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .paper-summary-total { border-top: 1px dashed #999; padding-top: 8px; margin-top: 8px; font-size: 16px; color: #d35400 !important; }
+  
+  .paper-section-title { font-size: 15px; font-weight: 700; margin: 20px 0 10px 0; background: #f0f0f0; padding: 6px 10px; border-left: 4px solid #333; }
+  
+  .paper-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 15px; min-width: 500px; }
+  .paper-table th, .paper-table td { border: 1px solid #ccc; padding: 7px 5px; text-align: left; }
+  .paper-table th { background: #f9f9f9; font-weight: 600; text-align: center; }
+  .paper-table td.right { text-align: right; }
+  .paper-table td.center { text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">홈케어의 제왕<span>매출 관리</span></div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div id="headerDate" style="font-size:11px;color:var(--text2)"></div>
+    <div class="sync-badge"><div class="sync-dot"></div><span id="syncStatus">연결 중...</span></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showSection('dashboard')">📊 대시보드</button>
+  <button class="nav-btn" onclick="showSection('revenue')">💰 매출</button>
+  <button class="nav-btn" onclick="showSection('expense')">🧾 경비</button>
+  <button class="nav-btn" onclick="showSection('drive')">🚗 운행일지</button>
+  <button class="nav-btn" onclick="showSection('report')">📋 리포트</button>
+  <button class="nav-btn" onclick="showSection('settings')">⚙️ 설정</button>
+</nav>
+
+<div class="main">
+
+  <div class="section active" id="s-dashboard">
+    <div class="section-header">
+      <div class="section-title">이번 달 현황</div>
+      <div class="month-selector">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="currentMonthLabel"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card revenue"><div class="kpi-label">총 매출</div><div class="kpi-value" style="color:var(--green)" id="kpi-revenue">₩0</div><div class="kpi-sub" id="kpi-revenue-count">0건</div></div>
+      <div class="kpi-card expense"><div class="kpi-label">총 경비</div><div class="kpi-value" style="color:var(--red)" id="kpi-expense">₩0</div><div class="kpi-sub" id="kpi-expense-count">0건</div></div>
+      <div class="kpi-card profit"><div class="kpi-label">순수익</div><div class="kpi-value" id="kpi-profit" style="color:var(--accent)">₩0</div><div class="kpi-sub">매출 - 경비 - 수수료</div></div>
+      <div class="kpi-card drive"><div class="kpi-label">이달 주행</div><div class="kpi-value" style="color:var(--blue)" id="kpi-drive">0 km</div><div class="kpi-sub" id="kpi-drive-ratio">사업용 0%</div></div>
+    </div>
+    <div class="month-bar">
+      <div class="month-bar-title">매출 vs 경비</div>
+      <div class="bar-row"><div class="bar-label" style="color:var(--green)">매출</div><div class="bar-track"><div class="bar-fill green" id="bar-revenue" style="width:0%"></div></div><div class="bar-amount" id="bar-revenue-amt">₩0</div></div>
+      <div class="bar-row"><div class="bar-label" style="color:var(--red)">경비</div><div class="bar-track"><div class="bar-fill red" id="bar-expense" style="width:0%"></div></div><div class="bar-amount" id="bar-expense-amt">₩0</div></div>
+    </div>
+    <div class="recent-list">
+      <div class="recent-header"><span>최근 내역</span></div>
+      <div id="recentList"><div class="empty-state">아직 기록이 없어요</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="s-revenue">
+    <div class="form-card">
+      <div class="form-title">💰 매출 입력</div>
+      <div class="form-grid">
+        <div class="form-group"><label>날짜</label><input type="date" id="r-date"></div>
+        <div class="form-group"><label>현장명</label><input type="text" id="r-site" placeholder="예: 강남 오피스"></div>
+        <div class="form-group"><label>금액 (원)</label><input type="number" id="r-amount" placeholder="0"></div>
+        <div class="form-group"><label>결제방법</label>
+          <select id="r-method"><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="카드">카드</option></select>
+        </div>
+        <div class="form-group"><label>세금계산서</label>
+          <select id="r-tax"><option value="미발행">미발행</option><option value="발행">발행</option><option value="현금영수증">현금영수증</option></select>
+        </div>
+        <div class="form-group"><label>작업 내용</label><input type="text" id="r-work" placeholder="예: 욕실 타일"></div>
+        <div class="form-group full"><label>메모</label><textarea id="r-memo" placeholder="특이사항..."></textarea></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addRevenue()">➕ 매출 저장</button>
+    </div>
+    <div class="recent-list">
+      <div class="recent-header"><span>매출 내역</span></div>
+      <div id="revenueList"><div class="empty-state">매출 내역이 없어요</div></div>
+    </div>
+
+    <hr style="border:0;border-top:1px dashed var(--border);margin:30px 0;">
+
+    <div class="form-card" style="border-color:var(--accent);">
+      <div class="form-title" style="color:var(--accent)">💸 본사 수수료 입력</div>
+      <div class="form-grid">
+        <div class="form-group"><label>날짜</label><input type="date" id="c-date"></div>
+        <div class="form-group"><label>금액 (원)</label><input type="number" id="c-amount" placeholder="0"></div>
+        <div class="form-group full"><label>메모 (현장명 등)</label><input type="text" id="c-memo" placeholder="예: 강남 오피스 수수료"></div>
+      </div>
+      <button class="btn btn-ghost btn-full" style="color:var(--accent);border-color:var(--accent);" onclick="addCommission()">➕ 수수료 저장</button>
+    </div>
+    <div class="recent-list">
+      <div class="recent-header"><span>수수료 내역</span></div>
+      <div id="commissionList"><div class="empty-state">수수료 내역이 없어요</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="s-expense">
+    <div class="form-card">
+      <div class="form-title">🧾 경비 입력</div>
+      <div class="form-grid">
+        <div class="form-group"><label>날짜</label><input type="date" id="e-date"></div>
+        <div class="form-group"><label>카테고리</label>
+          <select id="e-cat">
+            <option value="자재비">자재비</option><option value="유류비">유류비</option>
+            <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
+            <option value="통신비">통신비</option><option value="보험료">보험료</option>
+            <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
+          </select>
+        </div>
+        <div class="form-group"><label>금액 (원)</label><input type="number" id="e-amount" placeholder="0"></div>
+        <div class="form-group"><label>결제수단</label><select id="e-method"></select></div>
+        <div class="form-group"><label>구입처/거래처</label><input type="text" id="e-vendor" placeholder="예: 홈디포"></div>
+        <div class="form-group"><label>증빙</label>
+          <select id="e-receipt"><option value="현금영수증">현금영수증</option><option value="카드전표">카드전표</option><option value="세금계산서">세금계산서</option><option value="미수취">미수취</option></select>
+        </div>
+        <div class="form-group full"><label>메모</label><textarea id="e-memo" placeholder="품목 상세, 현장명..."></textarea></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addExpense()">➕ 경비 저장</button>
+    </div>
+    <div class="recent-list">
+      <div class="recent-header"><span>경비 내역</span></div>
+      <div id="expenseList"><div class="empty-state">경비 내역이 없어요</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="s-drive">
+    <div class="drive-summary">
+      <div class="drive-stat"><div class="drive-stat-val" id="d-total">0</div><div class="drive-stat-label">총 km</div></div>
+      <div class="drive-stat"><div class="drive-stat-val" id="d-biz">0</div><div class="drive-stat-label">사업용 km</div></div>
+      <div class="drive-stat"><div class="drive-stat-val" id="d-ratio">0%</div><div class="drive-stat-label">사업 비율</div></div>
+    </div>
+    <div class="form-card" style="margin-bottom:8px;">
+      <div class="ratio-label"><span>사업용 주행 비율</span><span id="d-ratio-pct">0%</span></div>
+      <div class="ratio-bar"><div class="ratio-fill" id="d-ratio-bar" style="width:0%"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">이 비율만큼 차량 경비 공제 가능</div>
+    </div>
+    <div class="form-card">
+      <div class="form-title">🚗 운행 기록</div>
+      <div class="form-grid">
+        <div class="form-group"><label>날짜</label><input type="date" id="d-date"></div>
+        <div class="form-group"><label>유형</label><select id="d-type"><option value="사업">사업용</option><option value="개인">개인용</option></select></div>
+        <div class="form-group"><label>출발지</label><input type="text" id="d-from" placeholder="예: 사무실"></div>
+        <div class="form-group"><label>도착지</label><input type="text" id="d-to" placeholder="예: 강남 현장"></div>
+        <div class="form-group"><label>주행거리 (km)</label><input type="number" id="d-km" placeholder="0"></div>
+        <div class="form-group"><label>목적</label><input type="text" id="d-purpose" placeholder="예: 현장 견적"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addDrive()">➕ 운행 저장</button>
+    </div>
+    <div class="recent-list">
+      <div class="recent-header"><span>운행 내역</span></div>
+      <div id="driveList"><div class="empty-state">운행 기록이 없어요</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="s-report">
+    <div class="form-card">
+      <div class="form-title">📋 월간 리포트 생성</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>조회 월</label>
+          <input type="month" id="report-month">
+        </div>
+        <div class="form-group">
+          <label>리포트 종류</label>
+          <select id="report-type">
+            <option value="all">홈케어의 제왕 월간 종합 리포트</option>
+            <option value="revenue">매출 상세 리포트</option>
+            <option value="commission">수수료 상세 리포트</option>
+            <option value="expense">경비 상세 리포트</option>
+            <option value="drive">운행일지 상세 리포트</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="generateReport()">📊 리포트 생성</button>
+        <button class="btn btn-ghost" style="flex:1;justify-content:center;" onclick="exportPDF()">📄 PDF 다운로드</button>
+      </div>
+    </div>
+    
+    <div id="reportOutput"></div>
+  </div>
+
+  <div class="section" id="s-settings">
+    <div class="form-card">
+      <div class="form-title">⚙️ 결제수단 관리</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">경비 입력 시 사용할 결제수단을 자유롭게 추가/수정/삭제할 수 있어요.</p>
+      <div class="setting-section-title">등록된 결제수단</div>
+      <div class="payment-list" id="paymentList"><div class="empty-state" style="padding:20px;">로딩 중...</div></div>
+      <div class="add-payment-form">
+        <div style="font-size:12px;font-weight:700;margin-bottom:12px;color:var(--accent)">➕ 새 결제수단 추가</div>
+        <div class="form-grid" style="gap:8px;">
+          <div class="form-group"><label>이름</label><input type="text" id="pm-name" placeholder="예: 국민카드"></div>
+          <div class="form-group"><label>종류</label>
+            <select id="pm-type"><option value="신용카드">신용카드</option><option value="체크카드">체크카드</option><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="기타">기타</option></select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:8px;"><label>아이콘</label>
+          <div class="icon-row" id="iconPicker">
+            <div class="icon-chip selected" data-icon="💳" onclick="selectIcon(this)">💳</div>
+            <div class="icon-chip" data-icon="💵" onclick="selectIcon(this)">💵</div>
+            <div class="icon-chip" data-icon="🏦" onclick="selectIcon(this)">🏦</div>
+            <div class="icon-chip" data-icon="📱" onclick="selectIcon(this)">📱</div>
+            <div class="icon-chip" data-icon="🪙" onclick="selectIcon(this)">🪙</div>
+            <div class="icon-chip" data-icon="🔵" onclick="selectIcon(this)">🔵</div>
+            <div class="icon-chip" data-icon="🟠" onclick="selectIcon(this)">🟠</div>
+            <div class="icon-chip" data-icon="🟢" onclick="selectIcon(this)">🟢</div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:8px;"><label>색상</label>
+          <div class="color-row" id="colorPicker">
+            <div class="color-chip selected" data-color="#5b8af0" style="background:#5b8af0" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#4caf6e" style="background:#4caf6e" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#f5a623" style="background:#f5a623" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#e05252" style="background:#e05252" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#9b59b6" style="background:#9b59b6" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#e91e8c" style="background:#e91e8c" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#00bcd4" style="background:#00bcd4" onclick="selectColor(this)"></div>
+            <div class="color-chip" data-color="#999" style="background:#999" onclick="selectColor(this)"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addPaymentMethod()">저장하기</button>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="form-title">ℹ️ 세무 안내</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+        <div style="margin-bottom:6px;">✅ <span style="font-weight:bold;color:var(--text)">사업용 카드</span> → 홈택스 등록 시 자동 집계</div>
+        <div style="margin-bottom:6px;">✅ <span style="font-weight:bold;color:var(--text)">현금 지출</span> → 반드시 현금영수증 수취</div>
+        <div style="margin-bottom:6px;">✅ <span style="font-weight:bold;color:var(--text)">간이과세자</span> 부가세: 매년 1월 신고</div>
+        <div>✅ <span style="font-weight:bold;color:var(--text)">종합소득세</span>: 매년 5월 신고</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-revenue">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 매출 수정</div>
+    <input type="hidden" id="edit-r-key">
+    <div class="form-grid">
+      <div class="form-group"><label>날짜</label><input type="date" id="edit-r-date"></div>
+      <div class="form-group"><label>현장명</label><input type="text" id="edit-r-site"></div>
+      <div class="form-group"><label>금액 (원)</label><input type="number" id="edit-r-amount"></div>
+      <div class="form-group"><label>결제방법</label>
+        <select id="edit-r-method"><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="카드">카드</option></select>
+      </div>
+      <div class="form-group"><label>세금계산서</label>
+        <select id="edit-r-tax"><option value="미발행">미발행</option><option value="발행">발행</option><option value="현금영수증">현금영수증</option></select>
+      </div>
+      <div class="form-group"><label>작업 내용</label><input type="text" id="edit-r-work"></div>
+      <div class="form-group full"><label>메모</label><textarea id="edit-r-memo"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-revenue')">취소</button>
+      <button class="btn btn-primary" onclick="saveRevenue()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 경비 수정</div>
+    <input type="hidden" id="edit-e-key">
+    <div class="form-grid">
+      <div class="form-group"><label>날짜</label><input type="date" id="edit-e-date"></div>
+      <div class="form-group"><label>카테고리</label>
+        <select id="edit-e-cat">
+          <option value="자재비">자재비</option><option value="유류비">유류비</option>
+          <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
+          <option value="통신비">통신비</option><option value="보험료">보험료</option>
+          <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
+        </select>
+      </div>
+      <div class="form-group"><label>금액 (원)</label><input type="number" id="edit-e-amount"></div>
+      <div class="form-group"><label>결제수단</label><select id="edit-e-method"></select></div>
+      <div class="form-group"><label>구입처/거래처</label><input type="text" id="edit-e-vendor"></div>
+      <div class="form-group"><label>증빙</label>
+        <select id="edit-e-receipt"><option value="현금영수증">현금영수증</option><option value="카드전표">카드전표</option><option value="세금계산서">세금계산서</option><option value="미수취">미수취</option></select>
+      </div>
+      <div class="form-group full"><label>메모</label><textarea id="edit-e-memo"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-expense')">취소</button>
+      <button class="btn btn-primary" onclick="saveExpense()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-drive">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 운행 수정</div>
+    <input type="hidden" id="edit-d-key">
+    <div class="form-grid">
+      <div class="form-group"><label>날짜</label><input type="date" id="edit-d-date"></div>
+      <div class="form-group"><label>유형</label><select id="edit-d-type"><option value="사업">사업용</option><option value="개인">개인용</option></select></div>
+      <div class="form-group"><label>출발지</label><input type="text" id="edit-d-from"></div>
+      <div class="form-group"><label>도착지</label><input type="text" id="edit-d-to"></div>
+      <div class="form-group"><label>주행거리 (km)</label><input type="number" id="edit-d-km"></div>
+      <div class="form-group"><label>목적</label><input type="text" id="edit-d-purpose"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-drive')">취소</button>
+      <button class="btn btn-primary" onclick="saveDrive()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 결제수단 수정</div>
+    <input type="hidden" id="edit-pm-key">
+    <div class="form-grid" style="gap:8px;">
+      <div class="form-group"><label>이름</label><input type="text" id="edit-pm-name"></div>
+      <div class="form-group"><label>종류</label>
+        <select id="edit-pm-type"><option value="신용카드">신용카드</option><option value="체크카드">체크카드</option><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="기타">기타</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-payment')">취소</button>
+      <button class="btn btn-primary" onclick="savePayment()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const app = initializeApp({
+    apiKey:"AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+    authDomain:"chocosora-ad4df.firebaseapp.com",
+    databaseURL:"https://chocosora-ad4df-default-rtdb.firebaseio.com",
+    projectId:"chocosora-ad4df",
+    storageBucket:"chocosora-ad4df.firebasestorage.app",
+    messagingSenderId:"798065461606",
+    appId:"1:798065461606:web:fcc2308eae7a71e8f360a7"
+  });
+  const db = getDatabase(app);
+  window.fbDB=db; window.fbRef=ref; window.fbPush=push; window.fbRemove=remove; window.fbUpdate=update;
+  document.getElementById('syncStatus').textContent='Firebase 연결됨';
+
+  function listen(path,cb){
+    onValue(ref(db,path),snap=>{const d={};snap.forEach(c=>{d[c.key]=c.val();});cb(d);});
+  }
+  listen('revenues',d=>{window._revenues=d;renderAll();});
+  listen('expenses',d=>{window._expenses=d;renderAll();});
+  listen('drives',d=>{window._drives=d;renderAll();});
+  listen('commissions',d=>{window._commissions=d;renderAll();});
+  listen('paymentMethods',d=>{
+    window._paymentMethods=d;
+    renderPaymentList();
+    rebuildPaymentSelects();
+  });
+
+  onValue(ref(db,'paymentMethods'),snap=>{
+    if(!snap.exists()){
+      [
+        {name:'현금',type:'현금',icon:'💵',color:'#4caf6e',order:0},
+        {name:'계좌이체',type:'계좌이체',icon:'🏦',color:'#5b8af0',order:1},
+        {name:'사업카드 A',type:'신용카드',icon:'💳',color:'#f5a623',order:2},
+        {name:'사업카드 B',type:'신용카드',icon:'💳',color:'#e91e8c',order:3},
+      ].forEach(d=>push(ref(db,'paymentMethods'),d));
+    }
+  },{onlyOnce:true});
+</script>
+
+<script>
+  let currentMonth = new Date();
+  window._revenues={}; window._expenses={}; window._drives={}; window._paymentMethods={}; window._commissions={};
+  let selectedIcon='💳', selectedColor='#5b8af0';
+
+  const today = new Date().toISOString().split('T')[0];
+  ['r-date','e-date','d-date', 'c-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
+  document.getElementById('report-month').value=today.slice(0,7);
+  document.getElementById('headerDate').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+  updateMonthLabel();
+
+  function getMonthKey(){return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,'0')}`;}
+  function updateMonthLabel(){document.getElementById('currentMonthLabel').textContent=`${currentMonth.getFullYear()}년 ${currentMonth.getMonth()+1}월`;}
+  window.changeMonth=function(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderAll();};
+  function filterByMonth(obj){const mk=getMonthKey();return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
+  function fmt(n){return '₩'+Number(n||0).toLocaleString('ko-KR');}
+
+  function rebuildPaymentSelects(){
+    const methods=Object.values(window._paymentMethods).sort((a,b)=>(a.order||0)-(b.order||0));
+    const opts=methods.map(m=>`<option value="${m.name}">${m.icon||'💳'} ${m.name}</option>`).join('');
+    ['e-method','edit-e-method'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts;});
+  }
+
+  function getMethodColor(name){
+    const m=Object.values(window._paymentMethods).find(p=>p.name===name);
+    return m?m.color:'#999';
+  }
+  function methodTag(name){
+    if(!name)return '';
+    const color=getMethodColor(name);
+    const m=Object.values(window._paymentMethods).find(p=>p.name===name);
+    const icon=m?.icon||'💳';
+    return `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;background:${color}22;color:${color};border:1px solid ${color}44">${icon} ${name}</span>`;
+  }
+
+  window.openModal=function(id){document.getElementById(id).classList.add('open');}
+  window.closeModal=function(id){document.getElementById(id).classList.remove('open');}
+  document.querySelectorAll('.modal-overlay').forEach(m=>{
+    m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+  });
+
+  window.openEditRevenue=function(key){
+    const v=window._revenues[key]; if(!v)return;
+    document.getElementById('edit-r-key').value=key;
+    document.getElementById('edit-r-date').value=v.date||'';
+    document.getElementById('edit-r-site').value=v.site||'';
+    document.getElementById('edit-r-amount').value=v.amount||'';
+    document.getElementById('edit-r-method').value=v.method||'현금';
+    document.getElementById('edit-r-tax').value=v.tax||'미발행';
+    document.getElementById('edit-r-work').value=v.work||'';
+    document.getElementById('edit-r-memo').value=v.memo||'';
+    openModal('modal-revenue');
+  };
+  window.saveRevenue=function(){
+    const key=document.getElementById('edit-r-key').value;
+    const data={
+      date:document.getElementById('edit-r-date').value,
+      site:document.getElementById('edit-r-site').value.trim(),
+      amount:Number(document.getElementById('edit-r-amount').value),
+      method:document.getElementById('edit-r-method').value,
+      tax:document.getElementById('edit-r-tax').value,
+      work:document.getElementById('edit-r-work').value.trim(),
+      memo:document.getElementById('edit-r-memo').value.trim(),
+    };
+    if(!data.date||!data.site||!data.amount){showToast('날짜, 현장명, 금액을 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`revenues/${key}`),data);
+    closeModal('modal-revenue');
+    showToast('매출이 수정되었습니다','success');
+  };
+
+  window.openEditExpense=function(key){
+    const v=window._expenses[key]; if(!v)return;
+    document.getElementById('edit-e-key').value=key;
+    document.getElementById('edit-e-date').value=v.date||'';
+    document.getElementById('edit-e-cat').value=v.cat||'자재비';
+    document.getElementById('edit-e-amount').value=v.amount||'';
+    document.getElementById('edit-e-vendor').value=v.vendor||'';
+    document.getElementById('edit-e-receipt').value=v.receipt||'현금영수증';
+    document.getElementById('edit-e-memo').value=v.memo||'';
+    setTimeout(()=>{
+      const sel=document.getElementById('edit-e-method');
+      if(sel&&v.method)[...sel.options].forEach(o=>{if(o.value===v.method)o.selected=true;});
+    },50);
+    openModal('modal-expense');
+  };
+  window.saveExpense=function(){
+    const key=document.getElementById('edit-e-key').value;
+    const data={
+      date:document.getElementById('edit-e-date').value,
+      cat:document.getElementById('edit-e-cat').value,
+      amount:Number(document.getElementById('edit-e-amount').value),
+      method:document.getElementById('edit-e-method').value,
+      vendor:document.getElementById('edit-e-vendor').value.trim(),
+      receipt:document.getElementById('edit-e-receipt').value,
+      memo:document.getElementById('edit-e-memo').value.trim(),
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`expenses/${key}`),data);
+    closeModal('modal-expense');
+    showToast('경비가 수정되었습니다','success');
+  };
+
+  window.openEditDrive=function(key){
+    const v=window._drives[key]; if(!v)return;
+    document.getElementById('edit-d-key').value=key;
+    document.getElementById('edit-d-date').value=v.date||'';
+    document.getElementById('edit-d-type').value=v.type||'사업';
+    document.getElementById('edit-d-from').value=v.from||'';
+    document.getElementById('edit-d-to').value=v.to||'';
+    document.getElementById('edit-d-km').value=v.km||'';
+    document.getElementById('edit-d-purpose').value=v.purpose||'';
+    openModal('modal-drive');
+  };
+  window.saveDrive=function(){
+    const key=document.getElementById('edit-d-key').value;
+    const data={
+      date:document.getElementById('edit-d-date').value,
+      type:document.getElementById('edit-d-type').value,
+      from:document.getElementById('edit-d-from').value.trim(),
+      to:document.getElementById('edit-d-to').value.trim(),
+      km:Number(document.getElementById('edit-d-km').value),
+      purpose:document.getElementById('edit-d-purpose').value.trim(),
+    };
+    if(!data.date||!data.km){showToast('날짜와 주행거리를 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
+    closeModal('modal-drive');
+    showToast('운행이 수정되었습니다','success');
+  };
+
+  window.selectIcon=function(el){document.querySelectorAll('.icon-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedIcon=el.dataset.icon;};
+  window.selectColor=function(el){document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedColor=el.dataset.color;};
+  window.addPaymentMethod=function(){
+    const name=document.getElementById('pm-name').value.trim();
+    const type=document.getElementById('pm-type').value;
+    if(!name){showToast('이름을 입력해주세요','error');return;}
+    const order=Object.keys(window._paymentMethods).length;
+    window.fbPush(window.fbRef(window.fbDB,'paymentMethods'),{name,type,icon:selectedIcon,color:selectedColor,order});
+    document.getElementById('pm-name').value='';
+    showToast('결제수단이 추가되었습니다','success');
+  };
+  window.openEditPayment=function(key){
+    const m=window._paymentMethods[key]; if(!m)return;
+    document.getElementById('edit-pm-key').value=key;
+    document.getElementById('edit-pm-name').value=m.name||'';
+    document.getElementById('edit-pm-type').value=m.type||'신용카드';
+    openModal('modal-payment');
+  };
+  window.savePayment=function(){
+    const key=document.getElementById('edit-pm-key').value;
+    const name=document.getElementById('edit-pm-name').value.trim();
+    const type=document.getElementById('edit-pm-type').value;
+    if(!name){showToast('이름을 입력해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`paymentMethods/${key}`),{name,type});
+    closeModal('modal-payment');
+    showToast('수정되었습니다','success');
+  };
+  window.deletePayment=function(key,name){
+    if(!confirm(`"${name}" 결제수단을 삭제할까요?`))return;
+    window.fbRemove(window.fbRef(window.fbDB,`paymentMethods/${key}`));
+    showToast('삭제되었습니다');
+  };
+
+  function renderPaymentList(){
+    const methods=Object.entries(window._paymentMethods).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+    const el=document.getElementById('paymentList'); if(!el)return;
+    if(!methods.length){el.innerHTML='<div class="empty-state" style="padding:20px;">등록된 결제수단이 없어요</div>';return;}
+    el.innerHTML=methods.map(([k,m])=>`
+      <div class="payment-item">
+        <div class="payment-icon" style="background:${m.color}22;border:1px solid ${m.color}44">${m.icon||'💳'}</div>
+        <div class="payment-info"><div class="payment-name">${m.name}</div><div class="payment-type">${m.type}</div></div>
+        <div class="btn-row">
+          <button class="btn btn-edit btn-sm" onclick="openEditPayment('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePayment('${k}','${m.name}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderAll(){
+    renderDashboard();
+    renderRevenueList();
+    renderCommissionList();
+    renderExpenseList();
+    renderDriveList();
+  }
+
+  function renderDashboard(){
+    const revE=filterByMonth(window._revenues),expE=filterByMonth(window._expenses),drvE=filterByMonth(window._drives),comE=filterByMonth(window._commissions);
+    const totalRev=revE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalExp=expE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const profit=totalRev-totalExp-totalCom; 
+    
+    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+    
+    document.getElementById('kpi-revenue').textContent=fmt(totalRev);
+    document.getElementById('kpi-revenue-count').textContent=`${revE.length}건`;
+    document.getElementById('kpi-expense').textContent=fmt(totalExp);
+    document.getElementById('kpi-expense-count').textContent=`${expE.length}건`;
+    document.getElementById('kpi-profit').textContent=fmt(profit);
+    document.getElementById('kpi-profit').style.color=profit>=0?'var(--accent)':'var(--red)';
+    document.getElementById('kpi-drive').textContent=`${totalKm} km`;
+    document.getElementById('kpi-drive-ratio').textContent=`사업용 ${ratio}%`;
+    const max=Math.max(totalRev,totalExp,1);
+    document.getElementById('bar-revenue').style.width=(totalRev/max*100)+'%';
+    document.getElementById('bar-expense').style.width=(totalExp/max*100)+'%';
+    document.getElementById('bar-revenue-amt').textContent=fmt(totalRev);
+    document.getElementById('bar-expense-amt').textContent=fmt(totalExp);
+    
+    const combined=[
+      ...revE.map(([k,v])=>({...v,k,_type:'revenue'})),
+      ...expE.map(([k,v])=>({...v,k,_type:'expense'})),
+      ...comE.map(([k,v])=>({...v,k,_type:'commission'}))
+    ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+    
+    const rl=document.getElementById('recentList');
+    if(!combined.length){rl.innerHTML='<div class="empty-state">아직 기록이 없어요</div>';return;}
+    rl.innerHTML=combined.map(item=>{
+      let isRev=item._type==='revenue';
+      let isCom=item._type==='commission';
+      let color=isRev?'var(--green)':(isCom?'var(--accent)':'var(--red)');
+      let sign=isRev?'+':'-';
+      let label=isRev?(item.site||'현장미상'):(isCom?'본사 수수료':(item.vendor||item.cat||'경비'));
+      let subLabel=isRev?item.method:(isCom?'수수료 송금':item.cat);
+      return `<div class="recent-item"><div class="ri-dot" style="background:${color}"></div><div class="ri-info"><div class="ri-name">${label}</div><div class="ri-meta">${item.date} · ${subLabel}</div></div><div class="ri-amount" style="color:${color}">${sign}${fmt(item.amount)}</div></div>`;
+    }).join('');
+  }
+
+  function renderRevenueList(){
+    const entries=filterByMonth(window._revenues).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('revenueList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">매출 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--green)"></div>
+        <div class="ri-info">
+          <div class="ri-name">${v.site||'-'} <span style="font-size:10px;color:var(--text3)">${v.work||''}</span></div>
+          <div class="ri-meta">${v.date} · ${methodTag(v.method)} · ${v.tax||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--green)">+${fmt(v.amount)}</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditRevenue('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('revenues','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderCommissionList(){
+    const entries=filterByMonth(window._commissions).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('commissionList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">수수료 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--accent)"></div>
+        <div class="ri-info">
+          <div class="ri-name">본사 수수료 <span style="font-size:10px;color:var(--text3)">${v.memo||''}</span></div>
+          <div class="ri-meta">${v.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--accent)">-${fmt(v.amount)}</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('commissions','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderExpenseList(){
+    const entries=filterByMonth(window._expenses).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('expenseList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">경비 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--red)"></div>
+        <div class="ri-info">
+          <div class="ri-name">${v.vendor||'-'} <span style="font-size:10px;background:rgba(224,82,82,0.15);color:var(--red);padding:1px 6px;border-radius:10px;">${v.cat}</span></div>
+          <div class="ri-meta">${v.date} · ${methodTag(v.method)} · ${v.receipt||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--red)">-${fmt(v.amount)}</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditExpense('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('expenses','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderDriveList(){
+    const entries=filterByMonth(window._drives).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('driveList');
+    const totalKm=entries.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=entries.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+    document.getElementById('d-total').textContent=totalKm;
+    document.getElementById('d-biz').textContent=bizKm;
+    document.getElementById('d-ratio').textContent=ratio+'%';
+    document.getElementById('d-ratio-pct').textContent=ratio+'%';
+    document.getElementById('d-ratio-bar').style.width=ratio+'%';
+    if(!entries.length){el.innerHTML='<div class="empty-state">운행 기록이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:${v.type==='사업'?'var(--blue)':'var(--text3)'}"></div>
+        <div class="ri-info">
+          <div class="ri-name">${v.from||'-'} → ${v.to||'-'} <span style="font-size:10px;color:var(--text2)">${v.purpose||''}</span></div>
+          <div class="ri-meta">${v.date} · ${v.type} · ${v.km}km</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--blue)">${v.km}km</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditDrive('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('drives','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  window.addRevenue=function(){
+    const data={date:document.getElementById('r-date').value,site:document.getElementById('r-site').value.trim(),amount:Number(document.getElementById('r-amount').value),method:document.getElementById('r-method').value,tax:document.getElementById('r-tax').value,work:document.getElementById('r-work').value.trim(),memo:document.getElementById('r-memo').value.trim(),createdAt:Date.now()};
+    if(!data.date||!data.site||!data.amount){showToast('날짜, 현장명, 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'revenues'),data);
+    ['r-site','r-amount','r-work','r-memo'].forEach(id=>document.getElementById(id).value='');
+    showToast('매출이 저장되었습니다','success');
+  };
+
+  window.addCommission=function(){
+    const data={
+      date:document.getElementById('c-date').value,
+      amount:Number(document.getElementById('c-amount').value),
+      memo:document.getElementById('c-memo').value.trim(),
+      createdAt:Date.now()
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'commissions'),data);
+    
+    document.getElementById('c-amount').value='';
+    document.getElementById('c-memo').value='';
+    showToast('수수료가 저장되었습니다','success');
+  };
+
+  window.addExpense=function(){
+    const data={date:document.getElementById('e-date').value,cat:document.getElementById('e-cat').value,amount:Number(document.getElementById('e-amount').value),method:document.getElementById('e-method').value,vendor:document.getElementById('e-vendor').value.trim(),receipt:document.getElementById('e-receipt').value,memo:document.getElementById('e-memo').value.trim(),createdAt:Date.now()};
+    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'expenses'),data);
+    ['e-amount','e-vendor','e-memo'].forEach(id=>document.getElementById(id).value='');
+    showToast('경비가 저장되었습니다','success');
+  };
+  window.addDrive=function(){
+    const data={date:document.getElementById('d-date').value,type:document.getElementById('d-type').value,from:document.getElementById('d-from').value.trim(),to:document.getElementById('d-to').value.trim(),km:Number(document.getElementById('d-km').value),purpose:document.getElementById('d-purpose').value.trim(),createdAt:Date.now()};
+    if(!data.date||!data.km){showToast('날짜와 주행거리를 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'drives'),data);
+    ['d-from','d-to','d-km','d-purpose'].forEach(id=>document.getElementById(id).value='');
+    showToast('운행이 저장되었습니다','success');
+  };
+  window.deleteItem=function(path,key){
+    if(!confirm('삭제할까요?'))return;
+    window.fbRemove(window.fbRef(window.fbDB,`${path}/${key}`));
+    showToast('삭제되었습니다');
+  };
+
+  window.generateReport=function(){
+    const month=document.getElementById('report-month').value; if(!month)return;
+    const rType=document.getElementById('report-type').value;
+    
+    const revE=Object.entries(window._revenues).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const expE=Object.entries(window._expenses).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const drvE=Object.entries(window._drives).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const comE=Object.entries(window._commissions).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date)); 
+    
+    const totalRev=revE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalExp=expE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const netProfit=totalRev-totalExp-totalCom;
+    
+    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+
+    let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
+    let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.from} -> ${v.to}</td><td>${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+
+    let html = '';
+
+    if(rType === 'all') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">홈케어의 제왕 월간 종합 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span>총 매출</span><span style="color:#27ae60">${fmt(totalRev)}</span></div>
+            <div class="paper-summary-row"><span>총 수수료 납부</span><span style="color:#e67e22">-${fmt(totalCom)}</span></div>
+            <div class="paper-summary-row"><span>총 매입/경비</span><span style="color:#c0392b">-${fmt(totalExp)}</span></div>
+            <div class="paper-summary-row paper-summary-total"><span>순수익</span><span>${fmt(netProfit)}</span></div>
+          </div>
+
+          <div class="paper-section-title">1. 매출 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:30%">현장명</th><th style="width:25%">작업내용</th><th style="width:15%">결제</th><th style="width:15%">금액</th></tr></thead>
+            <tbody>${revRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">2. 수수료 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:20%">날짜</th><th style="width:60%">메모</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${comRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">3. 매입/경비 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${expRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">4. 차량 운행 내역 요약</div>
+          <table class="paper-table" style="margin-bottom:5px;">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:35%">경로</th><th style="width:20%">목적</th><th style="width:15%">거리</th></tr></thead>
+            <tbody>${drvRows}</tbody>
+          </table>
+          <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
+        </div>`;
+    } 
+    else if(rType === 'revenue') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 매출 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 매출</span><span style="color:#27ae60;font-size:16px;">${fmt(totalRev)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 처리 건수</span><span>${revE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">매출 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:30%">현장명</th><th style="width:25%">작업내용</th><th style="width:15%">결제</th><th style="width:15%">금액</th></tr></thead>
+            <tbody>${revRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'commission') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 수수료 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 수수료 납부</span><span style="color:#e67e22;font-size:16px;">${fmt(totalCom)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 납부 건수</span><span>${comE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">수수료 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:20%">날짜</th><th style="width:60%">메모</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${comRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'expense') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 경비/매입 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 경비</span><span style="color:#c0392b;font-size:16px;">${fmt(totalExp)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 지출 건수</span><span>${expE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">매입/경비 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${expRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'drive') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 차량 운행 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">총 주행 거리</span><span style="font-size:16px;">${totalKm} km</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>사업용 주행 거리</span><span style="color:#2980b9; font-weight:700;">${bizKm} km (${ratio}%)</span></div>
+          </div>
+
+          <div class="paper-section-title">차량 운행 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:35%">경로</th><th style="width:20%">목적</th><th style="width:15%">거리</th></tr></thead>
+            <tbody>${drvRows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    document.getElementById('reportOutput').innerHTML = html;
+  };
+
+  window.exportPDF = function() {
+    const element = document.getElementById('printArea');
+    if(!element){ 
+      showToast('먼저 리포트를 생성해주세요', 'error'); 
+      return; 
+    }
+    
+    const month = document.getElementById('report-month').value;
+    const rType = document.getElementById('report-type').value;
+    
+    const typeNames = {
+      'all': '종합',
+      'revenue': '매출',
+      'commission': '수수료',
+      'expense': '경비',
+      'drive': '운행일지'
+    };
+    const fileNameStr = typeNames[rType] || '상세';
+
+    const opt = {
+      margin:       [15, 15, 20, 15], 
+      filename:     `홈케어의제왕_${month}_${fileNameStr}리포트.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    showToast('PDF 파일을 생성중입니다...', 'success');
+    
+    html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
+      const totalPages = pdf.internal.getNumberOfPages();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        pdf.text(`- ${i} / ${totalPages} -`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+    }).save().then(() => {
+       showToast('PDF 다운로드가 완료되었습니다', 'success');
+    });
+  };
+
+  window.showSection=function(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    const map={dashboard:0,revenue:1,expense:2,drive:3,report:4,settings:5};
+    document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
+  };
+
+  function showToast(msg,type='success'){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.className=`toast ${type} show`;
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+</script>
+</body>
+</html>
