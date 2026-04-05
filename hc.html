@@ -54,9 +54,9 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, UserPlus, BarChart3, Settings } from 'lucide-react';
+        import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, UserPlus, BarChart3, Settings, Download } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
-        import { getDatabase, ref, push, onValue, remove, set, update } from 'firebase/database';
+        import { getDatabase, ref, push, onValue, remove, set, update, get } from 'firebase/database';
 
         const firebaseConfig = {
             apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
@@ -117,7 +117,6 @@
             return Number.isInteger(calc) ? calc + '만' : calc.toFixed(1) + '만';
         };
 
-        // 기본 문자 템플릿
         const defaultTemplates = [
             { title: '예약 확정', body: '안녕하세요, 하수구의 제왕입니다.\n방문을 위해 예약 확정 안내 문자 드립니다.\n\n일시: {월}/{일}({요일}) {시간} 사이\n원활한 방문을 위해 고객님 댁의 정확한 상세 주소(동, 호수 포함)를 이 문자로 회신해 주시기 바랍니다.\n\n신속한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n{요일}요일에 뵙겠습니다. 감사합니다.' },
             { title: '방문 전날', body: '안녕하세요, 하수구의 제왕입니다.\n예약 확인 차 안내 문자 드립니다.\n문자를 확인하셨다면 짧게라도 회신 부탁드립니다.\n\n일시: {월}/{일}({요일}) {시간} 사이\n주소: {주소}\n남겨주신 주소가 정확한지 다시 한번 확인 부탁드립니다.\n\n원활한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n(이미 보내주셨다면 생략하셔도 괜찮습니다.)\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n{요일}요일에 뵙겠습니다. 감사합니다.' },
@@ -144,7 +143,6 @@
             const [isProcessing, setIsProcessing] = useState(false);
             const [jobs, setJobs] = useState({});
             
-            // 템플릿 관련 상태
             const [templates, setTemplates] = useState(defaultTemplates);
             const [isEditingTemplates, setIsEditingTemplates] = useState(false);
             const [editingTemplatesData, setEditingTemplatesData] = useState([]);
@@ -164,7 +162,6 @@
                 const jobsRef = ref(database, 'homecare_jobs');
                 const unsubJobs = onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
 
-                // 저장된 템플릿 불러오기
                 const templatesRef = ref(database, 'homecare_settings/sms_templates');
                 const unsubTemplates = onValue(templatesRef, (snapshot) => {
                     const data = snapshot.val();
@@ -518,7 +515,6 @@
                 document.body.removeChild(link);
             };
 
-            // 템플릿 변환 함수
             const parseSmsTemplate = (templateBody, job) => {
                 const targetDateStr = (job.dates && job.dates[0] !== 'waiting') ? job.dates[0] : todayStr;
                 const dateObj = new Date(targetDateStr);
@@ -569,6 +565,35 @@
                         setIsEditingTemplates(false);
                     })
                     .catch((error) => alert("저장 실패: " + error.message));
+            };
+
+            const handleBackup = async () => {
+                try {
+                    const snapshot = await get(ref(database));
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const jsonString = JSON.stringify(data, null, 2);
+                        const blob = new Blob([jsonString], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+
+                        const today = new Date();
+                        const dateStr = `${today.getFullYear()}${(today.getMonth()+1).toString().padStart(2,'0')}${today.getDate().toString().padStart(2,'0')}`;
+                        link.download = `homecare_backup_${dateStr}.json`;
+
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        alert("데이터 백업이 완료되었습니다. 든든하게 보관해두세요!");
+                    } else {
+                        alert("백업할 데이터가 아직 없습니다.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("백업 중 오류가 발생했습니다: " + error.message);
+                }
             };
 
             const generateReportText = () => {
@@ -803,13 +828,6 @@
                         {currentView === 'calendar' && (
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setCurrentView('monthlyRevenue')}
-                                    className="bg-indigo-50 text-indigo-700 px-3 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-indigo-100 flex items-center gap-1.5 active:scale-95 transition-all"
-                                >
-                                    <BarChart3 className="w-4 h-4" />
-                                    <span>월별매출</span>
-                                </button>
-                                <button
                                     onClick={() => setCurrentView('consultations')}
                                     className="bg-teal-50 text-teal-700 px-3 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-teal-100 flex items-center gap-1.5 active:scale-95 transition-all relative"
                                 >
@@ -887,6 +905,23 @@
                                             </div>
                                         )
                                     })}
+                                </div>
+                                
+                                <div className="mt-6 pt-5 border-t border-slate-100 flex gap-3">
+                                    <button
+                                        onClick={handleBackup}
+                                        className="flex-1 bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-bold shadow-sm border border-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-slate-100"
+                                    >
+                                        <Download className="w-4 h-4 text-slate-600" />
+                                        <span>전체 백업</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('monthlyRevenue')}
+                                        className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-xl text-sm font-bold shadow-sm border border-indigo-100 flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-indigo-100"
+                                    >
+                                        <BarChart3 className="w-4 h-4 text-indigo-500" />
+                                        <span>월별 매출</span>
+                                    </button>
                                 </div>
                             </section>
                         )}
