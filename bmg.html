@@ -379,6 +379,11 @@
 
   <div class="section" id="s-settings">
     <div class="form-card">
+      <div class="form-title">💾 데이터 전체 백업</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">파이어베이스에 저장된 모든 매출, 경비, 운행일지 데이터를 파일로 내려받아 안전하게 보관할 수 있습니다.</p>
+      <button class="btn btn-primary btn-full" onclick="handleBackup()">⬇️ 전체 데이터 백업 (.json)</button>
+    </div>
+    <div class="form-card">
       <div class="form-title">⚙️ 결제수단 관리</div>
       <p style="font-size:12px;color:var(--text2);margin-bottom:16px;">경비 입력 시 사용할 결제수단을 자유롭게 추가/수정/삭제할 수 있어요.</p>
       <div class="setting-section-title">등록된 결제수단</div>
@@ -523,7 +528,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const app = initializeApp({
     apiKey:"AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
@@ -535,7 +540,7 @@
     appId:"1:798065461606:web:fcc2308eae7a71e8f360a7"
   });
   const db = getDatabase(app);
-  window.fbDB=db; window.fbRef=ref; window.fbPush=push; window.fbRemove=remove; window.fbUpdate=update;
+  window.fbDB=db; window.fbRef=ref; window.fbPush=push; window.fbRemove=remove; window.fbUpdate=update; window.fbGet=get;
   document.getElementById('syncStatus').textContent='Firebase 연결됨';
 
   function listen(path,cb){
@@ -579,6 +584,38 @@
   window.changeMonth=function(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderAll();};
   function filterByMonth(obj){const mk=getMonthKey();return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
   function fmt(n){return '₩'+Number(n||0).toLocaleString('ko-KR');}
+
+  // 백업 기능 함수
+  window.handleBackup = async function() {
+    try {
+      showToast("데이터를 불러오는 중...", "success");
+      const snapshot = await window.fbGet(window.fbRef(window.fbDB));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        const date = new Date();
+        const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+        link.download = `bmg_backup_${dateStr}.json`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast("데이터 백업이 완료되었습니다.", "success");
+      } else {
+        showToast("백업할 데이터가 없습니다.", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("백업 중 오류가 발생했습니다.", "error");
+    }
+  };
 
   function rebuildPaymentSelects(){
     const methods=Object.values(window._paymentMethods).sort((a,b)=>(a.order||0)-(b.order||0));
