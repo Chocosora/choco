@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="unsafe-url">
     <title>홈케어의 제왕 작업 일지</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
     <script type="importmap">
@@ -24,7 +22,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
     
-    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=3m2s7i9ttg&submodules=geocoder"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         body { 
@@ -50,7 +49,8 @@
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; }
+        #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; z-index: 10; }
+        .leaflet-control-attribution { display: none; } /* 지도 하단 글씨 숨김 */
     </style>
 </head>
 <body>
@@ -80,7 +80,7 @@
         const geminiPartA = "AIzaSyBAhDBv";
         const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
         const GEMINI_API_KEY = geminiPartA + geminiPartB;
-        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
+        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b"; // 이미 작동 확인된 키!
         
         const MY_HOME_ADDRESS = "다산중앙로82번길 105";
 
@@ -234,98 +234,95 @@
                 };
             }, [jobs, currentDateView]);
 
+            // ==========================================
+            // 무인증 에러-프리 지도 (Leaflet + Kakao REST API)
+            // ==========================================
             useEffect(() => {
                 if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
 
-                const initMap = () => {
-                    if (!window.naver || !window.naver.maps || !window.naver.maps.Service) {
-                        setTimeout(initMap, 100);
-                        return;
-                    }
+                // 기존 지도 날리기 (화면 중복 생성 방지)
+                if (window.myRouteMap) {
+                    window.myRouteMap.remove();
+                }
 
-                    const container = mapContainer.current;
-                    if (!container) return; 
+                // 지도 초기화
+                const map = L.map(mapContainer.current, { zoomControl: false });
+                window.myRouteMap = map;
 
-                    const map = new window.naver.maps.Map(container, {
-                        center: new window.naver.maps.LatLng(37.5666805, 126.9784147),
-                        zoom: 11
-                    });
+                // 인증 필요 없는 무료 타일 레이어 불러오기
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-                    const points = [];
-                    const bounds = new window.naver.maps.LatLngBounds();
+                const points = [];
+                const bounds = L.latLngBounds();
 
-                    const getCoords = (address) => {
-                        return new Promise((resolve) => {
-                            window.naver.maps.Service.geocode({ query: address }, (status, response) => {
-                                if (status === window.naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
-                                    resolve(new window.naver.maps.LatLng(response.v2.addresses[0].y, response.v2.addresses[0].x));
-                                } else {
-                                    resolve(null);
-                                }
-                            });
+                // 사장님 코드에서 이미 100% 작동 확인된 카카오 '주소->좌표' 검색 기능 재활용
+                const getCoords = async (address) => {
+                    try {
+                        const res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, {
+                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
                         });
-                    };
-
-                    const loadRoute = async () => {
-                        const homeCoords = await getCoords(MY_HOME_ADDRESS);
-                        if (homeCoords) {
-                            points.push(homeCoords);
-                            bounds.extend(homeCoords);
-                            const startContent = `<div style="background:#1E293B; color:white; padding: 3px 8px; border-radius:12px; font-size:11px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); white-space:nowrap;">출발</div>`;
-                            new window.naver.maps.Marker({
-                                position: homeCoords,
-                                map: map,
-                                icon: { content: startContent, anchor: new window.naver.maps.Point(15, 15) }
-                            });
+                        const data = await res.json();
+                        if (data.documents && data.documents.length > 0) {
+                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
                         }
-
-                        for (let i = 0; i < activeDateJobs.length; i++) {
-                            const job = activeDateJobs[i];
-                            const coords = await getCoords(job.address);
-
-                            if (coords) {
-                                points.push(coords);
-                                bounds.extend(coords);
-                                const content = `<div style="background:#0D9488; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);">${i+1}</div>`;
-                                new window.naver.maps.Marker({
-                                    position: coords,
-                                    map: map,
-                                    icon: { content: content, size: new window.naver.maps.Size(26, 26), anchor: new window.naver.maps.Point(13, 13) }
-                                });
-                            }
-                        }
-
-                        if (homeCoords) {
-                            points.push(homeCoords);
-                            const endContent = `<div style="background:#1E293B; color:white; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`;
-                            new window.naver.maps.Marker({
-                                position: homeCoords,
-                                map: map,
-                                icon: { content: endContent, size: new window.naver.maps.Size(26, 26), anchor: new window.naver.maps.Point(13, 13) }
-                            });
-                        }
-
-                        if (points.length > 1) {
-                            new window.naver.maps.Polyline({
-                                map: map,
-                                path: points,
-                                strokeColor: '#0D9488',
-                                strokeWeight: 3,
-                                strokeOpacity: 0.8,
-                                strokeStyle: 'shortdash'
-                            });
-                            map.fitBounds(bounds, { margin: [40, 40, 40, 40] });
-                        } else if (points.length === 1) {
-                            map.setCenter(points[0]);
-                            map.setZoom(14);
-                        }
-                    };
-
-                    loadRoute();
+                    } catch(e) {
+                        return null;
+                    }
+                    return null;
                 };
 
-                initMap();
+                const loadRoute = async () => {
+                    // 1. 우리집 출발
+                    const homeCoords = await getCoords(MY_HOME_ADDRESS);
+                    if (homeCoords) {
+                        points.push(homeCoords);
+                        bounds.extend(homeCoords);
+                        const startIcon = L.divIcon({
+                            html: `<div style="background:#1E293B; color:white; padding: 3px 8px; border-radius:12px; font-size:11px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); white-space:nowrap; margin-top:-15px; margin-left:-15px;">출발</div>`,
+                            className: ''
+                        });
+                        L.marker(homeCoords, {icon: startIcon}).addTo(map);
+                    }
+
+                    // 2. 작업 현장
+                    for (let i = 0; i < activeDateJobs.length; i++) {
+                        const job = activeDateJobs[i];
+                        const coords = await getCoords(job.address);
+                        if (coords) {
+                            points.push(coords);
+                            bounds.extend(coords);
+                            const jobIcon = L.divIcon({
+                                html: `<div style="background:#0D9488; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-top:-12px; margin-left:-12px;">${i+1}</div>`,
+                                className: ''
+                            });
+                            L.marker(coords, {icon: jobIcon}).addTo(map);
+                        }
+                    }
+
+                    // 3. 우리집 복귀
+                    if (homeCoords) {
+                        points.push(homeCoords);
+                        const endIcon = L.divIcon({
+                            html: `<div style="background:#1E293B; color:white; width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-top:-12px; margin-left:-12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`,
+                            className: ''
+                        });
+                        L.marker(homeCoords, {icon: endIcon}).addTo(map);
+                    }
+
+                    // 4. 점선 연결
+                    if (points.length > 1) {
+                        L.polyline(points, {color: '#0D9488', weight: 3, dashArray: '5, 8'}).addTo(map);
+                        map.fitBounds(bounds, {padding: [30, 30]});
+                    } else if (points.length === 1) {
+                        map.setView(points[0], 14);
+                    } else {
+                        map.setView([37.5666805, 126.9784147], 11);
+                    }
+                };
+
+                loadRoute();
             }, [currentView, activeDateJobs]);
+            // ==========================================
 
             const handleTaskChange = (index, field, value) => {
                 const newTasks = [...tasks];
