@@ -83,10 +83,12 @@
         const geminiPartA = "AIzaSyBAhDBv";
         const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
         const GEMINI_API_KEY = geminiPartA + geminiPartB;
-        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
         
-        // 우리집 주소 세팅 (지도 검색용)
-        const MY_HOME_ADDRESS = "다산중앙로82번길 105";
+        // ✅ 사장님의 진짜 카카오 REST API 키로 복구
+        const KAKAO_API_KEY = "f0b61cdb7e7ff5d10ca0ac951e2cefbf";
+        
+        // ✅ 정확한 좌표 검색을 위해 지역명 포함
+        const MY_HOME_ADDRESS = "경기도 남양주시 다산중앙로82번길 105";
 
         const NaverIcon = () => (
             <div className="w-6 h-6 rounded-md bg-[#03C75A] flex items-center justify-center overflow-hidden shadow-sm">
@@ -238,7 +240,7 @@
                 };
             }, [jobs, currentDateView]);
 
-            // Leaflet + Nominatim 무인증 지도 렌더링 로직
+            // Leaflet + 카카오 정밀 검색 렌더링 로직
             useEffect(() => {
                 if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
 
@@ -254,21 +256,29 @@
 
                 let isMounted = true;
 
-                // Nominatim: 완전 무료, API키 없음, CORS 없음
+                // ✅ 멍청한 외국 엔진 대신 똑똑한 한국 '카카오 이중 검색' 부활
                 const getCoords = async (address) => {
                     if (!address) return null;
                     try {
-                        const query = encodeURIComponent(address + ', 대한민국');
-                        const res = await fetch(
-                            `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-                            { headers: { 'Accept-Language': 'ko', 'User-Agent': 'HomecareKing/1.0' } }
-                        );
-                        const data = await res.json();
-                        if (data && data.length > 0) {
-                            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        // 1차 검색: 도로명/지번 등 정확한 주소용
+                        let res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
+                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+                        });
+                        let data = await res.json();
+                        if (data.documents && data.documents.length > 0) {
+                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
+                        }
+
+                        // 2차 검색: 건물명/아파트명 등 키워드용 (1차 실패 시 작동)
+                        res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, {
+                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+                        });
+                        data = await res.json();
+                        if (data.documents && data.documents.length > 0) {
+                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
                         }
                     } catch(e) {
-                        console.error("좌표 검색 실패:", e);
+                        console.error("카카오 좌표 검색 실패:", e);
                     }
                     return null;
                 };
@@ -277,6 +287,7 @@
                     const points = [];
                     const bounds = L.latLngBounds();
 
+                    // 1. 우리집 출발
                     const homeCoords = await getCoords(MY_HOME_ADDRESS);
                     if (!isMounted) return;
 
@@ -292,6 +303,7 @@
 
                     let jobAdded = false;
 
+                    // 2. 작업 현장 방문
                     for (let i = 0; i < activeDateJobs.length; i++) {
                         const job = activeDateJobs[i];
                         const coords = await getCoords(job.address);
@@ -309,6 +321,7 @@
                         }
                     }
 
+                    // 3. 우리집 복귀
                     if (homeCoords && jobAdded) {
                         points.push(homeCoords);
                         const endIcon = L.divIcon({
@@ -320,6 +333,7 @@
 
                     if (!isMounted) return;
 
+                    // 4. 점선 연결 및 화면 자동 줌인
                     if (points.length > 1) {
                         L.polyline(points, {color: '#0D9488', weight: 3, dashArray: '5, 8'}).addTo(map);
                         map.fitBounds(bounds, {padding: [40, 40]});
@@ -1043,7 +1057,6 @@
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
 
-                                {/* 동선 지도 섹션 (네이버맵) */}
                                 {activeDateJobs.length > 0 && (
                                     <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
                                         <div className="flex items-center gap-2 text-slate-800 font-bold text-sm ml-1">
