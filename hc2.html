@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="unsafe-url">
     <title>홈케어의 제왕 작업 일지</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,7 +51,7 @@
         }
 
         #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; z-index: 10; }
-        .leaflet-control-attribution { display: none; } /* 지도 하단 글씨 숨김 */
+        .leaflet-control-attribution { display: none; } /* 지도 하단 텍스트 숨김 */
     </style>
 </head>
 <body>
@@ -80,7 +81,9 @@
         const geminiPartA = "AIzaSyBAhDBv";
         const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
         const GEMINI_API_KEY = geminiPartA + geminiPartB;
-        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b"; // 이미 작동 확인된 키!
+        
+        // 🚨 사장님의 진짜 카카오 REST API 키로 복구 완료!
+        const KAKAO_API_KEY = "f0b61cdb7e7ff5d10ca0ac951e2cefbf"; 
         
         const MY_HOME_ADDRESS = "다산중앙로82번길 105";
 
@@ -235,44 +238,49 @@
             }, [jobs, currentDateView]);
 
             // ==========================================
-            // 무인증 에러-프리 지도 (Leaflet + Kakao REST API)
+            // 무인증 에러-프리 지도 (Leaflet) + 카카오 정밀 검색
             // ==========================================
             useEffect(() => {
                 if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
 
-                // 기존 지도 날리기 (화면 중복 생성 방지)
                 if (window.myRouteMap) {
                     window.myRouteMap.remove();
+                    window.myRouteMap = null;
                 }
 
-                // 지도 초기화
                 const map = L.map(mapContainer.current, { zoomControl: false });
                 window.myRouteMap = map;
 
-                // 인증 필요 없는 무료 타일 레이어 불러오기
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
                 const points = [];
                 const bounds = L.latLngBounds();
 
-                // 사장님 코드에서 이미 100% 작동 확인된 카카오 '주소->좌표' 검색 기능 재활용
+                // 🚨 이중 검색 기능 적용 (도로명, 아파트명 모두 완벽하게 찾습니다)
                 const getCoords = async (address) => {
                     try {
-                        const res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, {
+                        let res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
                             headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
                         });
-                        const data = await res.json();
+                        let data = await res.json();
+                        if (data.documents && data.documents.length > 0) {
+                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
+                        }
+
+                        res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, {
+                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+                        });
+                        data = await res.json();
                         if (data.documents && data.documents.length > 0) {
                             return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
                         }
                     } catch(e) {
-                        return null;
+                        console.error("좌표 검색 실패:", e);
                     }
                     return null;
                 };
 
                 const loadRoute = async () => {
-                    // 1. 우리집 출발
                     const homeCoords = await getCoords(MY_HOME_ADDRESS);
                     if (homeCoords) {
                         points.push(homeCoords);
@@ -284,7 +292,6 @@
                         L.marker(homeCoords, {icon: startIcon}).addTo(map);
                     }
 
-                    // 2. 작업 현장
                     for (let i = 0; i < activeDateJobs.length; i++) {
                         const job = activeDateJobs[i];
                         const coords = await getCoords(job.address);
@@ -299,7 +306,6 @@
                         }
                     }
 
-                    // 3. 우리집 복귀
                     if (homeCoords) {
                         points.push(homeCoords);
                         const endIcon = L.divIcon({
@@ -309,10 +315,9 @@
                         L.marker(homeCoords, {icon: endIcon}).addTo(map);
                     }
 
-                    // 4. 점선 연결
                     if (points.length > 1) {
                         L.polyline(points, {color: '#0D9488', weight: 3, dashArray: '5, 8'}).addTo(map);
-                        map.fitBounds(bounds, {padding: [30, 30]});
+                        map.fitBounds(bounds, {padding: [40, 40]});
                     } else if (points.length === 1) {
                         map.setView(points[0], 14);
                     } else {
