@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="referrer" content="unsafe-url">
     <title>홈케어의 제왕 작업 일지</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
     <script type="importmap">
@@ -50,6 +50,7 @@
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
+        /* 지도 영역 스타일 추가 */
         #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; z-index: 10; }
         .leaflet-control-attribution { display: none; }
     </style>
@@ -60,6 +61,7 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
+        // Navigation, Home 아이콘 추가됨
         import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, UserPlus, BarChart3, Navigation, Home } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getDatabase, ref, push, onValue, remove, set, update } from 'firebase/database';
@@ -81,12 +83,10 @@
         const geminiPartA = "AIzaSyBAhDBv";
         const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
         const GEMINI_API_KEY = geminiPartA + geminiPartB;
+        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
         
-        // 사장님의 진짜 카카오 REST API 키 적용 완료
-        const KAKAO_API_KEY = "f0b61cdb7e7ff5d10ca0ac951e2cefbf"; 
-        
-        // 정확한 좌표 검색을 위해 남양주시 다산동 풀네임 적용
-        const MY_HOME_ADDRESS = "경기도 남양주시 다산중앙로82번길 105";
+        // 우리집 주소 세팅 (지도 검색용)
+        const MY_HOME_ADDRESS = "다산중앙로82번길 105";
 
         const NaverIcon = () => (
             <div className="w-6 h-6 rounded-md bg-[#03C75A] flex items-center justify-center overflow-hidden shadow-sm">
@@ -156,7 +156,7 @@
             const [assignDateVal, setAssignDateVal] = useState(todayStr);
 
             const inputSectionRef = useRef(null);
-            const mapContainer = useRef(null); 
+            const mapContainer = useRef(null); // 지도 렌더링용 ref
 
             useEffect(() => {
                 const jobsRef = ref(database, 'homecare_jobs');
@@ -238,7 +238,7 @@
                 };
             }, [jobs, currentDateView]);
 
-            // 무인증 오픈소스 지도 렌더링 로직
+            // Leaflet + Nominatim 무인증 지도 렌더링 로직
             useEffect(() => {
                 if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
 
@@ -252,25 +252,20 @@
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-                let isMounted = true; 
+                let isMounted = true;
 
+                // Nominatim: 완전 무료, API키 없음, CORS 없음
                 const getCoords = async (address) => {
                     if (!address) return null;
                     try {
-                        let res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`, {
-                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
-                        });
-                        let data = await res.json();
-                        if (data.documents && data.documents.length > 0) {
-                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
-                        }
-
-                        res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(address)}`, {
-                            headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
-                        });
-                        data = await res.json();
-                        if (data.documents && data.documents.length > 0) {
-                            return [parseFloat(data.documents[0].y), parseFloat(data.documents[0].x)];
+                        const query = encodeURIComponent(address + ', 대한민국');
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+                            { headers: { 'Accept-Language': 'ko', 'User-Agent': 'HomecareKing/1.0' } }
+                        );
+                        const data = await res.json();
+                        if (data && data.length > 0) {
+                            return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
                         }
                     } catch(e) {
                         console.error("좌표 검색 실패:", e);
@@ -282,7 +277,6 @@
                     const points = [];
                     const bounds = L.latLngBounds();
 
-                    // 1. 우리집 출발
                     const homeCoords = await getCoords(MY_HOME_ADDRESS);
                     if (!isMounted) return;
 
@@ -290,15 +284,14 @@
                         points.push(homeCoords);
                         bounds.extend(homeCoords);
                         const startIcon = L.divIcon({
-                            html: `<div style="background:#1E293B; color:white; padding: 3px 8px; border-radius:12px; font-size:11px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); white-space:nowrap; margin-top:-15px; margin-left:-15px;">출발</div>`,
-                            className: ''
+                            html: `<div style="background:#1E293B; color:white; padding: 3px 8px; border-radius:12px; font-size:11px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); white-space:nowrap; transform:translate(-50%,-100%);">출발</div>`,
+                            className: '', iconAnchor: [0, 0]
                         });
                         L.marker(homeCoords, {icon: startIcon}).addTo(map);
                     }
 
                     let jobAdded = false;
 
-                    // 2. 작업 현장
                     for (let i = 0; i < activeDateJobs.length; i++) {
                         const job = activeDateJobs[i];
                         const coords = await getCoords(job.address);
@@ -309,26 +302,24 @@
                             bounds.extend(coords);
                             jobAdded = true;
                             const jobIcon = L.divIcon({
-                                html: `<div style="background:#0D9488; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-top:-12px; margin-left:-12px;">${i+1}</div>`,
-                                className: ''
+                                html: `<div style="background:#0D9488; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); transform:translate(-50%,-50%);">${i+1}</div>`,
+                                className: '', iconAnchor: [0, 0]
                             });
                             L.marker(coords, {icon: jobIcon}).addTo(map);
                         }
                     }
 
-                    // 3. 우리집 복귀
                     if (homeCoords && jobAdded) {
                         points.push(homeCoords);
                         const endIcon = L.divIcon({
-                            html: `<div style="background:#1E293B; color:white; width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); margin-top:-12px; margin-left:-12px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`,
-                            className: ''
+                            html: `<div style="background:#1E293B; color:white; width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2); transform:translate(-50%,-50%);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`,
+                            className: '', iconAnchor: [0, 0]
                         });
                         L.marker(homeCoords, {icon: endIcon}).addTo(map);
                     }
 
                     if (!isMounted) return;
 
-                    // 4. 점선 연결 및 화면 맞춤
                     if (points.length > 1) {
                         L.polyline(points, {color: '#0D9488', weight: 3, dashArray: '5, 8'}).addTo(map);
                         map.fitBounds(bounds, {padding: [40, 40]});
@@ -341,9 +332,7 @@
 
                 loadRoute();
 
-                return () => {
-                    isMounted = false;
-                };
+                return () => { isMounted = false; };
             }, [currentView, activeDateJobs]);
 
             const handleTaskChange = (index, field, value) => {
@@ -1054,6 +1043,7 @@
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
 
+                                {/* 동선 지도 섹션 (네이버맵) */}
                                 {activeDateJobs.length > 0 && (
                                     <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
                                         <div className="flex items-center gap-2 text-slate-800 font-bold text-sm ml-1">
