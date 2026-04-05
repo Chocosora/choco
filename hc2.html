@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="unsafe-url">
     <title>홈케어의 제왕 작업 일지</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -49,7 +50,6 @@
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* 지도 영역 스타일 추가 */
         #map { width: 100%; height: 300px; border-radius: 20px; border: 1px solid #E5E7EB; }
     </style>
 </head>
@@ -59,7 +59,6 @@
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
-        // Navigation, Home 아이콘 추가됨
         import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, UserPlus, BarChart3, Navigation, Home } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getDatabase, ref, push, onValue, remove, set, update } from 'firebase/database';
@@ -83,7 +82,6 @@
         const GEMINI_API_KEY = geminiPartA + geminiPartB;
         const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
         
-        // 우리집 주소 세팅 (지도 검색용)
         const MY_HOME_ADDRESS = "다산중앙로82번길 105";
 
         const NaverIcon = () => (
@@ -154,7 +152,7 @@
             const [assignDateVal, setAssignDateVal] = useState(todayStr);
 
             const inputSectionRef = useRef(null);
-            const mapContainer = useRef(null); // 지도 렌더링용 ref
+            const mapContainer = useRef(null); 
 
             useEffect(() => {
                 const jobsRef = ref(database, 'homecare_jobs');
@@ -236,7 +234,6 @@
                 };
             }, [jobs, currentDateView]);
 
-            // 네이버 동선 지도 렌더링 로직 (출발 -> 현장 -> 복귀)
             useEffect(() => {
                 if (currentView !== 'daily' || activeDateJobs.length === 0 || !mapContainer.current) return;
 
@@ -270,7 +267,6 @@
                     };
 
                     const loadRoute = async () => {
-                        // 1. 우리집 출발
                         const homeCoords = await getCoords(MY_HOME_ADDRESS);
                         if (homeCoords) {
                             points.push(homeCoords);
@@ -283,7 +279,6 @@
                             });
                         }
 
-                        // 2. 작업 현장 방문
                         for (let i = 0; i < activeDateJobs.length; i++) {
                             const job = activeDateJobs[i];
                             const coords = await getCoords(job.address);
@@ -300,7 +295,6 @@
                             }
                         }
 
-                        // 3. 우리집 복귀
                         if (homeCoords) {
                             points.push(homeCoords);
                             const endContent = `<div style="background:#1E293B; color:white; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>`;
@@ -311,7 +305,6 @@
                             });
                         }
 
-                        // 4. 선 연결
                         if (points.length > 1) {
                             new window.naver.maps.Polyline({
                                 map: map,
@@ -1042,7 +1035,6 @@
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
 
-                                {/* 동선 지도 섹션 (네이버맵) */}
                                 {activeDateJobs.length > 0 && (
                                     <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
                                         <div className="flex items-center gap-2 text-slate-800 font-bold text-sm ml-1">
