@@ -161,45 +161,41 @@
   .paper-report::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
   .paper-report::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 
+  /* 리포트 달력 선택 버튼 스타일 */
+  .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .month-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 0; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif; }
+  .month-btn:hover { background: var(--surface3); }
+  .month-btn.active { background: rgba(245,166,35,0.1); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  
+  .year-selector-wrap { display:flex; align-items:center; justify-content:center; gap:20px; background:var(--surface2); padding:10px; border-radius:8px; border:1px solid var(--border); }
+  .year-selector-wrap button { background:none; border:none; color:var(--text2); font-size:16px; cursor:pointer; padding:5px 10px; transition:color 0.2s; }
+  .year-selector-wrap button:hover { color:var(--accent); }
+
   /* =========================================
      📱 모바일 반응형 (Responsive UI) 최적화
      ========================================= */
   @media (max-width: 768px) {
-    /* 네비게이션 여유롭게 터치할 수 있게 */
     .nav-btn { padding: 14px 16px; font-size: 14px; }
-    
-    /* 모바일에서 폼을 1단으로 시원하게 배치 */
     .form-grid { grid-template-columns: 1fr; gap: 12px; }
     .form-group.full { grid-column: 1 / -1; }
-    
-    /* iOS 사파리 텍스트 입력창 클릭 시 화면 자동 확대 방지 (최소 16px 유지) */
     input, select, textarea { font-size: 16px; padding: 12px 14px; }
-    
-    /* 카드 여백 및 폰트 크기 미세 조정 */
     .kpi-grid { gap: 8px; }
     .kpi-card { padding: 14px; }
     .kpi-value { font-size: 18px; }
-    
     .drive-summary { gap: 6px; }
     .drive-stat { padding: 12px 6px; }
     .drive-stat-val { font-size: 16px; }
-    
-    /* 결제수단 아이콘 터치 영역 확장 */
     .icon-chip { width: 40px; height: 40px; font-size: 18px; }
     .color-chip { width: 32px; height: 32px; }
-    
-    /* 모달 창 하단 꽉 차게 변경 */
     .modal-box { padding: 20px 16px 30px; border-radius: 16px 16px 0 0; }
-    
-    /* 모바일 리포트 뷰 최적화 */
     .paper-report { padding: 20px 15px; border-radius: 8px; margin-top: 10px; }
     .paper-title { font-size: 18px; margin-bottom: 16px; }
-    .paper-table { min-width: 480px; font-size: 11px; } /* 최소 너비를 유지해 양식이 깨지지 않고 좌우 스크롤 되도록 유도 */
+    .paper-table { min-width: 480px; font-size: 11px; } 
     .paper-summary-row { font-size: 13px; }
     .paper-summary-total { font-size: 15px; }
-    
-    /* 토스트 알림 모바일에서 중앙 하단에 잘 보이게 */
     .toast { width: 90%; justify-content: center; bottom: 30px; transform: translateX(-50%) translateY(150px); }
+    .month-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .month-btn { padding: 8px 0; font-size: 12px; }
   }
 </style>
 </head>
@@ -331,14 +327,22 @@
       <div style="font-size:11px;color:var(--text3);margin-top:4px;">이 비율만큼 차량 경비 공제 가능</div>
     </div>
     <div class="form-card">
-      <div class="form-title">🚗 운행 기록</div>
+      <div class="form-title">🚗 스마트 운행 기록</div>
       <div class="form-grid">
         <div class="form-group"><label>날짜</label><input type="date" id="d-date"></div>
-        <div class="form-group"><label>유형</label><select id="d-type"><option value="사업">사업용</option><option value="개인">개인용</option></select></div>
-        <div class="form-group"><label>출발지</label><input type="text" id="d-from" placeholder="예: 사무실"></div>
-        <div class="form-group"><label>도착지</label><input type="text" id="d-to" placeholder="예: 강남 현장"></div>
         <div class="form-group"><label>주행거리 (km)</label><input type="number" id="d-km" placeholder="0"></div>
-        <div class="form-group"><label>목적</label><input type="text" id="d-purpose" placeholder="예: 현장 견적"></div>
+        <div class="form-group"><label>목적</label>
+          <select id="d-purpose" onchange="togglePurposeOther('d-purpose', 'd-purpose-other-wrap')">
+            <option value="출장">출장 (사업)</option>
+            <option value="견적">견적 (사업)</option>
+            <option value="개인이용">개인이용 (개인)</option>
+            <option value="기타">기타 (직접입력)</option>
+          </select>
+        </div>
+        <div class="form-group" id="d-purpose-other-wrap" style="display:none;">
+          <label>기타 목적 입력</label>
+          <input type="text" id="d-purpose-other" placeholder="예: 자재 구매, 사업소 방문 등">
+        </div>
       </div>
       <button class="btn btn-primary btn-full" onclick="addDrive()">➕ 운행 저장</button>
     </div>
@@ -352,11 +356,32 @@
     <div class="form-card">
       <div class="form-title">📋 월간 리포트 생성</div>
       <div class="form-grid">
-        <div class="form-group">
-          <label>조회 월</label>
-          <input type="month" id="report-month">
+        <div class="form-group full">
+          <label>조회 연월 선택</label>
+          <input type="hidden" id="report-month">
+          
+          <div class="year-selector-wrap">
+            <button type="button" onclick="changeReportYear(-1)">◀</button>
+            <span id="reportYearLabel" style="font-size:16px; font-weight:700; color:var(--text)">2026년</span>
+            <button type="button" onclick="changeReportYear(1)">▶</button>
+          </div>
+          
+          <div class="month-grid" id="reportMonthGrid">
+            <button type="button" class="month-btn" data-m="01" onclick="selectReportMonth('01')">1월</button>
+            <button type="button" class="month-btn" data-m="02" onclick="selectReportMonth('02')">2월</button>
+            <button type="button" class="month-btn" data-m="03" onclick="selectReportMonth('03')">3월</button>
+            <button type="button" class="month-btn" data-m="04" onclick="selectReportMonth('04')">4월</button>
+            <button type="button" class="month-btn" data-m="05" onclick="selectReportMonth('05')">5월</button>
+            <button type="button" class="month-btn" data-m="06" onclick="selectReportMonth('06')">6월</button>
+            <button type="button" class="month-btn" data-m="07" onclick="selectReportMonth('07')">7월</button>
+            <button type="button" class="month-btn" data-m="08" onclick="selectReportMonth('08')">8월</button>
+            <button type="button" class="month-btn" data-m="09" onclick="selectReportMonth('09')">9월</button>
+            <button type="button" class="month-btn" data-m="10" onclick="selectReportMonth('10')">10월</button>
+            <button type="button" class="month-btn" data-m="11" onclick="selectReportMonth('11')">11월</button>
+            <button type="button" class="month-btn" data-m="12" onclick="selectReportMonth('12')">12월</button>
+          </div>
         </div>
-        <div class="form-group">
+        <div class="form-group full">
           <label>리포트 종류</label>
           <select id="report-type">
             <option value="all">홈케어의 제왕 월간 종합 리포트</option>
@@ -494,11 +519,19 @@
     <input type="hidden" id="edit-d-key">
     <div class="form-grid">
       <div class="form-group"><label>날짜</label><input type="date" id="edit-d-date"></div>
-      <div class="form-group"><label>유형</label><select id="edit-d-type"><option value="사업">사업용</option><option value="개인">개인용</option></select></div>
-      <div class="form-group"><label>출발지</label><input type="text" id="edit-d-from"></div>
-      <div class="form-group"><label>도착지</label><input type="text" id="edit-d-to"></div>
       <div class="form-group"><label>주행거리 (km)</label><input type="number" id="edit-d-km"></div>
-      <div class="form-group"><label>목적</label><input type="text" id="edit-d-purpose"></div>
+      <div class="form-group"><label>목적</label>
+        <select id="edit-d-purpose" onchange="togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap')">
+          <option value="출장">출장 (사업)</option>
+          <option value="견적">견적 (사업)</option>
+          <option value="개인이용">개인이용 (개인)</option>
+          <option value="기타">기타 (직접입력)</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-d-purpose-other-wrap" style="display:none;">
+        <label>기타 목적 입력</label>
+        <input type="text" id="edit-d-purpose-other">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-drive')">취소</button>
@@ -575,7 +608,31 @@
 
   const today = new Date().toISOString().split('T')[0];
   ['r-date','e-date','d-date', 'c-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
-  document.getElementById('report-month').value=today.slice(0,7);
+  
+  // 리포트 조회 연도 및 월 로직
+  let currentReportYear = parseInt(today.substring(0, 4));
+  
+  window.changeReportYear = function(d) {
+    currentReportYear += d;
+    document.getElementById('reportYearLabel').textContent = currentReportYear + '년';
+    const activeBtn = document.querySelector('#reportMonthGrid .month-btn.active');
+    if(activeBtn) {
+      selectReportMonth(activeBtn.dataset.m);
+    }
+  };
+
+  window.selectReportMonth = function(mVal) {
+    const fullMonth = `${currentReportYear}-${mVal}`;
+    document.getElementById('report-month').value = fullMonth;
+    document.querySelectorAll('#reportMonthGrid .month-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.m === mVal);
+    });
+  };
+  
+  // 초기 세팅
+  document.getElementById('reportYearLabel').textContent = currentReportYear + '년';
+  selectReportMonth(today.substring(5, 7));
+
   document.getElementById('headerDate').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
   updateMonthLabel();
 
@@ -702,26 +759,57 @@
     showToast('경비가 수정되었습니다','success');
   };
 
+  // 운행일지 기타 토글
+  window.togglePurposeOther = function(selId, wrapId) {
+    const sel = document.getElementById(selId);
+    const wrap = document.getElementById(wrapId);
+    if(sel.value === '기타') {
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      document.getElementById(wrapId.replace('-wrap', '')).value = ''; 
+    }
+  };
+
   window.openEditDrive=function(key){
     const v=window._drives[key]; if(!v)return;
     document.getElementById('edit-d-key').value=key;
     document.getElementById('edit-d-date').value=v.date||'';
-    document.getElementById('edit-d-type').value=v.type||'사업';
-    document.getElementById('edit-d-from').value=v.from||'';
-    document.getElementById('edit-d-to').value=v.to||'';
     document.getElementById('edit-d-km').value=v.km||'';
-    document.getElementById('edit-d-purpose').value=v.purpose||'';
+    
+    // 이전 데이터 호환 처리
+    let rp = v.rawPurpose;
+    if (!rp) {
+      if (v.purpose === '출장' || v.purpose === '견적' || v.purpose === '개인이용') rp = v.purpose;
+      else rp = '기타';
+    }
+    
+    document.getElementById('edit-d-purpose').value=rp;
+    togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
+    
+    if(rp === '기타') {
+      document.getElementById('edit-d-purpose-other').value = v.purpose || '';
+    }
+    
     openModal('modal-drive');
   };
   window.saveDrive=function(){
     const key=document.getElementById('edit-d-key').value;
+    const rawPurpose = document.getElementById('edit-d-purpose').value;
+    let type = (rawPurpose === '개인이용') ? '개인' : '사업';
+    let purpose = rawPurpose;
+    
+    if (rawPurpose === '기타') {
+      purpose = document.getElementById('edit-d-purpose-other').value.trim();
+      if (!purpose) { showToast('기타 목적 내용을 입력해주세요', 'error'); return; }
+    }
+
     const data={
       date:document.getElementById('edit-d-date').value,
-      type:document.getElementById('edit-d-type').value,
-      from:document.getElementById('edit-d-from').value.trim(),
-      to:document.getElementById('edit-d-to').value.trim(),
-      km:Number(document.getElementById('edit-d-km').value),
-      purpose:document.getElementById('edit-d-purpose').value.trim(),
+      type: type,
+      rawPurpose: rawPurpose,
+      purpose: purpose,
+      km:Number(document.getElementById('edit-d-km').value)
     };
     if(!data.date||!data.km){showToast('날짜와 주행거리를 확인해주세요','error');return;}
     window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
@@ -897,12 +985,13 @@
     document.getElementById('d-ratio-pct').textContent=ratio+'%';
     document.getElementById('d-ratio-bar').style.width=ratio+'%';
     if(!entries.length){el.innerHTML='<div class="empty-state">운행 기록이 없어요</div>';return;}
+    
     el.innerHTML=entries.map(([k,v])=>`
       <div class="recent-item">
         <div class="ri-dot" style="background:${v.type==='사업'?'var(--blue)':'var(--text3)'}"></div>
         <div class="ri-info">
-          <div class="ri-name">${v.from||'-'} → ${v.to||'-'} <span style="font-size:10px;color:var(--text2)">${v.purpose||''}</span></div>
-          <div class="ri-meta">${v.date} · ${v.type} · ${v.km}km</div>
+          <div class="ri-name">${v.purpose||'-'}</div>
+          <div class="ri-meta">${v.date} · ${v.type}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <div class="ri-amount" style="color:var(--blue)">${v.km}km</div>
@@ -943,10 +1032,30 @@
     showToast('경비가 저장되었습니다','success');
   };
   window.addDrive=function(){
-    const data={date:document.getElementById('d-date').value,type:document.getElementById('d-type').value,from:document.getElementById('d-from').value.trim(),to:document.getElementById('d-to').value.trim(),km:Number(document.getElementById('d-km').value),purpose:document.getElementById('d-purpose').value.trim(),createdAt:Date.now()};
+    const rawPurpose = document.getElementById('d-purpose').value;
+    let type = (rawPurpose === '개인이용') ? '개인' : '사업';
+    let purpose = rawPurpose;
+    
+    if (rawPurpose === '기타') {
+      purpose = document.getElementById('d-purpose-other').value.trim();
+      if (!purpose) { showToast('기타 목적 내용을 입력해주세요', 'error'); return; }
+    }
+    
+    const data={
+      date:document.getElementById('d-date').value,
+      type: type,
+      rawPurpose: rawPurpose,
+      purpose: purpose,
+      km:Number(document.getElementById('d-km').value),
+      createdAt:Date.now()
+    };
     if(!data.date||!data.km){showToast('날짜와 주행거리를 입력해주세요','error');return;}
     window.fbPush(window.fbRef(window.fbDB,'drives'),data);
-    ['d-from','d-to','d-km','d-purpose'].forEach(id=>document.getElementById(id).value='');
+    
+    document.getElementById('d-km').value='';
+    document.getElementById('d-purpose').value='출장';
+    togglePurposeOther('d-purpose', 'd-purpose-other-wrap');
+    
     showToast('운행이 저장되었습니다','success');
   };
   window.deleteItem=function(path,key){
@@ -976,7 +1085,7 @@
     let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
     let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
     let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
-    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.from} -> ${v.to}</td><td>${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
 
     let html = '';
 
@@ -1013,7 +1122,7 @@
 
           <div class="paper-section-title">4. 차량 운행 내역 요약</div>
           <table class="paper-table" style="margin-bottom:5px;">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:35%">경로</th><th style="width:20%">목적</th><th style="width:15%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
           <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
@@ -1086,7 +1195,7 @@
 
           <div class="paper-section-title">차량 운행 상세 내역</div>
           <table class="paper-table">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:35%">경로</th><th style="width:20%">목적</th><th style="width:15%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
         </div>`;
