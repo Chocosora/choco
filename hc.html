@@ -6,6 +6,26 @@
     <title>홈케어의 제왕 작업 일지</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'sans-serif'],
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    }
+                }
+            }
+        }
+    </script>
     
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
@@ -25,16 +45,1504 @@
 
     <style>
         body { 
-            font-family: 'Pretendard', sans-serif;
-            background-color: #F3F4F6;
             -webkit-tap-highlight-color: transparent;
         }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        .transition-custom { transition: all 0.2s ease-in-out; }
-        
-        .dashed-line {
-            background-image: linear-gradient(to right, #E5E7EB 50%, rgba(255,255,255,0) 0%);
-            background-position: bottom;
+    </style>
+</head>
+<body className="bg-gray-100 font-sans text-slate-800 antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { MapPin, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Edit2, X, SearchCheck, AlignLeft, Clock, ChevronLeft, CalendarDays, Plus, Phone, MessageSquare, Copy, FileText, UserPlus, BarChart3, Settings, Download } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getDatabase, ref, push, onValue, remove, set, update, get } from 'firebase/database';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+            authDomain: "chocosora-ad4df.firebaseapp.com",
+            databaseURL: "https://chocosora-ad4df-default-rtdb.firebaseio.com",
+            projectId: "chocosora-ad4df",
+            storageBucket: "chocosora-ad4df.firebasestorage.app",
+            messagingSenderId: "798065461606",
+            appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
+            measurementId: "G-4FYC7HVNNV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const geminiPartA = "AIzaSyBAhDBv";
+        const geminiPartB = "Qror20VfT4vjygpKMh-lUejZhnM";
+        const GEMINI_API_KEY = geminiPartA + geminiPartB;
+        const KAKAO_API_KEY = "faf0b7f3e2f5b11fa2f1bf1d492e3b2b";
+
+        const NaverIcon = () => (
+            <div className="w-6 h-6 rounded-md bg-[#03C75A] flex items-center justify-center overflow-hidden shadow-sm">
+                <span className="text-white font-extrabold text-lg leading-none pt-0.5">N</span>
+            </div>
+        );
+
+        const TMapIcon = () => (
+            <div className="w-6 h-6 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6" stroke="url(#tmap_grad_h)" strokeWidth="5" strokeLinecap="round"/>
+                    <path d="M12 4V20" stroke="url(#tmap_grad_v)" strokeWidth="5" strokeLinecap="round"/>
+                    <defs>
+                        <linearGradient id="tmap_grad_h" x1="4" y1="4" x2="20" y2="4" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                        <linearGradient id="tmap_grad_v" x1="12" y1="4" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FF0050"/>
+                            <stop offset="1" stopColor="#0075FF"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        );
+
+        const KakaoIcon = () => (
+            <div className="w-6 h-6 rounded-full bg-[#FEE500] flex items-center justify-center overflow-hidden border border-[#FEE500] shadow-sm">
+                <MapPin className="w-3.5 h-3.5 text-[#191919] fill-[#191919]" />
+            </div>
+        );
+
+        const getDayOfWeekFromStr = (dateStr) => ['일', '월', '화', '수', '목', '금', '토'][new Date(dateStr).getDay()];
+
+        const formatAmountStr = (amt) => {
+            const num = Number(amt) || 0;
+            if (num === 0) return '0원';
+            const calc = num / 10000;
+            return Number.isInteger(calc) ? calc + '만' : calc.toFixed(1) + '만';
+        };
+
+        const defaultTemplates = [
+            { title: '예약 확정', body: '안녕하세요, 하수구의 제왕입니다.\n방문을 위해 예약 확정 안내 문자 드립니다.\n\n일시: {월}/{일}({요일}) {시간} 사이\n원활한 방문을 위해 고객님 댁의 정확한 상세 주소(동, 호수 포함)를 이 문자로 회신해 주시기 바랍니다.\n\n신속한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n{요일}요일에 뵙겠습니다. 감사합니다.' },
+            { title: '방문 전날', body: '안녕하세요, 하수구의 제왕입니다.\n예약 확인 차 안내 문자 드립니다.\n문자를 확인하셨다면 짧게라도 회신 부탁드립니다.\n\n일시: {월}/{일}({요일}) {시간} 사이\n주소: {주소}\n남겨주신 주소가 정확한지 다시 한번 확인 부탁드립니다.\n\n원활한 작업을 위해 아래 두 가지를 부탁드립니다.\n✔ 싱크대 하부 공간을 미리 정리해 주시면 감사하겠습니다.\n✔ 문제가 있는 현장 사진을 문자로 한 장 전송 부탁드립니다.\n(이미 보내주셨다면 생략하셔도 괜찮습니다.)\n\n또한 단지 내 차량 등록이 필요하신 경우, 아래 차량 번호 등록을 요청드립니다.\n차량 번호: 63가 7072\n\n믿고 맡겨주신 만큼 꼼꼼하고 책임감 있게 작업해 드리겠습니다.\n{요일}요일에 뵙겠습니다. 감사합니다.' },
+            { title: '부재중 / 상담 안내', body: '안녕하세요, 고객님.\n하수구의 제왕 박시언 팀장입니다.\n\n방금 고객님께 연락드렸으나 통화가 어려워\n문자로 먼저 안내드립니다.\n\n편하신 시간에 회신 주시거나\n부재중 전화 확인 후 연락 주시면 감사하겠습니다.\n\n확인되는 대로 신속히 안내드리겠습니다.\n감사합니다.' },
+            { title: '작업 완료 안내 (결제)', body: '안녕하세요, 홈케어의 제왕 박시언 팀장입니다.\n오늘 진행해 드린 작업 내용 확인 감사드립니다.\n\n[작업 내역]\n{작업내역}\n\n■ 총 결제 금액: {총금액}원\n\n안내해 드린 비용은 아래 계좌로 입금해 주시기 바랍니다.\n\n계좌번호: 카카오뱅크 3333-37-0796904\n예금주: 박시언(홈케어의 제왕)\n\n믿고 맡겨주셔서 감사합니다.' },
+            { title: '리뷰 작성 요청', body: '고객님, 오늘 막힌 하수구는 시원하게 잘 해결해 드렸습니다!\n믿고 맡겨주셔서 감사합니다.\n\n작업 결과에 만족하셨다면, 앞서 약속해주신 구글 리뷰 작성을 조심스럽게 부탁드리고자 합니다.\n아래 내용을 참고해 작성해 주시면 저희가 지역 내에서 더 신뢰받는 업체로 성장하는 데 큰 도움이 됩니다.\n\n[리뷰 작성 팁!]\n✔ 검색 키워드 포함\n\'{지역} 하수구 업체 하수구의제왕\' 문구를 포함해 주시면 정말 감사하겠습니다.\n(예: 송파 하수구 업체 하수구의제왕 덕분에 해결했어요!)\n\n✔ 느낀 점 공유\n저희의 친절함이나 전문적인 작업 과정에 대해 짧게 언급해 주시면 저희 팀원들에게 큰 격려가 됩니다.\n\n[리뷰 작성 링크]\nhttps://g.page/r/Cbpx5qL6PxIsEBM/review\n\n혹시 이용 중 불편하신 점이 있었다면 언제든 말씀해 주세요.\n늘 전문성을 바탕으로 책임감 있게 사후 관리까지 책임지는 하수구의제왕이 되겠습니다.\n감사합니다!' }
+        ];
+
+        const App = () => {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            const [currentView, setCurrentView] = useState('calendar');
+            const [activeDate, setActiveDate] = useState(todayStr);
+
+            const [rawInput, setRawInput] = useState('');
+            const [parsedAddress, setParsedAddress] = useState('');
+            const [parsedDetails, setParsedDetails] = useState('');
+            const [phoneNumber, setPhoneNumber] = useState(''); 
+            
+            const [tasks, setTasks] = useState([{ description: '', amount: '', materialCost: '' }]);
+            const [jobDate, setJobDate] = useState(todayStr); 
+            const [visitTime, setVisitTime] = useState('09:00');
+            
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [jobs, setJobs] = useState({});
+            
+            const [templates, setTemplates] = useState(defaultTemplates);
+            const [isEditingTemplates, setIsEditingTemplates] = useState(false);
+            const [editingTemplatesData, setEditingTemplatesData] = useState([]);
+
+            const [currentDateView, setCurrentDateView] = useState(new Date(today));
+            
+            const [editingId, setEditingId] = useState(null);
+            const [smsModal, setSmsModal] = useState(null); 
+            const [timeModalOpen, setTimeModalOpen] = useState(false);
+
+            const [assignDateModal, setAssignDateModal] = useState(null);
+            const [assignDateVal, setAssignDateVal] = useState(todayStr);
+
+            const inputSectionRef = useRef(null);
+
+            useEffect(() => {
+                const jobsRef = ref(database, 'homecare_jobs');
+                const unsubJobs = onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
+
+                const templatesRef = ref(database, 'homecare_settings/sms_templates');
+                const unsubTemplates = onValue(templatesRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && Array.isArray(data)) {
+                        setTemplates(data);
+                    } else {
+                        setTemplates(defaultTemplates);
+                    }
+                });
+
+                return () => {
+                    unsubJobs();
+                    unsubTemplates();
+                };
+            }, []);
+
+            const jobsByDate = useMemo(() => {
+                const map = {};
+                Object.values(jobs).forEach(job => {
+                    if(job.dates) {
+                        job.dates.forEach(d => {
+                            if(!map[d]) map[d] = [];
+                            map[d].push(job);
+                        });
+                    }
+                });
+                return map;
+            }, [jobs]);
+
+            const activeDateJobs = useMemo(() => {
+                const jobList = Object.entries(jobs)
+                    .map(([key, job]) => ({ key, ...job }))
+                    .filter(job => job.dates && job.dates.includes(activeDate));
+
+                return jobList.sort((a, b) => {
+                    const timeA = a.visitTime || '23:59';
+                    const timeB = b.visitTime || '23:59';
+                    return timeA.localeCompare(timeB);
+                });
+            }, [jobs, activeDate]);
+
+            const consultationJobs = useMemo(() => {
+                return Object.entries(jobs)
+                    .map(([key, job]) => ({ key, ...job }))
+                    .filter(job => job.dates && job.dates.includes('waiting'))
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            }, [jobs]);
+
+            const monthlyStats = useMemo(() => {
+                const year = currentDateView.getFullYear();
+                const month = String(currentDateView.getMonth() + 1).padStart(2, '0');
+                const prefix = `${year}-${month}-`;
+
+                let totalRev = 0;
+                let totalMat = 0;
+                let totalNet = 0;
+                let completedCount = 0;
+                const monthJobs = [];
+
+                Object.entries(jobs).forEach(([key, job]) => {
+                    if (job.status === 'completed' && job.dates) {
+                        const hasCurrentMonthDate = job.dates.some(d => d.startsWith(prefix));
+                        if (hasCurrentMonthDate) {
+                            totalRev += (job.totalAmount || 0);
+                            totalMat += (job.totalMaterialCost || 0);
+                            const net = job.netIncome !== undefined ? job.netIncome : ((job.totalAmount || 0) - (job.totalMaterialCost || 0));
+                            totalNet += net;
+                            completedCount++;
+                            monthJobs.push({ key, ...job });
+                        }
+                    }
+                });
+
+                const fee = totalNet * 0.3; 
+                const finalProfit = totalNet - fee;
+
+                return {
+                    totalRev,
+                    totalMat,
+                    totalNet,
+                    fee,
+                    finalProfit,
+                    completedCount,
+                    monthJobs: monthJobs.sort((a,b) => {
+                        const dateA = a.dates.find(d => d.startsWith(prefix)) || a.dates[0];
+                        const dateB = b.dates.find(d => d.startsWith(prefix)) || b.dates[0];
+                        return dateA.localeCompare(dateB);
+                    })
+                };
+            }, [jobs, currentDateView]);
+
+            const handleTaskChange = (index, field, value) => {
+                const newTasks = [...tasks];
+                newTasks[index][field] = value;
+                setTasks(newTasks);
+            };
+
+            const addTask = () => setTasks([...tasks, { description: '', amount: '', materialCost: '' }]);
+            const removeTask = (index) => setTasks(tasks.filter((_, i) => i !== index));
+
+            const displayWorkCost = tasks.reduce((sum, task) => sum + (Number(task.amount) || 0), 0) * 10000;
+            const displayMaterialCost = tasks.reduce((sum, task) => sum + (Number(task.materialCost) || 0), 0) * 10000;
+            const netIncome = displayWorkCost - displayMaterialCost;
+
+            const handleHybridSearch = async () => {
+                if (!rawInput.trim()) return;
+                setIsProcessing(true);
+
+                try {
+                    const prompt = `
+                        너는 전문적인 주소 텍스트 분석기야. 입력된 문장에서 "지도 검색용 핵심 키워드"와 "상세 정보"를 정확히 분리해줘.
+                        
+                        [규칙]
+                        1. search_query: 지도 API가 인식할 수 있는 핵심 주소 (지번, 아파트명, 도로명). 동/호수나 "층", "입니다" 같은 불필요한 말은 절대 넣지 마.
+                        2. details: 나머지 상세 정보 (건물명, 동, 호수, 층수 등).
+                        3. 절대로 주소를 창조하거나 추측해서 도로명 주소를 만들지 마. 있는 그대로 분리만 해.
+
+                        [예시]
+                        입력: "순천시 조례동 1598-1 나라타워 8층입니다"
+                        출력: { "search_query": "순천시 조례동 1598-1", "details": "나라타워 8층" }
+                        
+                        입력: "서울 서초구 방배삼호 1차 2동 716호"
+                        출력: { "search_query": "서울 서초구 방배삼호 1차", "details": "2동 716호" }
+
+                        입력: "${rawInput}"
+                        출력 포맷: JSON
+                    `;
+
+                    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const geminiData = await geminiResponse.json();
+                    if (geminiData.error) throw new Error("AI 분석 오류: " + geminiData.error.message);
+
+                    let aiText = geminiData.candidates[0].content.parts[0].text;
+                    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+                    const parsedAI = JSON.parse(jsonMatch ? jsonMatch[0] : aiText);
+
+                    const searchQuery = parsedAI.search_query;
+                    const detailsFromAI = parsedAI.details;
+
+                    const kakaoResponse = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(searchQuery)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `KakaoAK ${KAKAO_API_KEY}`
+                        }
+                    });
+
+                    const kakaoData = await kakaoResponse.json();
+
+                    if (kakaoData.documents && kakaoData.documents.length > 0) {
+                        const bestMatch = kakaoData.documents[0];
+                        const officialAddress = bestMatch.road_address_name || bestMatch.address_name;
+                        const placeName = bestMatch.place_name;
+
+                        setParsedAddress(officialAddress);
+
+                        let finalDetails = detailsFromAI;
+
+                        if (placeName && !finalDetails.includes(placeName) && !searchQuery.includes(placeName)) {
+                            finalDetails = `${placeName} ${finalDetails}`;
+                        }
+                        if (!finalDetails.trim()) {
+                             finalDetails = rawInput.replace(searchQuery, "").trim();
+                        }
+
+                        setParsedDetails(finalDetails.trim());
+                    } else {
+                        setParsedAddress(searchQuery);
+                        setParsedDetails(detailsFromAI);
+                    }
+
+                } catch (error) {
+                    console.error(error);
+                    alert(`처리 중 문제가 발생했습니다: ${error.message}`);
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const days = new Date(year, month + 1, 0).getDate();
+                return Array.from({ length: days }, (_, i) => i + 1);
+            };
+
+            const changeMonth = (offset) => setCurrentDateView(new Date(currentDateView.setMonth(currentDateView.getMonth() + offset)));
+
+            const openDailyView = (dateStr) => {
+                setActiveDate(dateStr);
+                setCurrentView('daily');
+                resetForm(dateStr);
+            };
+
+            const handleStatusChange = (jobId, newStatus) => {
+                update(ref(database, `homecare_jobs/${jobId}`), { status: newStatus });
+            };
+
+            const handleCancelReasonChange = (jobId, reason) => {
+                update(ref(database, `homecare_jobs/${jobId}`), { cancelReason: reason });
+            };
+
+            const handleSaveJob = () => {
+                if (!parsedAddress) return alert("주소를 입력해주세요.");
+                
+                const filteredTasks = tasks.filter(t => (t.description || '').trim() !== '' || t.amount !== '' || t.materialCost !== '');
+                
+                const targetDates = currentView === 'consultations' 
+                    ? (editingId ? (jobs[editingId].dates || ['waiting']) : ['waiting'])
+                    : [jobDate];
+                
+                const jobData = {
+                    address: parsedAddress,
+                    details: parsedDetails,
+                    phoneNumber: phoneNumber,
+                    tasks: filteredTasks,
+                    totalAmount: displayWorkCost, 
+                    totalMaterialCost: displayMaterialCost,
+                    netIncome: netIncome,
+                    visitTime: visitTime,
+                    dates: targetDates,
+                    status: editingId ? (jobs[editingId].status || 'pending') : 'pending',
+                    cancelReason: editingId ? (jobs[editingId].cancelReason || '') : '',
+                    createdAt: editingId ? jobs[editingId].createdAt : Date.now()
+                };
+
+                if (editingId) {
+                    set(ref(database, `homecare_jobs/${editingId}`), jobData)
+                        .then(() => {
+                            alert("수정이 완료되었습니다!");
+                            resetForm();
+                        })
+                        .catch((error) => alert("수정 실패: " + error.message));
+                } else {
+                    push(ref(database, 'homecare_jobs'), jobData)
+                        .then(() => {
+                            alert("저장 완료!");
+                            resetForm();
+                        })
+                        .catch((error) => alert("저장 실패: " + error.message));
+                }
+            };
+
+            const handleAssignDate = () => {
+                if (!assignDateVal) return alert('날짜를 선택해주세요.');
+                update(ref(database, `homecare_jobs/${assignDateModal.key}`), {
+                    dates: [assignDateVal]
+                }).then(() => {
+                    alert('일정이 캘린더에 배정되었습니다!');
+                    setAssignDateModal(null);
+                    setActiveDate(assignDateVal);
+                    setCurrentView('daily');
+                });
+            };
+
+            const handleEditStart = (job) => {
+                setEditingId(job.key);
+                setRawInput('');
+                setParsedAddress(job.address);
+                setParsedDetails(job.details || '');
+                setPhoneNumber(job.phoneNumber || ''); 
+                
+                if (job.tasks && job.tasks.length > 0) {
+                    const convertedTasks = job.tasks.map(t => ({
+                        description: t.description || '',
+                        amount: t.amount || '',
+                        materialCost: t.materialCost || ''
+                    }));
+                    setTasks(convertedTasks);
+                } else {
+                    setTasks([{ description: job.workDescription || '', amount: '', materialCost: '' }]);
+                }
+                
+                setVisitTime(job.visitTime || '09:00');
+                
+                const dateToSet = (job.dates && job.dates[0] !== 'waiting') ? job.dates[0] : activeDate;
+                setJobDate(dateToSet);
+
+                if (inputSectionRef.current) {
+                    inputSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const resetForm = (dateOverride = null) => {
+                setRawInput('');
+                setParsedAddress('');
+                setParsedDetails('');
+                setPhoneNumber(''); 
+                setTasks([{ description: '', amount: '', materialCost: '' }]);
+                setVisitTime('09:00');
+                setEditingId(null);
+                setJobDate(typeof dateOverride === 'string' ? dateOverride : activeDate);
+            };
+
+            const handleDeleteJob = (id) => {
+                if (confirm("삭제하시겠습니까?")) {
+                    remove(ref(database, `homecare_jobs/${id}`));
+                    if (editingId === id) resetForm();
+                }
+            };
+
+            const openMap = (type, address) => {
+                const encodedAddr = encodeURIComponent(address);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                if (type === 'naver') {
+                    if (isMobile) {
+                        window.location.href = `nmap://search?query=${encodedAddr}&appname=com.homecare.addressbook`;
+                    } else {
+                        window.open(`https://map.naver.com/v5/search/${encodedAddr}`, '_blank');
+                    }
+                } 
+                else if (type === 'tmap') {
+                    if (isMobile) {
+                        window.location.href = `tmap://search?name=${encodedAddr}`;
+                    } else {
+                        alert("티맵은 모바일에서만 가능합니다.");
+                    }
+                } 
+                else if (type === 'kakao') {
+                    const url = `https://map.kakao.com/link/search/${encodedAddr}`;
+                    window.open(url, '_blank') || (window.location.href = url);
+                }
+            };
+
+            const sendSMS = (phone, text) => {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const separator = isIOS ? '&' : '?';
+                window.location.href = `sms:${phone}${separator}body=${encodeURIComponent(text)}`;
+                setSmsModal(null);
+            };
+
+            const handleSaveContact = (job) => {
+                if (!job.phoneNumber) return alert("전화번호가 없습니다.");
+                
+                let contactName = "홈케어 고객";
+                if (job.address) {
+                    const parts = job.address.split(' ');
+                    contactName = `${parts[0] || ''} ${parts[1] || ''} 고객`.trim();
+                }
+
+                const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${contactName}\nTEL;TYPE=CELL:${job.phoneNumber.replace(/-/g, '')}\nNOTE:${job.address} ${job.details || ''}\nEND:VCARD`;
+                const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.setAttribute('download', `${contactName}.vcf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const parseSmsTemplate = (templateBody, job) => {
+                const targetDateStr = (job.dates && job.dates[0] !== 'waiting') ? job.dates[0] : todayStr;
+                const dateObj = new Date(targetDateStr);
+                const month = String(dateObj.getMonth() + 1);
+                const date = String(dateObj.getDate());
+                const dayStr = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
+                
+                const startTime = job.visitTime || '09:00';
+                const [hour, min] = startTime.split(':').map(Number);
+                const endDateObj = new Date();
+                endDateObj.setHours(hour, min + 30);
+                const endHour = String(endDateObj.getHours()).padStart(2, '0');
+                const endMin = String(endDateObj.getMinutes()).padStart(2, '0');
+                const formattedTimeRange = `${startTime} ~ ${endHour}:${endMin}`;
+                
+                const fullAddress = `${job.address || ''} ${job.details || ''}`.trim();
+
+                let regionStr = '지역';
+                if (job.address) {
+                    const parts = job.address.split(' ');
+                    const gu = parts.find(p => p.endsWith('구'));
+                    const si = parts.find(p => p.endsWith('시'));
+                    if (gu) {
+                        regionStr = gu.slice(0, -1);
+                    } else if (si) {
+                        regionStr = si.slice(0, -1);
+                    }
+                }
+
+                const workNames = job.tasks && job.tasks.length > 0 
+                    ? job.tasks.map(t => {
+                        const cost = (Number(t.amount) || 0) * 10000;
+                        const costText = cost > 0 ? ` - ${cost.toLocaleString()}원` : '';
+                        return `- ${t.description || '내용 없음'}${costText}`;
+                    }).join('\n') 
+                    : '- 작업 내용 없음';
+                    
+                const totalAmt = (job.totalAmount || 0) + (job.totalMaterialCost || 0);
+
+                return templateBody
+                    .replace(/{월}/g, month)
+                    .replace(/{일}/g, date)
+                    .replace(/{요일}/g, dayStr)
+                    .replace(/{시간}/g, formattedTimeRange)
+                    .replace(/{주소}/g, fullAddress)
+                    .replace(/{지역}/g, regionStr)
+                    .replace(/{작업내역}/g, workNames)
+                    .replace(/{총금액}/g, totalAmt.toLocaleString());
+            };
+
+            const handleOpenTemplateEditor = () => {
+                setEditingTemplatesData(JSON.parse(JSON.stringify(templates)));
+                setIsEditingTemplates(true);
+            };
+
+            const handleSaveTemplates = () => {
+                set(ref(database, 'homecare_settings/sms_templates'), editingTemplatesData)
+                    .then(() => {
+                        alert("문자 템플릿이 성공적으로 저장되었습니다.");
+                        setIsEditingTemplates(false);
+                    })
+                    .catch((error) => alert("저장 실패: " + error.message));
+            };
+
+            const handleBackup = async () => {
+                try {
+                    const snapshot = await get(ref(database));
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const jsonString = JSON.stringify(data, null, 2);
+                        const blob = new Blob([jsonString], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+
+                        const today = new Date();
+                        const dateStr = `${today.getFullYear()}${(today.getMonth()+1).toString().padStart(2,'0')}${today.getDate().toString().padStart(2,'0')}`;
+                        link.download = `homecare_backup_${dateStr}.json`;
+
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        alert("데이터 백업이 완료되었습니다. 든든하게 보관해두세요!");
+                    } else {
+                        alert("백업할 데이터가 아직 없습니다.");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("백업 중 오류가 발생했습니다: " + error.message);
+                }
+            };
+
+            const generateReportText = () => {
+                const completedJobs = activeDateJobs.filter(j => j.status === 'completed');
+                if (completedJobs.length === 0) return "금일 완료된 작업이 없습니다.";
+
+                const dateStr = activeDate.replace(/-/g, '. ');
+                let report = `[일일 업무보고 - ${dateStr}]\n\n`;
+
+                let totalRev = 0;
+                let totalMat = 0;
+
+                completedJobs.forEach((job, idx) => {
+                    totalRev += (job.totalAmount || 0);
+                    totalMat += (job.totalMaterialCost || 0);
+                    
+                    const taskNames = job.tasks && job.tasks.length > 0 
+                                      ? job.tasks.map(t => t.description || '내용 없음').join(', ') 
+                                      : '내용 없음';
+                    const shortAddress = job.address.split(' ').slice(0, 3).join(' '); 
+
+                    report += `${idx + 1}. ${shortAddress} (${taskNames})\n`;
+                    report += ` - 작업비: ${(job.totalAmount || 0).toLocaleString()}원\n`;
+                    if ((job.totalMaterialCost || 0) > 0) {
+                        report += ` - 자재비: ${(job.totalMaterialCost || 0).toLocaleString()}원\n`;
+                    }
+                    report += `\n`;
+                });
+
+                const net = totalRev - totalMat;
+                const fee = net * 0.3;
+
+                report += `------------------------\n`;
+                report += `■ 일일 매출: ${totalRev.toLocaleString()}원\n`;
+                report += `■ 총 자재비: ${totalMat.toLocaleString()}원\n`;
+                report += `■ 수수료(30%): ${fee.toLocaleString()}원`;
+
+                return report;
+            };
+
+            const handleCopyReport = () => {
+                const text = generateReportText();
+                navigator.clipboard.writeText(text).then(() => {
+                    alert("업무보고 내용이 복사되었습니다.\n카카오톡이나 문자에 붙여넣기 하세요!");
+                }).catch(err => {
+                    alert("복사에 실패했습니다. 수동으로 복사해주세요.");
+                });
+            };
+
+            const renderInputForm = () => (
+                <section ref={inputSectionRef} className={`rounded-3xl p-5 shadow-sm border relative overflow-hidden transition-colors ${editingId ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-100'}`}>
+                    <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-50'}`}></div>
+                    
+                    <h2 className={`text-sm font-bold mb-3 flex items-center gap-2 ${editingId ? 'text-teal-700' : 'text-slate-500'}`}>
+                        {editingId ? (
+                            <>
+                                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-md text-xs">EDIT</span>
+                                작업 내용 수정
+                            </>
+                        ) : (
+                            <>
+                                <span className="bg-teal-100 text-teal-600 px-2 py-0.5 rounded-md text-xs">NEW</span>
+                                {currentView === 'consultations' ? '새 상담 고객 추가' : '새 현장 추가'}
+                            </>
+                        )}
+                    </h2>
+                    
+                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">1. 주소 및 연락처 입력</label>
+                    <textarea 
+                        className="w-full p-4 bg-white rounded-2xl text-slate-700 text-sm border border-slate-200 focus:ring-2 focus:ring-teal-500 transition-all resize-none h-20 mb-3 leading-relaxed placeholder:text-slate-400 outline-none"
+                        placeholder={editingId ? "수정할 때는 아래 칸에서 직접 고치셔도 됩니다." : "문자 내용을 여기에 붙여넣으세요."}
+                        value={rawInput}
+                        onChange={(e) => setRawInput(e.target.value)}
+                    />
+                    
+                    <button 
+                        onClick={handleHybridSearch}
+                        disabled={isProcessing || !rawInput}
+                        className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 ease-in-out shadow-lg shadow-slate-200 disabled:opacity-50 mb-5"
+                    >
+                        {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <SearchCheck className="w-4 h-4" />}
+                        {isProcessing ? "AI 분석 & 지도 검색 중..." : "AI 정밀 주소 변환"}
+                    </button>
+
+                    <div className="mb-5 space-y-2">
+                        <div className="relative">
+                            <MapPin className="w-4 h-4 absolute left-3 top-3.5 text-teal-500" />
+                            <input 
+                                type="text" 
+                                className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                value={parsedAddress}
+                                onChange={(e) => setParsedAddress(e.target.value)}
+                                placeholder="주소 (도로명으로 자동 변환됩니다)"
+                            />
+                        </div>
+                        <div className="relative">
+                            <CheckCircle2 className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                            <input 
+                                type="text" 
+                                className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm text-slate-600 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                value={parsedDetails}
+                                onChange={(e) => setParsedDetails(e.target.value)}
+                                placeholder="상세 내용"
+                            />
+                        </div>
+                        <div className="relative">
+                            <Phone className="w-4 h-4 absolute left-3 top-3.5 text-teal-500" />
+                            <input 
+                                type="tel" 
+                                className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                placeholder="고객 연락처 (예: 010-1234-5678)"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-slate-200 w-full mb-4"></div>
+
+                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">2. 현장 방문 일정 및 작업 내역 (금액)</label>
+                    <div className="mb-5 space-y-3">
+                        <div className="flex items-center gap-2 mb-4">
+                            {currentView !== 'consultations' && (
+                                <div className="flex-1 relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <CalendarDays className="w-4 h-4 text-teal-500" />
+                                    </div>
+                                    <input
+                                        type="date"
+                                        className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                        value={jobDate}
+                                        onChange={(e) => setJobDate(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            <div className={currentView !== 'consultations' ? "flex-1" : "w-1/2"}>
+                                <button
+                                    type="button"
+                                    onClick={() => setTimeModalOpen(true)}
+                                    className="w-full px-3 py-2.5 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 flex items-center justify-center gap-2 active:bg-slate-50 transition-colors"
+                                >
+                                    <Clock className="w-4 h-4 text-teal-500" />
+                                    {visitTime}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {tasks.map((task, index) => (
+                                <div key={index} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl relative">
+                                    <input 
+                                        type="text"
+                                        className="w-full px-3 py-2.5 bg-white rounded-lg text-sm text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                        placeholder="내용 (예: 수전 교체)"
+                                        value={task.description}
+                                        onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
+                                    />
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 relative">
+                                            <input 
+                                                type="number" step="0.1"
+                                                className="w-full px-3 py-2.5 pr-8 bg-white rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
+                                                placeholder="작업비 (예: 10.5)"
+                                                value={task.amount}
+                                                onChange={(e) => handleTaskChange(index, 'amount', e.target.value)}
+                                            />
+                                            <span className="absolute right-3 top-2.5 text-sm text-slate-400">만</span>
+                                        </div>
+                                        <div className="flex-1 relative">
+                                            <input 
+                                                type="number" step="0.1"
+                                                className="w-full px-3 py-2.5 pr-8 bg-white rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
+                                                placeholder="자재비 (예: 5)"
+                                                value={task.materialCost}
+                                                onChange={(e) => handleTaskChange(index, 'materialCost', e.target.value)}
+                                            />
+                                            <span className="absolute right-3 top-2.5 text-sm text-slate-400">만</span>
+                                        </div>
+                                    </div>
+                                    {tasks.length > 1 && (
+                                        <button onClick={() => removeTask(index)} className="absolute -top-2 -right-2 p-1 bg-white shadow-sm text-slate-400 hover:text-red-500 border border-slate-200 rounded-full">
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <button onClick={addTask} className="w-full py-2 border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:border-teal-300 hover:text-teal-600 transition-colors flex items-center justify-center gap-1">
+                            <Plus className="w-4 h-4" /> 내역 추가
+                        </button>
+                        
+                        <div className="bg-teal-50 p-4 rounded-xl space-y-2 border border-teal-100 mt-2 shadow-sm">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-600">총 작업비</span>
+                                <span className="text-sm font-extrabold text-slate-800">{displayWorkCost.toLocaleString()} 원</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-bold text-slate-600">총 자재비</span>
+                                <span className="text-sm font-extrabold text-red-500">- {displayMaterialCost.toLocaleString()} 원</span>
+                            </div>
+                            <div className="pt-2 border-t border-teal-200 flex justify-between items-center">
+                                <span className="text-base font-bold text-teal-800">예상 순수입</span>
+                                <span className="text-lg font-extrabold text-teal-700">{netIncome.toLocaleString()} 원</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                        <button 
+                            onClick={resetForm} 
+                            className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-1"
+                        >
+                            {editingId ? <><X className="w-4 h-4"/> 취소</> : '초기화'}
+                        </button>
+                        <button 
+                            onClick={handleSaveJob} 
+                            className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
+                        >
+                            <Save className="w-4 h-4" /> 
+                            {editingId ? '수정 완료' : (currentView === 'consultations' ? '상담 대기로 저장' : '선택한 일정으로 저장')}
+                        </button>
+                    </div>
+                </section>
+            );
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20 relative">
+                    <header className="bg-white px-5 py-4 sticky top-0 z-30 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            {currentView !== 'calendar' ? (
+                                <button onClick={() => {setCurrentView('calendar'); resetForm();}} className="flex items-center text-slate-600 hover:text-teal-600 font-bold transition-colors">
+                                    <ChevronLeft className="w-6 h-6 mr-1" />
+                                    <span>달력으로 돌아가기</span>
+                                </button>
+                            ) : (
+                                <>
+                                    <img src="https://raw.githubusercontent.com/Chocosora/choco/main/hc.png" alt="홈케어의 제왕 로고" className="w-12 h-12 object-contain flex-shrink-0" />
+                                    <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight ml-1">
+                                        홈케어의 제왕
+                                    </h1>
+                                </>
+                            )}
+                        </div>
+                        {currentView === 'calendar' && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setCurrentView('consultations')}
+                                    className="bg-teal-50 text-teal-700 px-3 py-2.5 rounded-xl text-sm font-bold shadow-sm border border-teal-100 flex items-center gap-1.5 active:scale-95 transition-all relative"
+                                >
+                                    <MessageSquare className="w-4 h-4" />
+                                    <span>상담대기</span>
+                                    {consultationJobs.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                                            {consultationJobs.length}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                    </header>
+
+                    <main className="p-5 space-y-6">
+                        {currentView === 'calendar' && (
+                            <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 fade-in">
+                                <div className="flex justify-between items-center mb-6 px-2">
+                                    <button onClick={() => changeMonth(-1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <CalendarDays className="w-5 h-5 text-teal-500" />
+                                        {currentDateView.getFullYear()}년 {currentDateView.getMonth() + 1}월
+                                    </h2>
+                                    <button onClick={() => changeMonth(1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors transform rotate-180">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                                    {['일','월','화','수','목','금','토'].map((d,i) => (
+                                        <div key={d} className={`text-[11px] font-bold pb-1 ${i===0?'text-red-400':i===6?'text-blue-400':'text-slate-400'}`}>{d}</div>
+                                    ))}
+                                </div>
+                                
+                                <div className="grid grid-cols-7 gap-1 text-center">
+                                    {Array.from({ length: new Date(currentDateView.getFullYear(), currentDateView.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
+                                    {getDaysInMonth(currentDateView).map(day => {
+                                        const dateStr = `${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                                        const isToday = dateStr === todayStr;
+                                        const dayJobs = jobsByDate[dateStr] || [];
+                                        const hasJobs = dayJobs.length > 0;
+                                        
+                                        return (
+                                            <div
+                                                key={day}
+                                                role="button"
+                                                onClick={() => openDailyView(dateStr)}
+                                                className={`cursor-pointer relative flex flex-col items-center justify-start pt-1.5 pb-1 px-1 rounded-[10px] transition-all border min-h-[85px] max-h-[110px] overflow-y-auto ${isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
+                                            >
+                                                <span className={`text-[12px] font-bold mb-1 ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
+                                                
+                                                {hasJobs && (
+                                                    <div className="flex flex-col gap-[3px] w-full mt-0.5">
+                                                        {dayJobs.sort((a,b) => (a.visitTime||'23:59').localeCompare(b.visitTime||'23:59')).map((job, idx) => {
+                                                            const currentStatus = job.status || 'pending';
+                                                            let statusColor = 'bg-slate-300'; 
+                                                            if (currentStatus === 'completed') statusColor = 'bg-teal-500'; 
+                                                            if (currentStatus === 'cancelled') statusColor = 'bg-red-400';
+                                                            
+                                                            const displayAmt = job.netIncome !== undefined ? job.netIncome : job.totalAmount;
+                                                            const amt = formatAmountStr(displayAmt);
+                                                            
+                                                            return (
+                                                                <div key={job.key || idx} className="flex items-center justify-center gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${statusColor} flex-shrink-0`}></div>
+                                                                    <span className="text-[9px] font-extrabold text-slate-700 tracking-tighter truncate leading-none mt-[1px]">{amt}</span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                                
+                                <div className="mt-6 pt-5 border-t border-slate-100 flex gap-3">
+                                    <button
+                                        onClick={handleBackup}
+                                        className="flex-1 bg-slate-50 text-slate-700 py-3 rounded-xl text-sm font-bold shadow-sm border border-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-slate-100"
+                                    >
+                                        <Download className="w-4 h-4 text-slate-600" />
+                                        <span>전체 백업</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentView('monthlyRevenue')}
+                                        className="flex-1 bg-indigo-50 text-indigo-700 py-3 rounded-xl text-sm font-bold shadow-sm border border-indigo-100 flex items-center justify-center gap-2 active:scale-95 transition-all hover:bg-indigo-100"
+                                    >
+                                        <BarChart3 className="w-4 h-4 text-indigo-500" />
+                                        <span>월별 매출</span>
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+
+                        {currentView === 'monthlyRevenue' && (
+                            <div className="space-y-6 fade-in">
+                                <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex justify-between items-center">
+                                    <button onClick={() => changeMonth(-1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                        <BarChart3 className="w-5 h-5 text-indigo-500" />
+                                        {currentDateView.getFullYear()}년 {currentDateView.getMonth() + 1}월 매출
+                                    </h2>
+                                    <button onClick={() => changeMonth(1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl transition-colors transform rotate-180">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="text-xs font-bold text-slate-500 mb-1">총 매출</div>
+                                        <div className="text-lg font-extrabold text-slate-800">{monthlyStats.totalRev.toLocaleString()}원</div>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                        <div className="text-xs font-bold text-slate-500 mb-1">총 자재비</div>
+                                        <div className="text-lg font-extrabold text-red-500">-{monthlyStats.totalMat.toLocaleString()}원</div>
+                                    </div>
+                                    <div className="bg-indigo-50 p-4 rounded-2xl shadow-sm border border-indigo-100 col-span-2">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div className="text-sm font-bold text-indigo-800">예상 순수입</div>
+                                            <div className="text-xl font-extrabold text-indigo-700">{monthlyStats.totalNet.toLocaleString()}원</div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-600 border-t border-indigo-200 pt-2.5">
+                                            <span>수수료 (30%)</span>
+                                            <span className="text-red-500">-{monthlyStats.fee.toLocaleString()}원</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-base font-extrabold text-slate-800 mt-1.5">
+                                            <span>최종 정산액</span>
+                                            <span>{monthlyStats.finalProfit.toLocaleString()}원</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-600 ml-1 mb-3">완료된 작업 목록 ({monthlyStats.completedCount}건)</h3>
+                                    <div className="space-y-3">
+                                        {monthlyStats.monthJobs.map(job => (
+                                            <div key={job.key} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2 relative overflow-hidden">
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400"></div>
+                                                <div className="flex justify-between items-start pl-2">
+                                                    <div className="font-bold text-sm text-slate-800">{job.address}</div>
+                                                    <div className="text-xs font-bold text-indigo-600">{job.dates.find(d => d.startsWith(`${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2, '0')}`))?.slice(5).replace('-', '/')}</div>
+                                                </div>
+                                                <div className="text-xs text-slate-500 line-clamp-1 pl-2">
+                                                    {job.tasks?.map(t => t.description || '내용 없음').join(', ') || '내용 없음'}
+                                                </div>
+                                                <div className="flex justify-end font-extrabold text-sm text-slate-700 mt-1">
+                                                    {(job.totalAmount || 0).toLocaleString()}원
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {monthlyStats.completedCount === 0 && (
+                                            <div className="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                                                <p className="text-slate-400 text-sm font-medium">이번 달 완료된 작업이 없습니다.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentView === 'daily' && (
+                            <div className="space-y-6 fade-in">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
+                                        {activeDate.slice(5).replace('-', '월 ')}일
+                                    </div>
+                                    <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
+                                </div>
+
+                                <section className="space-y-4">
+                                    {activeDateJobs.length === 0 ? (
+                                        <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                                            <p className="text-slate-400 text-sm">이 날짜에 등록된 일정이 없습니다.</p>
+                                        </div>
+                                    ) : (
+                                        activeDateJobs.map((job) => {
+                                            const isEditing = editingId === job.key;
+                                            const currentStatus = job.status || 'pending';
+                                            const cardOpacity = currentStatus === 'completed' || currentStatus === 'cancelled' ? 'opacity-85' : 'opacity-100';
+
+                                            return (
+                                            <div key={job.key} className={`rounded-2xl p-5 shadow-sm border transition-all ${cardOpacity} ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-teal-100 hover:shadow-md'}`}>
+                                                <div className="flex flex-wrap gap-1.5 mb-3 items-center">
+                                                    {job.visitTime && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-teal-100 text-teal-700">
+                                                            <Clock className="w-3 h-3 mr-1" />
+                                                            {job.visitTime}
+                                                        </span>
+                                                    )}
+
+                                                    <div className="ml-auto flex gap-1">
+                                                        <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md transition-colors ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteJob(job.key)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="mb-4 pl-1">
+                                                    <h3 className="text-base font-bold leading-tight mb-1.5 text-slate-800">{job.address}</h3>
+                                                    {job.details && (
+                                                        <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
+                                                            {job.details}
+                                                        </p>
+                                                    )}
+                                                    
+                                                    {job.phoneNumber && (
+                                                        <div className="flex items-center gap-2 mt-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                            <Phone className="w-4 h-4 text-slate-400" />
+                                                            <span className="text-sm font-bold text-slate-700 flex-1">{job.phoneNumber}</span>
+                                                            
+                                                            <button onClick={() => handleSaveContact(job)} className="flex items-center justify-center p-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors shadow-sm active:scale-95" title="연락처 저장">
+                                                                <UserPlus className="w-4 h-4" />
+                                                            </button>
+                                                            <a href={`tel:${job.phoneNumber}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors shadow-sm active:scale-95">
+                                                                <Phone className="w-4 h-4" />
+                                                            </a>
+                                                            <button onClick={() => setSmsModal(job)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors shadow-sm active:scale-95">
+                                                                <MessageSquare className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex bg-slate-100/80 p-1 rounded-xl mb-3 mt-1">
+                                                        <button 
+                                                            onClick={() => handleStatusChange(job.key, 'pending')} 
+                                                            className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${currentStatus === 'pending' ? 'bg-white text-slate-700 shadow-sm ring-1 ring-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                                        >
+                                                            작업 전
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleStatusChange(job.key, 'completed')} 
+                                                            className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${currentStatus === 'completed' ? 'bg-teal-500 text-white shadow-sm ring-1 ring-teal-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                        >
+                                                            작업 완료
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleStatusChange(job.key, 'cancelled')} 
+                                                            className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${currentStatus === 'cancelled' ? 'bg-red-500 text-white shadow-sm ring-1 ring-red-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                        >
+                                                            취소
+                                                        </button>
+                                                    </div>
+
+                                                    {currentStatus === 'cancelled' && (
+                                                        <div className="mb-3 fade-in">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="취소 사유를 입력하세요 (자동 저장)"
+                                                                className="w-full p-2.5 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200 focus:outline-none focus:ring-1 focus:ring-red-400"
+                                                                defaultValue={job.cancelReason || ''}
+                                                                onBlur={(e) => handleCancelReasonChange(job.key, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {job.tasks && job.tasks.length > 0 && (
+                                                        <div className="mt-3 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100 space-y-2">
+                                                            {job.tasks.map((task, i) => (
+                                                                <div key={i} className="flex flex-col gap-1 border-b border-yellow-200/50 pb-2 last:border-0 last:pb-0">
+                                                                    <div className="flex items-start gap-1.5">
+                                                                        <AlignLeft className="w-3.5 h-3.5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                                                        <span className="text-sm text-slate-700">{task.description || '내용 없음'}</span>
+                                                                    </div>
+                                                                    <div className="flex justify-end gap-3 text-xs text-slate-500 mt-1">
+                                                                        {Number(task.amount) > 0 && <span>작업비: {(Number(task.amount)*10000).toLocaleString()}원</span>}
+                                                                        {Number(task.materialCost) > 0 && <span className="text-red-500">자재비: {(Number(task.materialCost)*10000).toLocaleString()}원</span>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            <div className="pt-2 border-t border-yellow-200 space-y-1.5">
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="text-xs font-bold text-slate-600">총 작업비</span>
+                                                                    <span className="text-sm font-bold text-slate-800">
+                                                                        {Number(job.totalAmount || 0).toLocaleString()}원
+                                                                    </span>
+                                                                </div>
+                                                                {Number(job.totalMaterialCost) > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-xs font-bold text-slate-600">자재비</span>
+                                                                        <span className="text-sm font-bold text-red-500">
+                                                                            - {Number(job.totalMaterialCost || 0).toLocaleString()}원
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-yellow-200/50">
+                                                                    <span className="text-sm font-bold text-yellow-800">예상 순수입</span>
+                                                                    <span className="text-base font-extrabold text-teal-600">
+                                                                        {Number(job.netIncome !== undefined ? job.netIncome : job.totalAmount || 0).toLocaleString()}원
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <button onClick={() => openMap('naver', job.address)} className="bg-white border border-slate-200 hover:bg-green-50 hover:border-green-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <NaverIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#03C75A] transition-colors">네이버</span>
+                                                    </button>
+                                                    <button onClick={() => openMap('tmap', job.address)} className="bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <TMapIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#E80048] transition-colors">티맵</span>
+                                                    </button>
+                                                    <button onClick={() => openMap('kakao', job.address)} className="bg-white border border-slate-200 hover:bg-yellow-50 hover:border-yellow-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                        <KakaoIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#F9C000] transition-colors">카카오</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            )
+                                        })
+                                    )}
+                                </section>
+
+                                {activeDateJobs.length > 0 && (
+                                    <div className="mt-8 bg-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-slate-700 rounded-bl-full -mr-10 -mt-10 opacity-40 pointer-events-none"></div>
+                                        
+                                        <div className="flex justify-between items-center mb-4 relative z-10">
+                                            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-teal-400" />
+                                                일일 업무보고 생성
+                                            </h3>
+                                            <button 
+                                                onClick={handleCopyReport} 
+                                                className="bg-teal-500 hover:bg-teal-400 active:scale-95 text-white text-[11px] font-extrabold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-all shadow-sm"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" /> 복사하기
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="bg-slate-900 rounded-2xl p-4 relative z-10 border border-slate-700">
+                                            <pre className="text-slate-300 text-sm whitespace-pre-wrap font-sans leading-relaxed">
+                                                {generateReportText()}
+                                            </pre>
+                                        </div>
+                                        <p className="text-slate-400 text-[10px] mt-3 text-center">※ '작업 완료' 상태로 체크된 현장만 합산됩니다.</p>
+                                    </div>
+                                )}
+
+                                <div className="border-t-2 border-dashed border-slate-200 w-full my-6"></div>
+
+                                {renderInputForm()}
+                            </div>
+                        )}
+
+                        {currentView === 'consultations' && (
+                            <div className="space-y-6 fade-in">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-teal-700 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm flex items-center gap-1.5">
+                                        <MessageSquare className="w-4 h-4" /> 상담 대기함
+                                    </div>
+                                    <span className="text-slate-500 text-sm font-medium">예약 날짜 미정 고객</span>
+                                </div>
+
+                                <section className="space-y-4">
+                                    {consultationJobs.length === 0 ? (
+                                        <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                                            <p className="text-slate-400 text-sm">현재 대기 중인 상담 고객이 없습니다.</p>
+                                        </div>
+                                    ) : (
+                                        consultationJobs.map((job) => {
+                                            const isEditing = editingId === job.key;
+
+                                            return (
+                                                <div key={job.key} className={`rounded-2xl p-5 shadow-sm border transition-all ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-teal-100 hover:shadow-md'}`}>
+                                                    <div className="flex flex-wrap gap-1.5 mb-3 items-center">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                            상담 대기 중
+                                                        </span>
+                                                        
+                                                        {job.visitTime && (
+                                                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-teal-100 text-teal-700">
+                                                                <Clock className="w-3 h-3 mr-1" />
+                                                                {job.visitTime} (예정)
+                                                            </span>
+                                                        )}
+
+                                                        <div className="ml-auto flex gap-1">
+                                                            <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md transition-colors ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button onClick={() => handleDeleteJob(job.key)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="mb-4 pl-1">
+                                                        <h3 className="text-base font-bold leading-tight mb-1.5 text-slate-800">{job.address}</h3>
+                                                        {job.details && (
+                                                            <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
+                                                                {job.details}
+                                                            </p>
+                                                        )}
+
+                                                        {job.phoneNumber && (
+                                                            <div className="flex items-center gap-2 mt-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                                <Phone className="w-4 h-4 text-slate-400" />
+                                                                <span className="text-sm font-bold text-slate-700 flex-1">{job.phoneNumber}</span>
+                                                                
+                                                                <button onClick={() => handleSaveContact(job)} className="flex items-center justify-center p-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors shadow-sm active:scale-95" title="연락처 저장">
+                                                                    <UserPlus className="w-4 h-4" />
+                                                                </button>
+                                                                <a href={`tel:${job.phoneNumber}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors shadow-sm active:scale-95">
+                                                                    <Phone className="w-4 h-4" />
+                                                                </a>
+                                                                <button onClick={() => setSmsModal(job)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors shadow-sm active:scale-95">
+                                                                    <MessageSquare className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {job.tasks && job.tasks.length > 0 && (
+                                                            <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                                                                {job.tasks.map((task, i) => (
+                                                                    <div key={i} className="flex flex-col gap-1 border-b border-slate-200 pb-2 last:border-0 last:pb-0">
+                                                                        <div className="flex items-start gap-1.5">
+                                                                            <AlignLeft className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                                                                            <span className="text-sm text-slate-700">{task.description || '내용 없음'}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-3 gap-2 mb-3">
+                                                        <button onClick={() => openMap('naver', job.address)} className="bg-white border border-slate-200 hover:bg-green-50 hover:border-green-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                            <NaverIcon />
+                                                            <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#03C75A] transition-colors">네이버</span>
+                                                        </button>
+                                                        <button onClick={() => openMap('tmap', job.address)} className="bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                            <TMapIcon />
+                                                            <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#E80048] transition-colors">티맵</span>
+                                                        </button>
+                                                        <button onClick={() => openMap('kakao', job.address)} className="bg-white border border-slate-200 hover:bg-yellow-50 hover:border-yellow-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shadow-sm group">
+                                                            <KakaoIcon />
+                                                            <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#F9C000] transition-colors">카카오</span>
+                                                        </button>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => setAssignDateModal(job)}
+                                                        className="w-full py-3 bg-teal-600 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 ease-in-out shadow-md hover:bg-teal-700"
+                                                    >
+                                                        <CalendarDays className="w-4 h-4" />
+                                                        예약 날짜 배정하기
+                                                    </button>
+                                                </div>
+                                            )
+                                        })
+                                    )}
+                                </section>
+
+                                <div className="border-t-2 border-dashed border-slate-200 w-full my-6"></div>
+
+                                {renderInputForm()}
+                            </div>
+                        )}
+                        <div className="h-10"></div>
+                    </main>
+
+                    {/* 타임 피커 모달 */}
+                    {timeModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex flex-col justify-end backdrop-blur-sm transition-opacity">
+                            <div className="bg-white rounded-t-3xl p-5 pb-8 animate-slide-up shadow-2xl">
+                                <div className="flex justify-between items-center mb-5">
+                                    <h3 className="text-lg font-extrabold text-slate-800">예약 시간 선택</h3>
+                                    <button onClick={() => setTimeModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                
+                                <label className="block text-xs font-bold text-slate-400 mb-2">빠른 선택</label>
+                                <div className="grid grid-cols-4 gap-2 mb-6">
+                                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'].map(t => (
+                                        <button 
+                                            key={t}
+                                            onClick={() => { setVisitTime(t); setTimeModalOpen(false); }} 
+                                            className={`py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 ${visitTime === t ? 'bg-teal-500 text-white shadow-md shadow-teal-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <div className="pt-5 border-t border-slate-100">
+                                    <label className="block text-xs font-bold text-slate-400 mb-2">직접 입력</label>
+                                    <div className="flex items-center gap-3">
+                                        <input 
+                                            type="time" 
+                                            className="flex-1 px-4 py-3 bg-slate-50 rounded-xl font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                            value={visitTime} 
+                                            onChange={e => setVisitTime(e.target.value)} 
+                                        />
+                                        <button 
+                                            onClick={() => setTimeModalOpen(false)} 
+                                            className="px-6 py-3 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-900 transition-colors shadow-md"
+                                        >
+                                            확인
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 문자 메시지 전송 모달 */}
+                    {smsModal && !isEditingTemplates && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm transition-opacity">
+                            <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl animate-slide-up">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">안내 문자 템플릿</h3>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={handleOpenTemplateEditor} className="p-1.5 text-slate-400 hover:text-teal-600 bg-slate-100 rounded-full transition-colors" title="템플릿 수정">
+                                            <Settings className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setSmsModal(null)} className="p-1 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 h-[28rem] overflow-y-auto pr-1 pb-1">
+                                    {templates.map((template, idx) => {
+                                        const parsedBody = parseSmsTemplate(template.body, smsModal);
+                                        return (
+                                            <button 
+                                                key={idx}
+                                                onClick={() => sendSMS(smsModal.phoneNumber, parsedBody)}
+                                                className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-colors group relative"
+                                            >
+                                                <div className="font-bold text-slate-700 mb-2 group-hover:text-blue-700">{template.title}</div>
+                                                <div className="text-xs text-slate-500 whitespace-pre-wrap leading-relaxed">{parsedBody}</div>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 문자 템플릿 설정 모달 */}
+                    {isEditingTemplates && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+                            <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-lg font-extrabold text-slate-800">문자 템플릿 설정</h3>
+                                    <button onClick={() => setIsEditingTemplates(false)} className="p-1 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                
+                                <div className="bg-teal-50 p-3 rounded-xl border border-teal-100 mb-4 flex-shrink-0">
+                                    <p className="text-xs text-teal-700 leading-relaxed font-bold mb-1">
+                                        템플릿 내용에 아래 키워드를 넣으면 고객 정보로 자동 변환됩니다.
+                                    </p>
+                                    <div className="text-[11px] text-teal-600 flex flex-wrap gap-1.5">
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;월&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;일&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;요일&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;시간&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;주소&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;지역&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;작업내역&#125;</span>
+                                        <span className="bg-white px-1.5 py-0.5 rounded shadow-sm">&#123;총금액&#125;</span>
+                                    </div>
+                                </div>
+
+                                <div className="overflow-y-auto space-y-4 pr-1 pb-4 flex-1">
+                                    {editingTemplatesData.map((template, idx) => (
+                                        <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 relative">
+                                            {/* 삭제 버튼 추가 */}
+                                            <button 
+                                                onClick={() => {
+                                                    const newData = editingTemplatesData.filter((_, i) => i !== idx);
+                                                    setEditingTemplatesData(newData);
+                                                }}
+                                                className="absolute -top-2 -right-2 p-1.5 bg-white border border-slate-200 text-slate-400 hover:text-red-500 rounded-full shadow-sm transition-colors"
+                                                title="템플릿 삭제"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                            <input
+                                                type="text"
+                                                className="w-full mb-2 p-2 rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                                value={template.title}
+                                                onChange={(e) => {
+                                                    const newData = [...editingTemplatesData];
+                                                    newData[idx].title = e.target.value;
+                                                    setEditingTemplatesData(newData);
+                                                }}
+                                                placeholder="템플릿 제목"
+                                            />
+                                            <textarea
+                                                className="w-full p-2 rounded-lg text-xs text-slate-700 border border-slate-200 h-32 resize-none focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 leading-relaxed"
+                                                value={template.body}
+                                                onChange={(e) => {
+                                                    const newData = [...editingTemplatesData];
+                                                    newData[idx].body = e.target.value;
+                                                    setEditingTemplatesData(newData);
+                                                }}
+                                                placeholder="문자 내용 입력..."
+                                            />
+                                        </div>
+                                    ))}
+                                    
+                                    {/* 새 템플릿 추가 버튼 */}
+                                    <button 
+                                        onClick={() => setEditingTemplatesData([...editingTemplatesData, { title: '새 템플릿', body: '' }])}
+                                        className="w-full py-3 border-2 border-dashed border-teal-200 text-teal-600 rounded-xl text-sm font-bold hover:bg-teal-50 hover:border-teal-300 transition-colors flex items-center justify-center gap-1"
+                                    >
+                                        <Plus className="w-4 h-4" /> 새 템플릿 추가
+                                    </button>
+                                </div>
+
+                                <div className="pt-3 border-t border-slate-100 flex gap-2 flex-shrink-0">
+                                    <button 
+                                        onClick={() => setIsEditingTemplates(false)}
+                                        className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm active:bg-slate-50 transition-colors"
+                                    >
+                                        취소
+                                    </button>
+                                    <button 
+                                        onClick={handleSaveTemplates}
+                                        className="flex-[2] py-3 bg-teal-600 text-white rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all hover:bg-teal-700"
+                                    >
+                                        저장하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 예약 날짜 배정 모달 */}
+                    {assignDateModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm transition-opacity">
+                            <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-slide-up">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <CalendarDays className="w-5 h-5 text-teal-500" />
+                                    <h3 className="text-lg font-extrabold text-slate-800">예약 날짜 확정</h3>
+                                </div>
+                                <p className="text-sm text-slate-500 mb-4 leading-relaxed">
+                                    선택한 고객의 방문 일정을 확정하고 캘린더로 이동시킵니다.
+                                </p>
+                                <input
+                                    type="date"
+                                    className="w-full p-4 bg-slate-50 rounded-xl text-slate-800 font-bold border border-slate-200 mb-6 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-center"
+                                    value={assignDateVal}
+                                    onChange={(e) => setAssignDateVal(e.target.value)}
+                                />
+                                <div className="flex gap-3">
+                                    <button onClick={() => setAssignDateModal(null)} className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl active:bg-slate-50 transition-colors">취소</button>
+                                    <button
+                                        onClick={handleAssignDate}
+                                        className="flex-[2] py-3.5 bg-teal-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all hover:bg-teal-700"
+                                    >
+                                        일정 등록
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>            background-position: bottom;
             background-size: 8px 1px;
             background-repeat: repeat-x;
         }
