@@ -25,13 +25,30 @@
             font-family: 'Noto Sans KR', sans-serif;
             background: #e8e4dc;
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 20px 10px;
             color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .page-wrapper { max-width: 820px; margin: 0 auto; }
+        .page-wrapper { 
+            width: 100%; 
+            max-width: 860px;
+            margin: 0 auto; 
+        }
+
+        .doc-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+        }
 
         .document {
+            width: 820px;
+            min-width: 820px;
+            margin: 0 auto;
             background: var(--cream);
             border: 1px solid var(--border);
             box-shadow: 0 4px 40px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08);
@@ -261,7 +278,14 @@
         }
 
         /* 컨트롤 */
-        .controls { padding: 20px 0 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .controls { 
+            padding: 20px 0; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            flex-wrap: wrap;
+            width: 100%;
+        }
         .btn {
             font-family: 'Noto Sans KR', sans-serif;
             font-size: 0.85em; padding: 10px 22px;
@@ -270,16 +294,27 @@
         }
         .btn-add { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
         .btn-add:hover { background: var(--navy); color: #fff; }
+        
+        .btn-switch { background: var(--border); color: var(--navy); border: 1.5px solid var(--border); margin-left: 10px; }
+        .btn-switch:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+
         .btn-print { background: var(--navy); color: #fff; padding: 12px 24px; font-size: 0.92em; }
         .btn-print:hover { background: var(--gold); color: var(--navy); }
         .btn-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1em; padding: 0 4px; transition: color 0.2s; line-height: 1; }
         .btn-del:hover { color: var(--accent); }
 
         @media print {
+            @page { size: A4 portrait; margin: 10mm; }
             body { background: white; padding: 0; }
-            .controls, .vat-toggle-row { display: none !important; }
-            .document { box-shadow: none; border: none; }
             .page-wrapper { max-width: 100%; }
+            .doc-scroll-wrapper { overflow: visible; }
+            .controls, .vat-toggle-row { display: none !important; }
+            .document { 
+                box-shadow: none; 
+                border: none; 
+                width: 100% !important;
+                min-width: auto !important; 
+            }
             thead tr { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .top-bar, .bottom-bar, .contact-bar, .total-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             input { border: none !important; outline: none; background: transparent; }
@@ -289,145 +324,151 @@
 </head>
 <body>
 <div class="page-wrapper">
-    <div class="document">
-        <div class="top-bar"></div>
+    <div class="doc-scroll-wrapper">
+        <div class="document">
+            <div class="top-bar"></div>
 
-        <div class="header">
-            <div class="header-inner">
-                <div class="brand-block">
-                    <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" class="brand-logo" crossorigin="anonymous">
-                    <div>
-                        <div class="brand-name">홈케어의 제왕</div>
-                        <div class="brand-sub">Home Care Professional Service</div>
+            <div class="header">
+                <div class="header-inner">
+                    <div class="brand-block">
+                        <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" class="brand-logo" crossorigin="anonymous">
+                        <div>
+                            <div class="brand-name">홈케어의 제왕</div>
+                            <div class="brand-sub">Home Care Professional Service</div>
+                        </div>
+                    </div>
+                    <div class="doc-title-block">
+                        <div class="doc-title" id="docTitleText">작업내역서</div>
+                        <div class="doc-title-underline"></div>
                     </div>
                 </div>
-                <div class="doc-title-block">
-                    <div class="doc-title">작업내역서</div>
-                    <div class="doc-title-underline"></div>
-                </div>
             </div>
-        </div>
 
-        <div class="gold-divider"></div>
+            <div class="gold-divider"></div>
 
-        <div class="parties-section">
-            <div class="party-box">
-                <div class="party-label">공급자</div>
-                <div class="party-info">
-                    <div class="info-row"><span class="info-key">상호</span><span class="info-val">홈케어의 제왕</span></div>
-                    <div class="info-row">
-                        <span class="info-key">대표자</span>
-                        <span class="info-val">박시언</span>
+            <div class="parties-section">
+                <div class="party-box">
+                    <div class="party-label">공급자</div>
+                    <div class="party-info">
+                        <div class="info-row"><span class="info-key">등록번호</span><span class="info-val">245-58-01020</span></div>
+                        <div class="info-row"><span class="info-key">상호</span><span class="info-val">홈케어의 제왕</span></div>
+                        <div class="info-row">
+                            <span class="info-key">대표자</span>
+                            <span class="info-val">박시언</span>
+                        </div>
+                        <div class="info-row"><span class="info-key">주소</span><span class="info-val" style="white-space: nowrap; letter-spacing: -0.5px;">경기도 남양주시 별내중앙로 34, 5층 502-A40</span></div>
+                        <div class="info-row"><span class="info-key">업태</span><span class="info-val">건설업</span></div>
+                        <div class="info-row"><span class="info-key">종목</span><span class="info-val">배관 및 냉·난방 공사업</span></div>
+                        <div class="info-row"><span class="info-key"></span><span class="info-val">미장, 타일 및 방수 공사업</span></div>
                     </div>
-                    <div class="info-row"><span class="info-key">주소</span><span class="info-val" style="white-space: nowrap; letter-spacing: -0.5px;">경기도 남양주시 별내중앙로 34, 5층 502-A40</span></div>
-                    <div class="info-row"><span class="info-key">업태</span><span class="info-val">건설업</span></div>
-                    <div class="info-row"><span class="info-key">종목</span><span class="info-val">배관 및 냉·난방 공사업</span></div>
+                </div>
+
+                <div class="party-divider"></div>
+
+                <div class="party-box">
+                    <div class="party-label">고객 (공급받는 자)</div>
+                    <div class="customer-field">
+                        <label>성&nbsp;&nbsp;&nbsp;&nbsp;함</label>
+                        <input type="text" id="customerName">
+                    </div>
+                    <div class="customer-field">
+                        <label>주소 / 현장명</label>
+                        <input type="text" id="customerAddress">
+                    </div>
+                    <div class="customer-field">
+                        <label>작업 일자</label>
+                        <input type="date" id="workDate">
+                    </div>
                 </div>
             </div>
 
-            <div class="party-divider"></div>
-
-            <div class="party-box">
-                <div class="party-label">고객 (공급받는 자)</div>
-                <div class="customer-field">
-                    <label>성&nbsp;&nbsp;&nbsp;&nbsp;함</label>
-                    <input type="text" id="customerName" placeholder="홍길동">
+            <div class="contact-bar">
+                <div class="contact-item">
+                    <span class="ci-label">TEL</span>010-3426-1914
                 </div>
-                <div class="customer-field">
-                    <label>주소 / 현장명</label>
-                    <input type="text" id="customerAddress" placeholder="다산동 데시앙 101동 101호">
+                <div class="contact-sep"></div>
+                <div class="contact-item">
+                    <span class="ci-label">계좌</span>카카오뱅크&nbsp;3333-37-0795904
                 </div>
-                <div class="customer-field">
-                    <label>작업 일자</label>
-                    <input type="date" id="workDate">
+                <div class="contact-sep"></div>
+                <div class="contact-item">
+                    <span class="ci-label">예금주</span>홈케어의 제왕 (박시언)
                 </div>
             </div>
-        </div>
 
-        <div class="contact-bar">
-            <div class="contact-item">
-                <span class="ci-label">TEL</span>010-3426-1914
-            </div>
-            <div class="contact-sep"></div>
-            <div class="contact-item">
-                <span class="ci-label">계좌</span>카카오뱅크&nbsp;3333-37-0795904
-            </div>
-            <div class="contact-sep"></div>
-            <div class="contact-item">
-                <span class="ci-label">예금주</span>홈케어의 제왕 (박시언)
-            </div>
-        </div>
+            <div class="table-section">
+                <div class="section-label">작업 내역</div>
 
-        <div class="table-section">
-            <div class="section-label">작업 내역</div>
-
-            <div class="vat-toggle-row">
-                <div class="vat-toggle">
-                    <button class="vat-btn active" id="vatIncBtn" onclick="setVat('inc')">부가세 포함</button>
-                    <button class="vat-btn" id="vatExcBtn" onclick="setVat('exc')">부가세 별도</button>
+                <div class="vat-toggle-row">
+                    <div class="vat-toggle">
+                        <button class="vat-btn active" id="vatIncBtn" onclick="setVat('inc')">부가세 포함</button>
+                        <button class="vat-btn" id="vatExcBtn" onclick="setVat('exc')">부가세 별도</button>
+                    </div>
+                    <span class="vat-note" id="vatNote">입력 금액에 VAT 10% 포함된 가격</span>
                 </div>
-                <span class="vat-note" id="vatNote">입력 금액에 VAT 10% 포함된 가격</span>
+
+                <table id="itemTable">
+                    <thead>
+                        <tr>
+                            <th>품목 및 작업 내용</th>
+                            <th style="width:11%;">수량</th>
+                            <th style="width:18%;">단가 (원)</th>
+                            <th style="width:19%;">금액 (원)</th>
+                            <th style="width:36px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text"></td>
+                            <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
+                            <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
+                            <td class="amount-cell">0</td>
+                            <td><button class="btn-del" onclick="delRow(this)">✕</button></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <table id="itemTable">
-                <thead>
-                    <tr>
-                        <th>품목 및 작업 내용</th>
-                        <th style="width:11%;">수량</th>
-                        <th style="width:18%;">단가 (원)</th>
-                        <th style="width:19%;">금액 (원)</th>
-                        <th style="width:36px;"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" placeholder="예: 싱크대 수전 교체"></td>
-                        <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
-                        <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
-                        <td class="amount-cell">0</td>
-                        <td><button class="btn-del" onclick="delRow(this)">✕</button></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="total-section">
-            <div class="total-rows">
-                <div class="total-row" id="rowSupply" style="display:none;">
-                    <span class="t-label">공급가액</span>
-                    <span class="t-val" id="supplyAmt">0</span>
-                    <span class="t-unit">원</span>
-                </div>
-                <div class="total-row" id="rowVat" style="display:none;">
-                    <span class="t-label">부가세 (10%)</span>
-                    <span class="t-val" id="vatAmt">0</span>
-                    <span class="t-unit">원</span>
-                </div>
-                <div class="total-row grand">
-                    <div class="total-box">
-                        <span class="t-label">합&nbsp;&nbsp;계</span>
-                        <span class="t-val" id="totalAmount">0</span>
+            <div class="total-section">
+                <div class="total-rows">
+                    <div class="total-row" id="rowSupply" style="display:none;">
+                        <span class="t-label">공급가액</span>
+                        <span class="t-val" id="supplyAmt">0</span>
                         <span class="t-unit">원</span>
                     </div>
+                    <div class="total-row" id="rowVat" style="display:none;">
+                        <span class="t-label">부가세 (10%)</span>
+                        <span class="t-val" id="vatAmt">0</span>
+                        <span class="t-unit">원</span>
+                    </div>
+                    <div class="total-row grand">
+                        <div class="total-box">
+                            <span class="t-label">합&nbsp;&nbsp;계</span>
+                            <span class="t-val" id="totalAmount">0</span>
+                            <span class="t-unit">원</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="footer">
-            <div class="footer-note" style="white-space: nowrap; letter-spacing: -0.5px;">
-                위와 같이 작업 내역을 확인합니다.<br>
-                <strong>홈케어의 제왕</strong>&nbsp;&nbsp;|&nbsp;&nbsp;경기도 남양주시 별내중앙로 34, 5층 502-A40
+            <div class="footer">
+                <div class="footer-note" style="white-space: nowrap; letter-spacing: -0.5px;">
+                    <span id="footerNoteText">위와 같이 작업 내역을 확인합니다.</span><br>
+                    <strong>홈케어의 제왕</strong>&nbsp;&nbsp;|&nbsp;&nbsp;경기도 남양주시 별내중앙로 34, 5층 502-A40
+                </div>
+                <div class="logo-seal">
+                    <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕" class="logo-seal-img" crossorigin="anonymous">
+                </div>
             </div>
-            <div class="logo-seal">
-                <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕" class="logo-seal-img" crossorigin="anonymous">
-            </div>
-        </div>
 
-        <div class="bottom-bar"></div>
+            <div class="bottom-bar"></div>
+        </div>
     </div>
 
     <div class="controls">
         <button class="btn btn-add" onclick="addRow()">+ 항목 추가</button>
+        <button class="btn btn-switch" id="toggleDocBtn" onclick="toggleDocType()">🔄 견적서로 전환</button>
+
         <div style="margin-left: auto; display: flex; gap: 10px;">
             <button class="btn btn-print" onclick="window.print()" style="margin: 0;">🖨 PDF / 인쇄</button>
             <button class="btn btn-print" onclick="saveAsJpg()" style="margin: 0; background: var(--gold); color: var(--navy);">🖼 JPG 저장</button>
@@ -439,6 +480,27 @@
     document.getElementById('workDate').valueAsDate = new Date();
 
     let vatMode = 'inc';
+    let docType = 'work';
+
+    function toggleDocType() {
+        const titleEl = document.getElementById('docTitleText');
+        const footerEl = document.getElementById('footerNoteText');
+        const btnEl = document.getElementById('toggleDocBtn');
+
+        if (docType === 'work') {
+            docType = 'estimate';
+            titleEl.textContent = '견적서';
+            footerEl.textContent = '위와 같이 견적합니다.';
+            btnEl.textContent = '🔄 작업내역서로 전환';
+            document.title = '홈케어의 제왕 견적서'; 
+        } else {
+            docType = 'work';
+            titleEl.textContent = '작업내역서';
+            footerEl.textContent = '위와 같이 작업 내역을 확인합니다.';
+            btnEl.textContent = '🔄 견적서로 전환';
+            document.title = '홈케어의 제왕 작업 내역서';
+        }
+    }
 
     function setVat(mode) {
         vatMode = mode;
@@ -447,7 +509,6 @@
         document.getElementById('vatNote').textContent =
             mode === 'inc' ? '입력 금액에 VAT 10% 포함된 가격' : '입력 금액에 VAT 10% 별도 추가';
         
-        // 부가세 별도일 때만 공급가액과 부가세 행을 표시합니다.
         const displayStyle = mode === 'exc' ? 'flex' : 'none';
         document.getElementById('rowSupply').style.display = displayStyle;
         document.getElementById('rowVat').style.display = displayStyle;
@@ -459,7 +520,7 @@
         const tbody = document.querySelector('#itemTable tbody');
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" placeholder="작업 내용을 입력하세요"></td>
+            <td><input type="text"></td>
             <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
             <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
             <td class="amount-cell">0</td>
@@ -501,18 +562,19 @@
         document.getElementById('totalAmount').textContent = total.toLocaleString();
     }
 
-    // JPG 저장 기능
     function saveAsJpg() {
         const doc = document.querySelector('.document');
+        const scrollWrapper = document.querySelector('.doc-scroll-wrapper');
         const vatToggle = document.querySelector('.vat-toggle-row');
         const delBtns = document.querySelectorAll('.btn-del');
         const dateInput = document.getElementById('workDate');
 
-        // 이미지 캡처 전 불필요한 UI 숨김 처리
         vatToggle.style.display = 'none';
         delBtns.forEach(btn => btn.style.display = 'none');
 
-        // 캡처 전 날짜 형식을 텍스트로 임시 변환
+        const originalOverflow = scrollWrapper.style.overflowX;
+        scrollWrapper.style.overflowX = 'visible';
+
         const originalDateValue = dateInput.value;
         if (originalDateValue) {
             const [y, m, d] = originalDateValue.split('-');
@@ -520,17 +582,22 @@
             dateInput.value = `${y}. ${m}. ${d}`;
         }
 
-        html2canvas(doc, { scale: 2, useCORS: true }).then(canvas => {
+        html2canvas(doc, { 
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: '#faf8f3', 
+            windowWidth: doc.scrollWidth, 
+            width: doc.offsetWidth
+        }).then(canvas => {
             const link = document.createElement('a');
-            link.download = '작업내역서.jpg';
+            link.download = docType === 'work' ? '작업내역서.jpg' : '견적서.jpg'; 
             link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
 
-            // 캡처 완료 후 UI 원상복구
             vatToggle.style.display = 'flex';
             delBtns.forEach(btn => btn.style.display = 'inline-block');
+            scrollWrapper.style.overflowX = originalOverflow; 
 
-            // 캡처 후 날짜 형식을 원래대로 복구
             if (originalDateValue) {
                 dateInput.type = 'date';
                 dateInput.value = originalDateValue;
