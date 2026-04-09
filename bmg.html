@@ -156,12 +156,10 @@
   .paper-table td.right { text-align: right; }
   .paper-table td.center { text-align: center; }
 
-  /* 리포트 부드러운 스크롤 바 커스텀 */
   .paper-report::-webkit-scrollbar { height: 8px; }
   .paper-report::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
   .paper-report::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 
-  /* 리포트 달력 선택 버튼 스타일 */
   .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
   .month-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 0; font-size: 13px; cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif; }
   .month-btn:hover { background: var(--surface3); }
@@ -171,9 +169,6 @@
   .year-selector-wrap button { background:none; border:none; color:var(--text2); font-size:16px; cursor:pointer; padding:5px 10px; transition:color 0.2s; }
   .year-selector-wrap button:hover { color:var(--accent); }
 
-  /* =========================================
-     📱 모바일 반응형 (Responsive UI) 최적화
-     ========================================= */
   @media (max-width: 768px) {
     .nav-btn { padding: 14px 16px; font-size: 14px; }
     .form-grid { grid-template-columns: 1fr; gap: 12px; }
@@ -254,7 +249,7 @@
         <div class="form-group"><label>현장명</label><input type="text" id="r-site" placeholder="예: 강남 오피스"></div>
         <div class="form-group"><label>금액 (원)</label><input type="number" id="r-amount" placeholder="0"></div>
         <div class="form-group"><label>결제방법</label>
-          <select id="r-method"><option value="현금">현금</option><option value="계좌이체">계좌이체</option><option value="카드">카드</option></select>
+          <select id="r-method"><option value="현금">현금</option><option value="계좌이체" selected>계좌이체</option><option value="카드">카드</option></select>
         </div>
         <div class="form-group"><label>세금계산서</label>
           <select id="r-tax"><option value="미발행">미발행</option><option value="발행">발행</option><option value="현금영수증">현금영수증</option></select>
@@ -292,18 +287,22 @@
       <div class="form-grid">
         <div class="form-group"><label>날짜</label><input type="date" id="e-date"></div>
         <div class="form-group"><label>카테고리</label>
-          <select id="e-cat">
+          <select id="e-cat" onchange="togglePurposeOther('e-cat', 'e-cat-other-wrap', '기타경비')">
             <option value="자재비">자재비</option><option value="유류비">유류비</option>
             <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
             <option value="통신비">통신비</option><option value="보험료">보험료</option>
             <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
           </select>
         </div>
+        <div class="form-group full" id="e-cat-other-wrap" style="display:none;">
+          <label>기타 경비 내용 입력</label>
+          <input type="text" id="e-cat-other" placeholder="예: 사무용품, 사업소 방문 등">
+        </div>
         <div class="form-group"><label>금액 (원)</label><input type="number" id="e-amount" placeholder="0"></div>
         <div class="form-group"><label>결제수단</label><select id="e-method"></select></div>
         <div class="form-group"><label>구입처/거래처</label><input type="text" id="e-vendor" placeholder="예: 홈디포"></div>
         <div class="form-group"><label>증빙</label>
-          <select id="e-receipt"><option value="현금영수증">현금영수증</option><option value="카드전표">카드전표</option><option value="세금계산서">세금계산서</option><option value="미수취">미수취</option></select>
+          <select id="e-receipt"><option value="현금영수증">현금영수증</option><option value="카드전표" selected>카드전표</option><option value="세금계산서">세금계산서</option><option value="미수취">미수취</option></select>
         </div>
         <div class="form-group full"><label>메모</label><textarea id="e-memo" placeholder="품목 상세, 현장명..."></textarea></div>
       </div>
@@ -326,25 +325,31 @@
       <div class="ratio-bar"><div class="ratio-fill" id="d-ratio-bar" style="width:0%"></div></div>
       <div style="font-size:11px;color:var(--text3);margin-top:4px;">이 비율만큼 차량 경비 공제 가능</div>
     </div>
-    <div class="form-card">
-      <div class="form-title">🚗 스마트 운행 기록</div>
+
+    <div class="form-card" style="margin-bottom:8px;">
+      <div class="form-title">📊 월말 누적 주행거리 기록</div>
       <div class="form-grid">
-        <div class="form-group"><label>날짜</label><input type="date" id="d-date"></div>
-        <div class="form-group"><label>주행거리 (km)</label><input type="number" id="d-km" placeholder="0"></div>
-        <div class="form-group"><label>목적</label>
-          <select id="d-purpose" onchange="togglePurposeOther('d-purpose', 'd-purpose-other-wrap')">
-            <option value="출장">출장 (사업)</option>
-            <option value="견적">견적 (사업)</option>
-            <option value="개인이용">개인이용 (개인)</option>
-            <option value="기타">기타 (직접입력)</option>
-          </select>
-        </div>
-        <div class="form-group" id="d-purpose-other-wrap" style="display:none;">
-          <label>기타 목적 입력</label>
-          <input type="text" id="d-purpose-other" placeholder="예: 자재 구매, 사업소 방문 등">
+        <div class="form-group full">
+          <label><span id="odometer-month-label">이번 달</span> 누적 주행거리 (km)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="number" id="d-odometer" placeholder="계기판 총 주행거리 입력">
+            <button class="btn btn-primary" onclick="saveOdometer()" style="white-space:nowrap;">저장</button>
+          </div>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" onclick="addDrive()">➕ 운행 저장</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">매월 말일 기준 계기판의 총 주행거리를 기록해두면 세무 신고 시 편리합니다.</div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-title">🚗 스마트 운행 기록 (다중 구간)</div>
+      <div class="form-grid" style="margin-bottom:10px;">
+        <div class="form-group full"><label>기록 날짜</label><input type="date" id="d-date"></div>
+      </div>
+      
+      <div id="drive-segments-container"></div>
+      
+      <button class="btn btn-ghost btn-full" onclick="addDriveSegment()">➕ 이동 구간 추가</button>
+      <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="addDrive()">💾 하루 전체 구간 일괄 저장</button>
     </div>
     <div class="recent-list">
       <div class="recent-header"><span>운행 내역</span></div>
@@ -491,12 +496,16 @@
     <div class="form-grid">
       <div class="form-group"><label>날짜</label><input type="date" id="edit-e-date"></div>
       <div class="form-group"><label>카테고리</label>
-        <select id="edit-e-cat">
+        <select id="edit-e-cat" onchange="togglePurposeOther('edit-e-cat', 'edit-e-cat-other-wrap', '기타경비')">
           <option value="자재비">자재비</option><option value="유류비">유류비</option>
           <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
           <option value="통신비">통신비</option><option value="보험료">보험료</option>
           <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
         </select>
+      </div>
+      <div class="form-group full" id="edit-e-cat-other-wrap" style="display:none;">
+        <label>기타 경비 내용</label>
+        <input type="text" id="edit-e-cat-other">
       </div>
       <div class="form-group"><label>금액 (원)</label><input type="number" id="edit-e-amount"></div>
       <div class="form-group"><label>결제수단</label><select id="edit-e-method"></select></div>
@@ -515,20 +524,23 @@
 
 <div class="modal-overlay" id="modal-drive">
   <div class="modal-box">
-    <div class="modal-title">✏️ 운행 수정</div>
+    <div class="modal-title">✏️ 운행 기록 수정</div>
     <input type="hidden" id="edit-d-key">
     <div class="form-grid">
-      <div class="form-group"><label>날짜</label><input type="date" id="edit-d-date"></div>
+      <div class="form-group full"><label>날짜</label><input type="date" id="edit-d-date"></div>
+      <div class="form-group"><label>출발지</label><input type="text" id="edit-d-path-from" placeholder="예: 현장A"></div>
+      <div class="form-group"><label>도착지</label><input type="text" id="edit-d-path-to" placeholder="예: 현장B"></div>
       <div class="form-group"><label>주행거리 (km)</label><input type="number" id="edit-d-km"></div>
       <div class="form-group"><label>목적</label>
         <select id="edit-d-purpose" onchange="togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap')">
-          <option value="출장">출장 (사업)</option>
+          <option value="배관 작업">배관 작업 (사업)</option>
           <option value="견적">견적 (사업)</option>
-          <option value="개인이용">개인이용 (개인)</option>
+          <option value="개인 이동">개인 이동 (개인)</option>
+          <option value="여행">여행 (개인)</option>
           <option value="기타">기타 (직접입력)</option>
         </select>
       </div>
-      <div class="form-group" id="edit-d-purpose-other-wrap" style="display:none;">
+      <div class="form-group full" id="edit-d-purpose-other-wrap" style="display:none;">
         <label>기타 목적 입력</label>
         <input type="text" id="edit-d-purpose-other">
       </div>
@@ -583,6 +595,7 @@
   listen('expenses',d=>{window._expenses=d;renderAll();});
   listen('drives',d=>{window._drives=d;renderAll();});
   listen('commissions',d=>{window._commissions=d;renderAll();});
+  listen('odometers',d=>{window._odometers=d||{};renderAll();});
   listen('paymentMethods',d=>{
     window._paymentMethods=d;
     renderPaymentList();
@@ -594,7 +607,7 @@
       [
         {name:'현금',type:'현금',icon:'💵',color:'#4caf6e',order:0},
         {name:'계좌이체',type:'계좌이체',icon:'🏦',color:'#5b8af0',order:1},
-        {name:'사업카드 A',type:'신용카드',icon:'💳',color:'#f5a623',order:2},
+        {name:'신한카드 더모아',type:'신용카드',icon:'💳',color:'#f5a623',order:2},
         {name:'사업카드 B',type:'신용카드',icon:'💳',color:'#e91e8c',order:3},
       ].forEach(d=>push(ref(db,'paymentMethods'),d));
     }
@@ -603,13 +616,12 @@
 
 <script>
   let currentMonth = new Date();
-  window._revenues={}; window._expenses={}; window._drives={}; window._paymentMethods={}; window._commissions={};
+  window._revenues={}; window._expenses={}; window._drives={}; window._paymentMethods={}; window._commissions={}; window._odometers={};
   let selectedIcon='💳', selectedColor='#5b8af0';
 
   const today = new Date().toISOString().split('T')[0];
   ['r-date','e-date','d-date', 'c-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
   
-  // 리포트 조회 연도 및 월 로직
   let currentReportYear = parseInt(today.substring(0, 4));
   
   window.changeReportYear = function(d) {
@@ -629,12 +641,13 @@
     });
   };
   
-  // 초기 세팅
   document.getElementById('reportYearLabel').textContent = currentReportYear + '년';
   selectReportMonth(today.substring(5, 7));
 
   document.getElementById('headerDate').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
   updateMonthLabel();
+
+  setTimeout(() => window.addDriveSegment(), 100);
 
   function getMonthKey(){return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,'0')}`;}
   function updateMonthLabel(){document.getElementById('currentMonthLabel').textContent=`${currentMonth.getFullYear()}년 ${currentMonth.getMonth()+1}월`;}
@@ -642,7 +655,6 @@
   function filterByMonth(obj){const mk=getMonthKey();return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
   function fmt(n){return '₩'+Number(n||0).toLocaleString('ko-KR');}
 
-  // 백업 기능 함수
   window.handleBackup = async function() {
     try {
       showToast("데이터를 불러오는 중...", "success");
@@ -677,7 +689,15 @@
   function rebuildPaymentSelects(){
     const methods=Object.values(window._paymentMethods).sort((a,b)=>(a.order||0)-(b.order||0));
     const opts=methods.map(m=>`<option value="${m.name}">${m.icon||'💳'} ${m.name}</option>`).join('');
-    ['e-method','edit-e-method'].forEach(id=>{const s=document.getElementById(id);if(s)s.innerHTML=opts;});
+    ['e-method','edit-e-method'].forEach(id=>{
+      const s=document.getElementById(id);
+      if(s){
+        s.innerHTML=opts;
+        if(id === 'e-method' && s.querySelector('option[value="신한카드 더모아"]')) {
+           s.value = "신한카드 더모아";
+        }
+      }
+    });
   }
 
   function getMethodColor(name){
@@ -704,7 +724,7 @@
     document.getElementById('edit-r-date').value=v.date||'';
     document.getElementById('edit-r-site').value=v.site||'';
     document.getElementById('edit-r-amount').value=v.amount||'';
-    document.getElementById('edit-r-method').value=v.method||'현금';
+    document.getElementById('edit-r-method').value=v.method||'계좌이체';
     document.getElementById('edit-r-tax').value=v.tax||'미발행';
     document.getElementById('edit-r-work').value=v.work||'';
     document.getElementById('edit-r-memo').value=v.memo||'';
@@ -727,14 +747,35 @@
     showToast('매출이 수정되었습니다','success');
   };
 
+  window.togglePurposeOther = function(selId, wrapId, triggerValue = '기타') {
+    const sel = document.getElementById(selId);
+    const wrap = document.getElementById(wrapId);
+    if(sel.value === triggerValue) {
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      const input = wrap.querySelector('input');
+      if(input) input.value = '';
+    }
+  };
+
   window.openEditExpense=function(key){
     const v=window._expenses[key]; if(!v)return;
     document.getElementById('edit-e-key').value=key;
     document.getElementById('edit-e-date').value=v.date||'';
-    document.getElementById('edit-e-cat').value=v.cat||'자재비';
+    
+    if(v.cat && v.cat.startsWith('기타경비(')) {
+       document.getElementById('edit-e-cat').value = '기타경비';
+       togglePurposeOther('edit-e-cat', 'edit-e-cat-other-wrap', '기타경비');
+       document.getElementById('edit-e-cat-other').value = v.cat.replace('기타경비(','').replace(')','');
+    } else {
+       document.getElementById('edit-e-cat').value = v.cat || '자재비';
+       togglePurposeOther('edit-e-cat', 'edit-e-cat-other-wrap', '기타경비');
+    }
+
     document.getElementById('edit-e-amount').value=v.amount||'';
     document.getElementById('edit-e-vendor').value=v.vendor||'';
-    document.getElementById('edit-e-receipt').value=v.receipt||'현금영수증';
+    document.getElementById('edit-e-receipt').value=v.receipt||'카드전표';
     document.getElementById('edit-e-memo').value=v.memo||'';
     setTimeout(()=>{
       const sel=document.getElementById('edit-e-method');
@@ -744,9 +785,16 @@
   };
   window.saveExpense=function(){
     const key=document.getElementById('edit-e-key').value;
+    
+    let cat = document.getElementById('edit-e-cat').value;
+    if(cat === '기타경비') {
+        const otherVal = document.getElementById('edit-e-cat-other').value.trim();
+        if(otherVal) cat = `기타경비(${otherVal})`;
+    }
+
     const data={
       date:document.getElementById('edit-e-date').value,
-      cat:document.getElementById('edit-e-cat').value,
+      cat:cat,
       amount:Number(document.getElementById('edit-e-amount').value),
       method:document.getElementById('edit-e-method').value,
       vendor:document.getElementById('edit-e-vendor').value.trim(),
@@ -759,16 +807,52 @@
     showToast('경비가 수정되었습니다','success');
   };
 
-  // 운행일지 기타 토글
-  window.togglePurposeOther = function(selId, wrapId) {
-    const sel = document.getElementById(selId);
-    const wrap = document.getElementById(wrapId);
+  window.toggleSegmentOther = function(sel) {
+    const wrap = sel.closest('.form-grid').querySelector('.ds-purpose-other-wrap');
     if(sel.value === '기타') {
       wrap.style.display = 'block';
     } else {
       wrap.style.display = 'none';
-      document.getElementById(wrapId.replace('-wrap', '')).value = ''; 
+      wrap.querySelector('input').value = '';
     }
+  };
+
+  window.addDriveSegment = function() {
+    const container = document.getElementById('drive-segments-container');
+    const isFirst = container.children.length === 0;
+    const html = `
+      <div class="drive-segment-box" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; position:relative; animation:fadeIn 0.3s ease;">
+        ${!isFirst ? `<div style="position:absolute; right:12px; top:12px; cursor:pointer; color:var(--red); font-size:12px; font-weight:bold; background:rgba(224,82,82,0.1); padding:4px 8px; border-radius:4px;" onclick="this.closest('.drive-segment-box').remove()">✕ 삭제</div>` : ''}
+        <div class="form-grid">
+          <div class="form-group">
+            <label>출발지</label>
+            <input type="text" class="ds-path-from" placeholder="예: 현장A">
+          </div>
+          <div class="form-group">
+            <label>도착지</label>
+            <input type="text" class="ds-path-to" placeholder="예: 현장B">
+          </div>
+          <div class="form-group">
+            <label>주행거리 (km)</label>
+            <input type="number" class="ds-km" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>목적</label>
+            <select class="ds-purpose" onchange="toggleSegmentOther(this)">
+              <option value="배관 작업">배관 작업 (사업)</option>
+              <option value="견적">견적 (사업)</option>
+              <option value="개인 이동">개인 이동 (개인)</option>
+              <option value="여행">여행 (개인)</option>
+              <option value="기타">기타 (직접입력)</option>
+            </select>
+          </div>
+          <div class="form-group full ds-purpose-other-wrap" style="display:none;">
+            <label>기타 목적 내용</label>
+            <input type="text" class="ds-purpose-other" placeholder="예: 자재 구매 등">
+          </div>
+        </div>
+      </div>`;
+    container.insertAdjacentHTML('beforeend', html);
   };
 
   window.openEditDrive=function(key){
@@ -777,15 +861,21 @@
     document.getElementById('edit-d-date').value=v.date||'';
     document.getElementById('edit-d-km').value=v.km||'';
     
-    // 이전 데이터 호환 처리
-    let rp = v.rawPurpose;
-    if (!rp) {
-      if (v.purpose === '출장' || v.purpose === '견적' || v.purpose === '개인이용') rp = v.purpose;
-      else rp = '기타';
+    let pFrom = v.pathFrom || '';
+    let pTo = v.pathTo || '';
+    if(!pFrom && !pTo && v.path) {
+        let parts = v.path.split(' → ');
+        if(parts.length === 2) { pFrom = parts[0]; pTo = parts[1]; }
+        else { pFrom = v.path; }
     }
     
+    document.getElementById('edit-d-path-from').value=pFrom;
+    document.getElementById('edit-d-path-to').value=pTo;
+    
+    let rp = v.rawPurpose || (['배관 작업', '견적', '개인 이동', '여행'].includes(v.purpose) ? v.purpose : '기타');
+    
     document.getElementById('edit-d-purpose').value=rp;
-    togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
+    window.togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
     
     if(rp === '기타') {
       document.getElementById('edit-d-purpose-other').value = v.purpose || '';
@@ -793,11 +883,15 @@
     
     openModal('modal-drive');
   };
+  
   window.saveDrive=function(){
     const key=document.getElementById('edit-d-key').value;
     const rawPurpose = document.getElementById('edit-d-purpose').value;
-    let type = (rawPurpose === '개인이용') ? '개인' : '사업';
+    let type = (rawPurpose === '개인 이동' || rawPurpose === '여행') ? '개인' : '사업';
     let purpose = rawPurpose;
+    const from = document.getElementById('edit-d-path-from').value.trim();
+    const to = document.getElementById('edit-d-path-to').value.trim();
+    const pathStr = (from && to) ? `${from} → ${to}` : (from || to);
     
     if (rawPurpose === '기타') {
       purpose = document.getElementById('edit-d-purpose-other').value.trim();
@@ -807,6 +901,9 @@
     const data={
       date:document.getElementById('edit-d-date').value,
       type: type,
+      pathFrom: from,
+      pathTo: to,
+      path: pathStr,
       rawPurpose: rawPurpose,
       purpose: purpose,
       km:Number(document.getElementById('edit-d-km').value)
@@ -814,7 +911,15 @@
     if(!data.date||!data.km){showToast('날짜와 주행거리를 확인해주세요','error');return;}
     window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
     closeModal('modal-drive');
-    showToast('운행이 수정되었습니다','success');
+    showToast('운행 기록이 수정되었습니다','success');
+  };
+
+  window.saveOdometer=function(){
+    const val = Number(document.getElementById('d-odometer').value);
+    if(!val) { showToast('누적 주행거리를 입력해주세요', 'error'); return; }
+    const mk = getMonthKey();
+    window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { value: val, updatedAt: Date.now() });
+    showToast('월말 누적 주행거리가 저장되었습니다', 'success');
   };
 
   window.selectIcon=function(el){document.querySelectorAll('.icon-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedIcon=el.dataset.icon;};
@@ -984,13 +1089,20 @@
     document.getElementById('d-ratio').textContent=ratio+'%';
     document.getElementById('d-ratio-pct').textContent=ratio+'%';
     document.getElementById('d-ratio-bar').style.width=ratio+'%';
+
+    const mk = getMonthKey();
+    const odoInput = document.getElementById('d-odometer');
+    const odoLabel = document.getElementById('odometer-month-label');
+    if(odoInput) odoInput.value = window._odometers[mk]?.value || '';
+    if(odoLabel) odoLabel.textContent = (currentMonth.getMonth() + 1) + '월말';
+
     if(!entries.length){el.innerHTML='<div class="empty-state">운행 기록이 없어요</div>';return;}
     
     el.innerHTML=entries.map(([k,v])=>`
       <div class="recent-item">
         <div class="ri-dot" style="background:${v.type==='사업'?'var(--blue)':'var(--text3)'}"></div>
         <div class="ri-info">
-          <div class="ri-name">${v.purpose||'-'}</div>
+          <div class="ri-name">${v.path ? `<span style="color:var(--text2)">[${v.path}]</span> ` : ''}${v.purpose||'-'}</div>
           <div class="ri-meta">${v.date} · ${v.type}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -1025,39 +1137,85 @@
   };
 
   window.addExpense=function(){
-    const data={date:document.getElementById('e-date').value,cat:document.getElementById('e-cat').value,amount:Number(document.getElementById('e-amount').value),method:document.getElementById('e-method').value,vendor:document.getElementById('e-vendor').value.trim(),receipt:document.getElementById('e-receipt').value,memo:document.getElementById('e-memo').value.trim(),createdAt:Date.now()};
+    let cat = document.getElementById('e-cat').value;
+    if(cat === '기타경비') {
+        const otherVal = document.getElementById('e-cat-other').value.trim();
+        if(otherVal) cat = `기타경비(${otherVal})`;
+    }
+
+    const data={
+        date:document.getElementById('e-date').value,
+        cat:cat,
+        amount:Number(document.getElementById('e-amount').value),
+        method:document.getElementById('e-method').value,
+        vendor:document.getElementById('e-vendor').value.trim(),
+        receipt:document.getElementById('e-receipt').value,
+        memo:document.getElementById('e-memo').value.trim(),
+        createdAt:Date.now()
+    };
     if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
     window.fbPush(window.fbRef(window.fbDB,'expenses'),data);
     ['e-amount','e-vendor','e-memo'].forEach(id=>document.getElementById(id).value='');
     showToast('경비가 저장되었습니다','success');
   };
+
   window.addDrive=function(){
-    const rawPurpose = document.getElementById('d-purpose').value;
-    let type = (rawPurpose === '개인이용') ? '개인' : '사업';
-    let purpose = rawPurpose;
+    const date = document.getElementById('d-date').value;
+    if(!date) { showToast('날짜를 입력해주세요', 'error'); return; }
     
-    if (rawPurpose === '기타') {
-      purpose = document.getElementById('d-purpose-other').value.trim();
-      if (!purpose) { showToast('기타 목적 내용을 입력해주세요', 'error'); return; }
+    const segments = document.querySelectorAll('.drive-segment-box');
+    let hasError = false;
+    let validData = [];
+    
+    segments.forEach(seg => {
+      const from = seg.querySelector('.ds-path-from').value.trim();
+      const to = seg.querySelector('.ds-path-to').value.trim();
+      const pathStr = (from && to) ? `${from} → ${to}` : (from || to);
+      const km = Number(seg.querySelector('.ds-km').value);
+      const rawPurpose = seg.querySelector('.ds-purpose').value;
+      let type = (rawPurpose === '개인 이동' || rawPurpose === '여행') ? '개인' : '사업';
+      let purpose = rawPurpose;
+      
+      if (rawPurpose === '기타') {
+        purpose = seg.querySelector('.ds-purpose-other').value.trim();
+        if (!purpose) { hasError = true; }
+      }
+      
+      if(!km) { hasError = true; }
+      
+      validData.push({
+        date: date,
+        type: type,
+        pathFrom: from,
+        pathTo: to,
+        path: pathStr,
+        rawPurpose: rawPurpose,
+        purpose: purpose,
+        km: km,
+        createdAt: Date.now()
+      });
+    });
+    
+    if(hasError) {
+       showToast('모든 구간의 주행거리와 목적을 정확히 입력해주세요', 'error');
+       return;
     }
     
-    const data={
-      date:document.getElementById('d-date').value,
-      type: type,
-      rawPurpose: rawPurpose,
-      purpose: purpose,
-      km:Number(document.getElementById('d-km').value),
-      createdAt:Date.now()
-    };
-    if(!data.date||!data.km){showToast('날짜와 주행거리를 입력해주세요','error');return;}
-    window.fbPush(window.fbRef(window.fbDB,'drives'),data);
+    if(validData.length === 0) {
+       showToast('저장할 이동 구간이 없습니다', 'error');
+       return;
+    }
     
-    document.getElementById('d-km').value='';
-    document.getElementById('d-purpose').value='출장';
-    togglePurposeOther('d-purpose', 'd-purpose-other-wrap');
+    validData.forEach(data => {
+      window.fbPush(window.fbRef(window.fbDB,'drives'), data);
+    });
     
-    showToast('운행이 저장되었습니다','success');
+    document.getElementById('drive-segments-container').innerHTML = '';
+    window.addDriveSegment();
+    
+    showToast(`총 ${validData.length}개의 구간이 성공적으로 일괄 저장되었습니다`, 'success');
   };
+
   window.deleteItem=function(path,key){
     if(!confirm('삭제할까요?'))return;
     window.fbRemove(window.fbRef(window.fbDB,`${path}/${key}`));
@@ -1085,7 +1243,7 @@
     let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
     let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
     let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
-    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
+    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.path ? '['+v.path+'] ' : ''}${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
 
     let html = '';
 
@@ -1122,7 +1280,7 @@
 
           <div class="paper-section-title">4. 차량 운행 내역 요약</div>
           <table class="paper-table" style="margin-bottom:5px;">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">목적</th><th style="width:20%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
           <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
@@ -1195,7 +1353,7 @@
 
           <div class="paper-section-title">차량 운행 상세 내역</div>
           <table class="paper-table">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">목적</th><th style="width:20%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
         </div>`;
