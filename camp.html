@@ -3,146 +3,553 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 배정 스케줄러</title>
+    <title>강일 회중 서울 캠페인 스케줄러</title>
 
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ko.js'></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
     <style>
-        /* 기본 및 리셋 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
         * { box-sizing: border-box; }
-        body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; -webkit-text-size-adjust: 100%; }
-        
-        /* 헤더 */
-        header { background-color: #fff; color: #333; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px; }
-        h2 { margin: 0; font-size: 20px; color: #2c3e50; }
-        
-        .header-btns { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
-        .header-btns button { flex: 1; padding: 12px 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s; white-space: nowrap; }
-        .btn-calendar { background-color: #e3f2fd; color: #1976d2; }
-        .btn-calendar:hover { background-color: #bbdefb; }
-        .btn-daily { background-color: #fff3e0; color: #e65100; }
-        .btn-daily:hover { background-color: #ffe0b2; }
-        .btn-admin { background-color: #ffebee; color: #d32f2f; }
-        .btn-admin:hover { background-color: #ffcdd2; }
-        .btn-sms { background-color: #e8f5e9; color: #388e3c; }
-        .btn-sms:hover { background-color: #c8e6c9; }
-        
-        /* 컨테이너 */
-        .container { max-width: 1300px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 95%; }
-        
+
+        body {
+            font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            margin: 0; padding: 0;
+            background: #f5f4f0;
+            color: #1a1a1a;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ── 헤더 ── */
+        header {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+            flex-wrap: wrap;
+            gap: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #fff;
+        }
+        h2 .accent { color: #a8ff78; }
+
+        .header-btns { display: flex; gap: 6px; }
+        .header-btns button {
+            padding: 7px 13px;
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+            background: transparent;
+            color: rgba(255,255,255,.75);
+            transition: all .2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .header-btns button:hover {
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            border-color: rgba(255,255,255,.35);
+        }
+        .header-btns button.active {
+            background: #fff;
+            color: #1a1a1a;
+            border-color: #fff;
+            font-weight: 700;
+        }
+
+        /* ── 컨테이너 ── */
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px 40px;
+            width: 100%;
+        }
+
         #login-view, #admin-view, #sms-view, #daily-view { display: none; }
-        
-        /* 로그인 */
-        .login-box { text-align: center; padding: 60px 15px; }
-        .login-box input { padding: 15px; font-size: 20px; width: 100%; max-width: 250px; text-align: center; letter-spacing: 8px; border: 2px solid #ddd; border-radius: 8px; outline: none; transition: border 0.3s; margin-bottom: 15px; }
-        .login-box input:focus { border-color: #3498db; }
-        .login-box button { padding: 15px 30px; font-size: 16px; background-color: #2c3e50; color: white; border: none; cursor: pointer; border-radius: 8px; width: 100%; max-width: 250px; }
 
-        /* 달력 최적화 */
-        #calendar { max-height: calc(100vh - 160px); }
-        .fc-event { border: none !important; border-radius: 4px !important; padding: 2px 4px; font-size: 11px; cursor: pointer; margin-bottom: 2px; }
-        .fc-daygrid-day-number { font-weight: bold; color: #555; padding: 4px !important; }
-        .fc-toolbar-title { font-size: 1.2em !important; }
-        .fc-button { padding: 0.4em 0.6em !important; font-size: 0.9em !important; }
-        
-        /* 모달 (팝업) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px); padding: 20px; }
-        .modal-content { background: white; padding: 25px 20px; border-radius: 16px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
-        .modal-close { position: absolute; top: 12px; right: 12px; cursor: pointer; font-size: 22px; color: #888; border: none; background: transparent; padding: 5px; }
-        
-        #eventModalContent { text-align: center; }
-        .modal-name { font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #2c3e50; }
-        .modal-desc { font-size: 14px; color: #7f8c8d; margin-bottom: 20px; }
-        .modal-btns { display: flex; gap: 10px; justify-content: center; }
-        .modal-btn { flex: 1; padding: 14px; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; text-align: center; transition: 0.2s; font-size: 15px; }
-        .btn-call { background-color: #3498db; }
-        .btn-msg { background-color: #2ecc71; }
+        /* ── 달력 ── */
+        #calendar-view {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+        }
 
-        /* 테이블 (가로 스크롤) */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #eee; margin-top: 15px; }
+        .cal-legend-bar {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 12px 20px 0;
+            font-size: 12px;
+            color: #888;
+        }
+        .cal-legend-bar span { display: flex; align-items: center; gap: 5px; }
+        .cal-legend-bar i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .legend-s { background: #f43f5e; }
+        .legend-b { background: #3b82f6; }
+
+        /* FullCalendar 스타일 */
+        .fc { --fc-border-color: #f0efeb; font-family: inherit; }
+        .fc .fc-toolbar {
+            padding: 16px 20px 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: #1a1a1a !important;
+            letter-spacing: -0.5px;
+        }
+        .fc .fc-button {
+            background: #f5f4f0 !important;
+            color: #1a1a1a !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 7px 14px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            box-shadow: none !important;
+            transition: background .15s !important;
+            font-family: inherit !important;
+        }
+        .fc .fc-button:hover { background: #ebe9e4 !important; }
+        .fc .fc-button-active,
+        .fc .fc-today-button { background: #1a1a1a !important; color: #fff !important; }
+        .fc .fc-col-header-cell {
+            padding: 10px 0 !important;
+            background: #faf9f6;
+            border-bottom: 1px solid #f0efeb !important;
+        }
+        .fc .fc-col-header-cell-cushion {
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            color: #aaa !important;
+            letter-spacing: .6px;
+            text-decoration: none !important;
+            text-transform: uppercase;
+        }
+        .fc .fc-col-header-cell:nth-child(1) .fc-col-header-cell-cushion { color: #f43f5e !important; }
+        .fc .fc-col-header-cell:nth-child(7) .fc-col-header-cell-cushion { color: #3b82f6 !important; }
+
+        .fc .fc-daygrid-day { vertical-align: top; }
+        .fc .fc-daygrid-day-frame { padding: 6px !important; min-height: 90px; }
+        .fc .fc-daygrid-day-top { flex-direction: row !important; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .fc .fc-daygrid-day-number {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #555 !important;
+            padding: 0 !important;
+            text-decoration: none !important;
+            line-height: 1;
+        }
+        /* 요일 색상 */
+        .fc-day-sun .fc-daygrid-day-number { color: #f43f5e !important; }
+        .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
+
+        /* 오늘 날짜 */
+        .fc .fc-day-today { background: #fffbf0 !important; }
+        .fc .fc-day-today .fc-daygrid-day-number {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border-radius: 50% !important;
+            width: 22px !important;
+            height: 22px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        /* 총 인원 배지 */
+        .day-count-badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: #1a1a1a;
+            color: #fff;
+            border-radius: 10px;
+            padding: 1px 6px;
+            line-height: 1.6;
+            letter-spacing: .3px;
+        }
+
+        /* 이벤트 칩 */
+        .fc-event {
+            border: none !important;
+            border-radius: 6px !important;
+            padding: 2px 7px !important;
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            margin-bottom: 2px !important;
+            line-height: 1.55 !important;
+            transition: opacity .15s, transform .1s !important;
+        }
+        .fc-event:hover { opacity: .82 !important; transform: scale(1.02) !important; }
+        .fc-event.gender-sister {
+            background: #fff0f2 !important;
+            color: #c0132b !important;
+        }
+        .fc-event.gender-brother {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+        .fc-event .fc-event-title { display: flex; align-items: center; gap: 5px; }
+        .fc-event .fc-event-title::before {
+            content: '';
+            display: inline-block;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .fc-event.gender-sister .fc-event-title::before { background: #f43f5e; }
+        .fc-event.gender-brother .fc-event-title::before { background: #60a5fa; }
+
+        /* 달력 높이: PC 화면 꽉 차게 */
+        #calendar { height: calc(100vh - 148px); min-height: 600px; }
+        @media (max-width: 768px) {
+            #calendar { height: auto; min-height: unset; }
+            .fc-event { font-size: 10px !important; padding: 1px 5px !important; }
+            .fc-event .fc-event-title::before { display: none; }
+            .fc .fc-toolbar { padding: 12px 14px 8px; }
+            .fc .fc-toolbar-title { font-size: 15px !important; }
+            .fc .fc-button { padding: 6px 11px !important; font-size: 12px !important; }
+            .fc .fc-daygrid-day-frame { min-height: 70px; }
+        }
+
+        /* ── 이벤트 팝업 모달 (개선) ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10,10,10,.45);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            padding: 20px;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 340px;
+            box-shadow: 0 24px 60px rgba(0,0,0,.18);
+            position: relative;
+            overflow: hidden;
+        }
+        .modal-close {
+            position: absolute;
+            top: 14px; right: 14px;
+            cursor: pointer;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: #f0efeb;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+            transition: background .15s;
+            line-height: 1;
+        }
+        .modal-close:hover { background: #e5e3dd; color: #1a1a1a; }
+
+        /* 이벤트 팝업 내부 */
+        .event-modal-header {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid #f0efeb;
+        }
+        .event-modal-avatar {
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+        .event-modal-avatar.sister { background: #fff0f2; }
+        .event-modal-avatar.brother { background: #eff6ff; }
+        .event-modal-name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin: 0 0 4px;
+            color: #1a1a1a;
+        }
+        .event-modal-meta {
+            font-size: 13px;
+            color: #888;
+            margin: 0;
+        }
+        .event-modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .event-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 20px 16px;
+            text-decoration: none;
+            transition: background .15s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+        }
+        .event-action-btn:first-child {
+            border-right: 1px solid #f0efeb;
+        }
+        .event-action-btn:hover { background: #faf9f6; }
+        .event-action-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .icon-call { background: #eff6ff; }
+        .icon-sms  { background: #f0fdf4; }
+        .event-action-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: .1px;
+        }
+        .event-action-sub {
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* ── 로그인 ── */
+        .login-box {
+            text-align: center;
+            padding: 60px 15px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+        }
+        .login-box h3 { color: #1a1a1a; margin-top: 0; font-size: 18px; font-weight: 700; }
+        .login-box p { color: #888; font-size: 14px; }
+        .login-box input {
+            padding: 15px;
+            font-size: 22px;
+            width: 100%; max-width: 220px;
+            text-align: center;
+            letter-spacing: 10px;
+            border: 1.5px solid #e5e3dd;
+            border-radius: 12px;
+            outline: none;
+            transition: border .2s;
+            margin-bottom: 15px;
+            font-family: inherit;
+            background: #faf9f6;
+        }
+        .login-box input:focus { border-color: #1a1a1a; background: #fff; }
+        .login-box button {
+            padding: 14px 30px;
+            font-size: 14px;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 12px;
+            width: 100%; max-width: 220px;
+            font-weight: 700;
+            font-family: inherit;
+            transition: background .15s;
+        }
+        .login-box button:hover { background: #333; }
+
+        /* ── 관리자 / SMS 공통 패널 ── */
+        .panel-wrap {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 20px;
+            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+        }
+        .panel-title {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin: 0 0 4px;
+            color: #1a1a1a;
+        }
+        .panel-sub {
+            font-size: 12px;
+            color: #aaa;
+            margin: 0 0 18px;
+        }
+
+        /* ── 테이블 ── */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #f0efeb; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-        th, td { border-bottom: 1px solid #eee; padding: 12px 10px; text-align: center; word-break: keep-all; }
-        th { background-color: #fcfcfc; color: #555; font-weight: bold; border-top: 2px solid #2c3e50; border-bottom: 2px solid #ddd; white-space: nowrap; }
-        .dates-cell { max-width: 200px; font-size: 11px; text-align: left; line-height: 1.4; color: #666; }
-        .edit-input { width: 100%; padding: 8px; box-sizing: border-box; text-align: center; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; }
-        
-        /* 다중 날짜 선택기 */
-        .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-        .date-btn { padding: 8px 0; font-size: 12px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer; color: #555; transition: 0.2s; }
-        .date-btn.selected { background-color: #3498db; color: white; border-color: #3498db; font-weight: bold; }
-        .date-btn.selected-daily { background-color: #e65100 !important; color: white !important; border-color: #e65100 !important; font-weight: bold; }
-        
-        .btn-edit { background-color: #f1c40f; border: none; padding: 8px 12px; cursor: pointer; border-radius: 4px; font-weight:bold; color: #555; width: 100%; }
-        .btn-save { background-color: #2ecc71; border: none; padding: 8px 12px; color:white; cursor: pointer; border-radius: 4px; font-weight:bold; width: 100%; }
+        th, td { border-bottom: 1px solid #f0efeb; padding: 12px 10px; text-align: center; word-break: keep-all; }
+        th { background: #faf9f6; color: #888; font-weight: 600; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; border-top: 2px solid #1a1a1a; border-bottom: 1px solid #e5e3dd; white-space: nowrap; }
+        .dates-cell { max-width: 200px; font-size: 11px; text-align: left; line-height: 1.6; color: #888; }
+        .edit-input { width: 100%; padding: 8px 10px; box-sizing: border-box; text-align: center; font-size: 12px; border: 1.5px solid #e5e3dd; border-radius: 8px; font-family: inherit; transition: border .15s; }
+        .edit-input:focus { border-color: #1a1a1a; outline: none; }
 
-        /* 템플릿 영역 */
-        .template-box { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef; margin-bottom: 20px; }
-        .template-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; margin-bottom: 10px; }
-        .template-controls select, .template-controls input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; font-family: inherit; }
-        textarea { width: 100%; padding: 15px; box-sizing: border-box; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; resize: none; margin-bottom: 10px; line-height: 1.5; font-family: inherit;}
-        textarea:focus { border-color: #388e3c; outline: none; }
-        .template-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn-save-temp, .btn-delete-temp { flex: 1; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; border: none; color: white; }
-        .btn-save-temp { background-color: #388e3c; }
-        .btn-delete-temp { background-color: #e74c3c; }
-        
-        .member-sms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
-        .sms-item-btn { display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: white; border: 1px solid #ced4da; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; color: #495057; }
-        
+        /* 날짜 선택 그리드 */
+        .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; background: #faf9f6; border-radius: 10px; border: 1px solid #f0efeb; }
+        .date-btn { padding: 8px 0; font-size: 12px; border: 1px solid #e5e3dd; background: white; border-radius: 6px; cursor: pointer; color: #555; transition: .15s; font-family: inherit; }
+        .date-btn.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; font-weight: 700; }
+        .date-btn.selected-daily { background: #e65100 !important; color: white !important; border-color: #e65100 !important; font-weight: bold; }
+
+        /* 버튼들 */
+        .btn-add-member { background: #1a1a1a; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-bottom: 10px; font-size: 13px; font-family: inherit; transition: background .15s; }
+        .btn-add-member:hover { background: #333; }
+        .btn-edit { background: #f5f4f0; border: none; padding: 7px 11px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #555; font-size: 12px; transition: background .15s; font-family: inherit; }
+        .btn-edit:hover { background: #ebe9e4; }
+        .btn-delete { background: #fff0f2; border: none; padding: 7px 11px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #c0132b; margin-top: 4px; font-size: 12px; transition: background .15s; font-family: inherit; }
+        .btn-delete:hover { background: #ffd7de; }
+        .btn-save { background: #1a1a1a; border: none; padding: 7px 11px; color: white; cursor: pointer; border-radius: 7px; font-weight: 700; font-size: 12px; font-family: inherit; transition: background .15s; }
+        .btn-save:hover { background: #333; }
+
+        /* ── 문자 발송 ── */
+        .template-box { background: #faf9f6; padding: 18px; border-radius: 14px; border: 1px solid #f0efeb; margin-bottom: 20px; }
+        .template-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; margin-bottom: 10px; }
+        .template-controls select,
+        .template-controls input {
+            width: 100%; padding: 11px 14px; border-radius: 10px;
+            border: 1.5px solid #e5e3dd; font-size: 14px;
+            font-family: inherit; background: #fff;
+            transition: border .15s; outline: none;
+        }
+        .template-controls select:focus,
+        .template-controls input:focus { border-color: #1a1a1a; }
+        textarea {
+            width: 100%; padding: 14px; box-sizing: border-box;
+            border: 1.5px solid #e5e3dd; border-radius: 10px;
+            font-size: 14px; resize: none; margin-bottom: 10px;
+            line-height: 1.6; font-family: inherit; background: #fff;
+            transition: border .15s; outline: none;
+        }
+        textarea:focus { border-color: #1a1a1a; }
+        .template-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-save-temp, .btn-delete-temp {
+            flex: 1; padding: 13px; border-radius: 10px; cursor: pointer;
+            font-weight: 700; font-size: 13px; border: none; color: white; font-family: inherit;
+            transition: opacity .15s;
+        }
+        .btn-save-temp:hover, .btn-delete-temp:hover { opacity: .85; }
+        .btn-save-temp { background: #1a1a1a; }
+        .btn-delete-temp { background: #f43f5e; }
+
+        .member-sms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px; margin-top: 15px;
+        }
+        .sms-item-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 4px; padding: 16px 10px;
+            background: #fff; border: 1.5px solid #f0efeb;
+            border-radius: 12px; cursor: pointer; transition: all .15s;
+        }
+        .sms-item-btn:hover { border-color: #1a1a1a; background: #faf9f6; }
+        .sms-item-btn .sms-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+        .sms-item-btn .sms-gender {
+            font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 20px;
+        }
+        .sms-gender-s { background: #fff0f2; color: #c0132b; }
+        .sms-gender-b { background: #eff6ff; color: #1d4ed8; }
+
         /* 발송 모달 */
-        #smsSendModalContent h3 { margin-top: 0; font-size: 17px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .preview-label { font-size: 13px; font-weight: bold; color: #666; margin-top: 15px; margin-bottom: 5px; display: block; }
-        .send-modal-select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; font-size: 15px; }
-        #smsPreviewText, #dailySummaryText { width: 100%; background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; color: #444; height: 160px; }
-        .btn-execute-sms { width: 100%; padding: 15px; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        
+        #smsSendModalContent h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; letter-spacing: -0.4px; }
+        .preview-label { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: .5px; text-transform: uppercase; margin: 14px 0 6px; display: block; }
+        .send-modal-select {
+            width: 100%; padding: 11px 14px; border-radius: 10px;
+            border: 1.5px solid #e5e3dd; margin-bottom: 4px; font-size: 14px;
+            font-family: inherit; background: #fff; outline: none;
+        }
+        .send-modal-select:focus { border-color: #1a1a1a; }
+        #smsPreviewText, #dailySummaryText {
+            width: 100%; background: #faf9f6; padding: 14px;
+            border: 1.5px solid #f0efeb; border-radius: 10px;
+            font-size: 13px; color: #444; height: 160px;
+            font-family: inherit; line-height: 1.6; resize: none;
+        }
+        .btn-execute-sms {
+            width: 100%; padding: 14px; color: white; border: none;
+            border-radius: 12px; font-size: 14px; font-weight: 700; margin-top: 14px;
+            cursor: pointer; font-family: inherit; transition: opacity .15s;
+        }
+        .btn-execute-sms:hover { opacity: .88; }
+
+        /* 명단 복사 */
         .daily-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 
-        /* PC 화면 대응 (태블릿 이상) */
+        /* 코드 태그 */
+        .code-tag {
+            display: inline-block; background: #f0efeb; color: #1a1a1a;
+            padding: 1px 6px; border-radius: 5px; font-size: 12px;
+            font-family: monospace;
+        }
+
+        /* PC 대응 */
         @media (min-width: 769px) {
             header { flex-wrap: nowrap; }
-            .header-btns { width: auto; }
-            .header-btns button { flex: none; }
             .template-controls { flex-direction: row; }
             .daily-actions { flex-direction: row; align-items: center; }
-            .fc-event { padding: 3px 5px; font-size: 12px; }
+            .fc .fc-daygrid-day-frame { min-height: 110px; }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h2>✨ 스마트 스케줄러</h2>
+        <h2>✦ <span class="accent">스마트</span> 스케줄러</h2>
         <div class="header-btns">
-            <button class="btn-calendar" onclick="requestView('calendar-view')">🗓️ 달력</button>
-            <button class="btn-daily" onclick="requestView('daily-view')">📋 명단복사</button>
-            <button class="btn-admin" onclick="requestView('admin-view')">👥 인원관리</button>
-            <button class="btn-sms" onclick="requestView('sms-view')">✉️ 문자발송</button>
+            <button id="hbtn-calendar" onclick="requestView('calendar-view')">달력</button>
+            <button id="hbtn-daily" onclick="requestView('daily-view')">명단복사</button>
+            <button id="hbtn-admin" onclick="requestView('admin-view')">인원관리</button>
+            <button id="hbtn-sms" onclick="requestView('sms-view')">문자발송</button>
         </div>
     </header>
 
     <div class="container">
-        <div id="calendar-view"><div id="calendar"></div></div>
-
-        <div id="login-view" class="login-box">
-            <h3 style="color:#2c3e50; margin-top:0;">보안 구역</h3>
-            <p style="color:#7f8c8d; font-size:14px;">관리자 PIN 번호를 입력하세요.</p>
-            <input type="password" id="pinInput" placeholder="PIN" maxlength="4" pattern="[0-9]*" inputmode="numeric">
-            <br>
-            <button onclick="checkPin()">인증하기</button>
-            <p id="loginError" style="color: #e74c3c; display: none; margin-top: 15px; font-weight: bold;">비밀번호가 틀렸습니다.</p>
+        <div id="calendar-view">
+            <div class="cal-legend-bar">
+                <span><i class="legend-s"></i>자매</span>
+                <span><i class="legend-b"></i>형제</span>
+            </div>
+            <div id="calendar"></div>
         </div>
 
-        <div id="admin-view">
-            <h3 style="margin-top:0; font-size:18px;">👥 전체 배정 인원 관리</h3>
-            <p style="color: #666; font-size: 12px; margin-bottom: 10px;">🔒 표를 좌우로 스크롤하여 확인하세요.</p>
+        <div id="login-view" class="login-box">
+            <h3>보안 구역</h3>
+            <p>관리자 PIN 번호를 입력하세요.</p>
+            <input type="password" id="pinInput" placeholder="····" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+            <br>
+            <button onclick="checkPin()">인증하기</button>
+            <p id="loginError" style="color: #f43f5e; display: none; margin-top: 15px; font-weight: 700; font-size: 13px;">비밀번호가 틀렸습니다.</p>
+        </div>
+
+        <div id="admin-view" class="panel-wrap">
+            <p class="panel-title">인원 관리</p>
+            <p class="panel-sub">정보는 암호화되어 Firebase에 저장됩니다 · 모바일 좌우 스크롤 가능</p>
+            <button class="btn-add-member" onclick="addNewMember()">+ 새 인원 추가</button>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -152,8 +559,8 @@
                             <th width="8%">성별</th>
                             <th width="8%">출생</th>
                             <th width="18%">전화번호</th>
-                            <th width="33%">참여일자 (클릭하여 수정)</th>
-                            <th width="8%">관리</th>
+                            <th width="31%">참여일자</th>
+                            <th width="10%">관리</th>
                         </tr>
                     </thead>
                     <tbody id="memberTableBody"></tbody>
@@ -161,76 +568,78 @@
             </div>
         </div>
 
-        <div id="sms-view">
+        <div id="sms-view" class="panel-wrap">
             <div class="template-box">
-                <h3 style="margin-top:0; color:#2e7d32; font-size:18px;">📝 다중 메시지 템플릿 관리</h3>
-                <p style="color: #666; font-size: 13px; margin: 5px 0;">
-                    문구에 <span class="code-tag">{이름}</span>, <span class="code-tag">{호칭}</span>, <span class="code-tag">{회중}</span>, <span class="code-tag">{배정일자}</span> 입력 시 자동 변환.
+                <p class="panel-title">메시지 템플릿</p>
+                <p style="color: #888; font-size: 13px; margin: 5px 0 0;">
+                    <span class="code-tag">{이름}</span> <span class="code-tag">{호칭}</span> <span class="code-tag">{회중}</span> <span class="code-tag">{배정일자}</span> 자동 변환
                 </p>
-                
                 <div class="template-controls">
                     <select id="templateSelect" onchange="loadSelectedTemplate()">
-                        <option value="new">➕ 새 템플릿 작성</option>
+                        <option value="new">+ 새 템플릿 작성</option>
                     </select>
                     <input type="text" id="templateTitle" placeholder="템플릿 제목 (예: 첫 안내 문자)">
                 </div>
-
                 <textarea id="smsTextarea" placeholder="문자 내용을 입력해주세요." style="height: 180px;"></textarea>
-                
                 <div class="template-actions">
-                    <button class="btn-save-temp" id="btnSaveTemp" onclick="saveTemplateToFirebase()">☁️ 저장</button>
-                    <button class="btn-delete-temp" onclick="deleteTemplate()" id="btnDeleteTemp" style="display:none;">🗑️ 삭제</button>
+                    <button class="btn-save-temp" id="btnSaveTemp" onclick="saveTemplateToFirebase()">저장</button>
+                    <button class="btn-delete-temp" onclick="deleteTemplate()" id="btnDeleteTemp" style="display:none;">삭제</button>
                 </div>
-                <div id="saveNoti" style="color:#e74c3c; font-size:13px; margin-top:10px; display:none; text-align:center;">저장되었습니다!</div>
+                <div id="saveNoti" style="color:#22c55e; font-size:13px; margin-top:10px; display:none; text-align:center; font-weight:700;">저장되었습니다!</div>
             </div>
-
-            <h3 style="margin-top:25px; font-size:17px;">📲 명단에서 발송할 사람 선택</h3>
+            <p class="panel-title" style="margin-bottom:4px;">발송 대상 선택</p>
+            <p class="panel-sub" style="margin-bottom:0;">아래에서 발송할 사람을 선택하세요</p>
             <div class="member-sms-grid" id="smsGrid"></div>
         </div>
 
-        <div id="daily-view">
+        <div id="daily-view" class="panel-wrap">
             <div class="template-box">
-                <h3 style="margin-top:0; color:#e65100; font-size:18px;">📋 일자별 참여 명단 복사</h3>
-                <p style="color: #666; font-size: 13px; margin: 5px 0;">
-                    달력에서 날짜를 선택하시면 해당 일자의 참석 명단이 표시됩니다.
-                </p>
-                
-                <div id="dailyDateGrid" class="date-grid" style="margin: 15px auto; max-width: 350px; gap: 6px;"></div>
-
+                <p class="panel-title">일자별 참여 명단 복사</p>
+                <p style="color: #888; font-size: 13px; margin: 5px 0 14px;">날짜를 선택하면 해당 일자의 참석 명단이 표시됩니다.</p>
+                <div id="dailyDateGrid" class="date-grid" style="margin: 0 auto 16px; max-width: 350px; gap: 6px;"></div>
                 <textarea id="dailySummaryText" style="height: 200px;" placeholder="날짜를 선택하시면 명단이 표시됩니다." readonly></textarea>
-                
                 <div class="daily-actions">
-                    <button class="btn-execute-sms" style="background-color:#e65100; margin-top:0;" onclick="copyDailySummary()">📋 텍스트 복사하기</button>
-                    <div id="copyNoti" style="color:#2ecc71; font-size:14px; font-weight:bold; display:none; text-align:center;">복사 완료! 카톡에 붙여넣기 하세요.</div>
+                    <button class="btn-execute-sms" style="background:#1a1a1a; margin-top:0;" onclick="copyDailySummary()">텍스트 복사하기</button>
+                    <div id="copyNoti" style="color:#22c55e; font-size:14px; font-weight:700; display:none; text-align:center;">복사 완료!</div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 이벤트 팝업 모달 (개선) -->
     <div class="modal-overlay" id="eventModalOverlay" onclick="closeModal('eventModalOverlay', event)">
-        <div class="modal-content" id="eventModalContent" onclick="event.stopPropagation()">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <button class="modal-close" onclick="closeModalBtn('eventModalOverlay')">✕</button>
-            <div class="modal-name" id="modalName">홍길동 (형제)</div>
-            <div class="modal-desc" id="modalDesc">회중 | 30세</div>
-            <div class="modal-btns">
-                <a href="#" class="modal-btn btn-call" id="modalCall">📞 전화걸기</a>
-                <a href="#" class="modal-btn btn-msg" id="modalSms">✉️ 일반 문자</a>
+            <div class="event-modal-header">
+                <div class="event-modal-avatar" id="modalAvatar">👤</div>
+                <p class="event-modal-name" id="modalName">홍길동</p>
+                <p class="event-modal-meta" id="modalDesc">회중 · 30세</p>
+            </div>
+            <div class="event-modal-actions">
+                <a href="#" class="event-action-btn" id="modalCall">
+                    <div class="event-action-icon icon-call">📞</div>
+                    <span class="event-action-label">전화</span>
+                    <span class="event-action-sub" id="modalCallNum">010-0000-0000</span>
+                </a>
+                <a href="#" class="event-action-btn" id="modalSms">
+                    <div class="event-action-icon icon-sms">💬</div>
+                    <span class="event-action-label">문자</span>
+                    <span class="event-action-sub">메시지 보내기</span>
+                </a>
             </div>
         </div>
     </div>
 
+    <!-- 문자 발송 모달 -->
     <div class="modal-overlay" id="smsSendModalOverlay" onclick="closeModal('smsSendModalOverlay', event)">
-        <div class="modal-content" id="smsSendModalContent" onclick="event.stopPropagation()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="padding:24px 20px;">
             <button class="modal-close" onclick="closeModalBtn('smsSendModalOverlay')">✕</button>
-            <h3 id="smsSendTargetName">메시지 보내기</h3>
-            
-            <label class="preview-label">1. 발송할 템플릿 선택</label>
+            <h3 id="smsSendTargetName" style="margin:0 0 16px; font-size:16px; font-weight:700; letter-spacing:-0.4px;">메시지 보내기</h3>
+            <label class="preview-label">템플릿 선택</label>
             <select class="send-modal-select" id="sendModalTemplateSelect" onchange="updateSmsPreview()"></select>
-            
-            <label class="preview-label">2. 발송될 문구 미리보기 (자동 변환됨)</label>
+            <label class="preview-label">미리보기</label>
             <textarea id="smsPreviewText" readonly></textarea>
-            
-            <button class="btn-execute-sms" style="background-color:#27ae60;" onclick="executeSmsSend()">📱 문자 앱으로 열기</button>
+            <button class="btn-execute-sms" style="background:#1a1a1a;" onclick="executeSmsSend()">문자 앱으로 열기</button>
         </div>
     </div>
 
@@ -245,23 +654,21 @@
             appId: "1:798065461606:web:fcc2308eae7a71e8f360a7",
             measurementId: "G-4FYC7HVNNV"
         };
-        
+
         let db = null;
         try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.database();
-        } catch(e) {
-            console.error("Firebase 초기화 에러:", e);
-        }
+        } catch(e) { console.error("Firebase 초기화 에러:", e); }
 
         const ADMIN_PIN = "4560";
-        const SECRET_KEY = "GuestRoster_Secret_V5_Secure"; 
-        
+        const SECRET_KEY = "GuestRoster_Secret_V5_Secure";
+
         let calendarInstance = null;
-        let pendingView = ''; 
-        let members = []; 
-        let smsTemplates = []; 
-        let currentSmsUserIndex = null; 
+        let pendingView = '';
+        let members = [];
+        let smsTemplates = [];
+        let currentSmsUserIndex = null;
 
         const initialData = [
             { cong: '경기이천부발', name: '진보람', gender: '자매', birth: '1994', phone: '010-2572-4132', dates: ['2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17'] },
@@ -287,18 +694,18 @@
 
         function encryptData(data) { return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString(); }
         function decryptData(ciphertext) {
-            try { return JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); } 
+            try { return JSON.parse(CryptoJS.AES.decrypt(ciphertext, SECRET_KEY).toString(CryptoJS.enc.Utf8)); }
             catch (e) { return null; }
         }
 
         function loadData() {
-            if(db) {
+            if (db) {
                 db.ref('roster/encryptedMembers').once('value').then((snapshot) => {
-                    if(snapshot.exists()) {
-                        const decrypted = decryptData(snapshot.val()); 
+                    if (snapshot.exists()) {
+                        const decrypted = decryptData(snapshot.val());
                         members = decrypted ? decrypted : initialData;
                     } else fallbackLocalData();
-                    finalizeLoad(); 
+                    finalizeLoad();
                 }).catch(() => { fallbackLocalData(); finalizeLoad(); });
 
                 db.ref('settings/smsTemplatesList').once('value').then((snapshot) => {
@@ -306,7 +713,6 @@
                     else fallbackLocalTemplates();
                     renderTemplateDropdown();
                 }).catch(() => { fallbackLocalTemplates(); renderTemplateDropdown(); });
-                
             } else {
                 fallbackLocalData();
                 fallbackLocalTemplates();
@@ -316,17 +722,15 @@
         }
 
         function fallbackLocalData() {
-            const encryptedSavedData = localStorage.getItem('encryptedMembersDataV5');
-            members = encryptedSavedData ? (decryptData(encryptedSavedData) || initialData) : initialData;
+            const saved = localStorage.getItem('encryptedMembersDataV5');
+            members = saved ? (decryptData(saved) || initialData) : initialData;
         }
-
         function fallbackLocalTemplates() {
-            const localBackup = localStorage.getItem('smsTemplatesListData');
-            if(localBackup) smsTemplates = JSON.parse(localBackup);
+            const local = localStorage.getItem('smsTemplatesListData');
+            if (local) smsTemplates = JSON.parse(local);
         }
-
         function finalizeLoad() {
-            if(!calendarInstance) initCalendar();
+            if (!calendarInstance) initCalendar();
             else {
                 calendarInstance.removeAllEvents();
                 calendarInstance.addEventSource(generateCalendarEvents());
@@ -334,19 +738,19 @@
         }
 
         function saveData() {
-            const encryptedData = encryptData(members); 
-            localStorage.setItem('encryptedMembersDataV5', encryptedData); 
-            if(db) db.ref('roster/encryptedMembers').set(encryptedData);
-            if(calendarInstance) {
+            const encrypted = encryptData(members);
+            localStorage.setItem('encryptedMembersDataV5', encrypted);
+            if (db) db.ref('roster/encryptedMembers').set(encrypted);
+            if (calendarInstance) {
                 calendarInstance.removeAllEvents();
                 calendarInstance.addEventSource(generateCalendarEvents());
             }
         }
 
+        // ── 템플릿 ──
         function renderTemplateDropdown() {
             const select = document.getElementById('templateSelect');
-            select.innerHTML = '<option value="new">➕ 새 템플릿 작성</option>';
-            
+            select.innerHTML = '<option value="new">+ 새 템플릿 작성</option>';
             smsTemplates.forEach((temp) => {
                 const opt = document.createElement('option');
                 opt.value = temp.id;
@@ -355,51 +759,42 @@
             });
             loadSelectedTemplate();
         }
-
         function loadSelectedTemplate() {
             const val = document.getElementById('templateSelect').value;
             const btnDel = document.getElementById('btnDeleteTemp');
             const btnSave = document.getElementById('btnSaveTemp');
-            
-            if(val === 'new') {
+            if (val === 'new') {
                 document.getElementById('templateTitle').value = '';
                 document.getElementById('smsTextarea').value = '';
                 btnDel.style.display = 'none';
-                btnSave.innerText = '☁️ 새 템플릿 저장';
+                btnSave.innerText = '새 템플릿 저장';
             } else {
                 const temp = smsTemplates.find(t => t.id == val);
-                if(temp) {
+                if (temp) {
                     document.getElementById('templateTitle').value = temp.title;
                     document.getElementById('smsTextarea').value = temp.content;
-                    btnDel.style.display = 'block';
-                    btnSave.innerText = '☁️ 템플릿 수정 (덮어쓰기)';
+                    btnDel.style.display = 'inline-block';
+                    btnSave.innerText = '수정 저장';
                 }
             }
         }
-
         function saveTemplateToFirebase() {
             const val = document.getElementById('templateSelect').value;
             const title = document.getElementById('templateTitle').value.trim() || '제목 없는 템플릿';
             const content = document.getElementById('smsTextarea').value;
             const noti = document.getElementById('saveNoti');
-
-            if(val === 'new') {
-                const newTemp = { id: Date.now(), title: title, content: content };
-                smsTemplates.push(newTemp);
+            if (val === 'new') {
+                smsTemplates.push({ id: Date.now(), title, content });
             } else {
                 const idx = smsTemplates.findIndex(t => t.id == val);
-                if(idx > -1) {
-                    smsTemplates[idx].title = title;
-                    smsTemplates[idx].content = content;
-                }
+                if (idx > -1) { smsTemplates[idx].title = title; smsTemplates[idx].content = content; }
             }
-
-            localStorage.setItem('smsTemplatesListData', JSON.stringify(smsTemplates)); 
-            if(db) {
+            localStorage.setItem('smsTemplatesListData', JSON.stringify(smsTemplates));
+            if (db) {
                 db.ref('settings/smsTemplatesList').set(smsTemplates).then(() => {
                     noti.style.display = 'block'; setTimeout(() => noti.style.display = 'none', 3000);
                     renderTemplateDropdown();
-                    document.getElementById('templateSelect').value = val === 'new' ? smsTemplates[smsTemplates.length-1].id : val;
+                    document.getElementById('templateSelect').value = val === 'new' ? smsTemplates[smsTemplates.length - 1].id : val;
                     loadSelectedTemplate();
                 });
             } else {
@@ -407,36 +802,36 @@
                 renderTemplateDropdown();
             }
         }
-
         function deleteTemplate() {
             const val = document.getElementById('templateSelect').value;
-            if(val === 'new') return;
-            
-            if(confirm("이 템플릿을 삭제하시겠습니까?")) {
+            if (val === 'new') return;
+            if (confirm("이 템플릿을 삭제하시겠습니까?")) {
                 smsTemplates = smsTemplates.filter(t => t.id != val);
-                localStorage.setItem('smsTemplatesListData', JSON.stringify(smsTemplates)); 
-                if(db) db.ref('settings/smsTemplatesList').set(smsTemplates);
-                
+                localStorage.setItem('smsTemplatesListData', JSON.stringify(smsTemplates));
+                if (db) db.ref('settings/smsTemplatesList').set(smsTemplates);
                 document.getElementById('templateSelect').value = 'new';
                 renderTemplateDropdown();
             }
         }
 
+        // ── 달력 ──
         function getAge(birthYear) { return 2026 - parseInt(birthYear); }
 
         function generateCalendarEvents() {
             let events = [];
             members.forEach(member => {
-                if(member.dates && member.dates.length > 0) {
+                if (member.dates && member.dates.length > 0) {
+                    const isSister = member.gender === '자매';
                     member.dates.forEach(date => {
-                        let age = getAge(member.birth);
                         events.push({
-                            title: `${member.name}(${member.gender}) [${member.cong}] [${age}세]`,
+                            title: `${member.name} ${member.gender}`,
                             start: date,
                             allDay: true,
-                            backgroundColor: member.gender === '자매' ? '#ff7675' : '#74b9ff', 
+                            backgroundColor: 'transparent',
                             borderColor: 'transparent',
-                            extendedProps: { ...member, age: age } 
+                            textColor: isSister ? '#c0132b' : '#1d4ed8',
+                            classNames: [isSister ? 'gender-sister' : 'gender-brother'],
+                            extendedProps: { ...member, age: getAge(member.birth) }
                         });
                     });
                 }
@@ -445,10 +840,9 @@
         }
 
         function initCalendar() {
-            var calendarEl = document.getElementById('calendar');
-            // 화면 너비에 따라 달력 헤더 버튼 설정 변경
+            const calendarEl = document.getElementById('calendar');
             const isMobile = window.innerWidth <= 768;
-            const headerToolbarOpt = isMobile 
+            const headerToolbarOpt = isMobile
                 ? { left: 'prev,next', center: 'title', right: 'today' }
                 : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' };
 
@@ -457,27 +851,47 @@
                 initialDate: '2026-05-01',
                 locale: 'ko',
                 headerToolbar: headerToolbarOpt,
-                height: 'auto', // 부모 요소에 맞춰 자동 높이 조절
-                contentHeight: 'auto',
+                height: isMobile ? 'auto' : '100%',
+                contentHeight: isMobile ? 'auto' : undefined,
                 events: generateCalendarEvents(),
                 eventDisplay: 'block',
+                dayMaxEvents: false,   // ← 모든 이벤트 표시 (숨김 없음)
+                dayCellDidMount: function(info) {
+                    // 날짜 옆 총 인원 배지 추가
+                    const dateStr = info.date.toISOString().split('T')[0];
+                    const count = members.filter(m => m.dates && m.dates.includes(dateStr)).length;
+                    if (count > 0) {
+                        const top = info.el.querySelector('.fc-daygrid-day-top');
+                        if (top) {
+                            const badge = document.createElement('span');
+                            badge.className = 'day-count-badge';
+                            badge.textContent = count + '명';
+                            top.appendChild(badge);
+                        }
+                    }
+                },
                 eventClick: function(info) {
                     const data = info.event.extendedProps;
-                    document.getElementById('modalName').innerText = `${data.name} (${data.gender})`;
-                    document.getElementById('modalDesc').innerText = `${data.cong} 회중 | ${data.age}세`;
+                    const isSister = data.gender === '자매';
+                    document.getElementById('modalAvatar').textContent = isSister ? '👩' : '👨';
+                    document.getElementById('modalAvatar').className = 'event-modal-avatar ' + (isSister ? 'sister' : 'brother');
+                    document.getElementById('modalName').textContent = `${data.name} (${data.gender})`;
+                    document.getElementById('modalDesc').textContent = `${data.cong} 회중 · ${data.age}세`;
                     document.getElementById('modalCall').href = `tel:${data.phone}`;
                     document.getElementById('modalSms').href = `sms:${data.phone}`;
+                    document.getElementById('modalCallNum').textContent = data.phone;
                     document.getElementById('eventModalOverlay').style.display = 'flex';
                 }
             });
             calendarInstance.render();
         }
 
-        function closeModal(id, e) { if(e.target.id === id) document.getElementById(id).style.display = 'none'; }
+        function closeModal(id, e) { if (e.target.id === id) document.getElementById(id).style.display = 'none'; }
         function closeModalBtn(id) { document.getElementById(id).style.display = 'none'; }
 
+        // ── 뷰 전환 ──
         function requestView(viewId) {
-            if(viewId === 'admin-view' || viewId === 'sms-view' || viewId === 'daily-view') {
+            if (viewId === 'admin-view' || viewId === 'sms-view' || viewId === 'daily-view') {
                 pendingView = viewId;
                 showView('login-view');
             } else {
@@ -485,36 +899,46 @@
             }
         }
 
+        function setActiveHeaderBtn(viewId) {
+            ['calendar-view','daily-view','admin-view','sms-view'].forEach(v => {
+                const btn = document.getElementById('hbtn-' + v.replace('-view',''));
+                if (btn) btn.classList.remove('active');
+            });
+            const activeId = 'hbtn-' + viewId.replace('-view','');
+            const activeBtn = document.getElementById(activeId);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
         function showView(viewId) {
-            document.getElementById('calendar-view').style.display = 'none';
-            document.getElementById('login-view').style.display = 'none';
-            document.getElementById('admin-view').style.display = 'none';
-            document.getElementById('sms-view').style.display = 'none';
-            document.getElementById('daily-view').style.display = 'none';
-            
+            ['calendar-view','login-view','admin-view','sms-view','daily-view'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
             document.getElementById(viewId).style.display = 'block';
 
-            if(viewId === 'calendar-view' && calendarInstance) calendarInstance.render();
-            if(viewId === 'login-view') {
+            if (viewId === 'calendar-view' && calendarInstance) calendarInstance.render();
+            if (viewId === 'login-view') {
                 document.getElementById('pinInput').value = '';
                 document.getElementById('loginError').style.display = 'none';
-                document.getElementById('pinInput').focus();
+                setTimeout(() => document.getElementById('pinInput').focus(), 100);
             }
-            if(viewId === 'sms-view') renderSmsGrid();
-            if(viewId === 'daily-view') initDailyView();
+            if (viewId === 'sms-view') renderSmsGrid();
+            if (viewId === 'daily-view') initDailyView();
+
+            setActiveHeaderBtn(viewId === 'login-view' ? pendingView : viewId);
         }
 
         function checkPin() {
             const pin = document.getElementById('pinInput').value;
             if (pin === ADMIN_PIN) {
-                if(pendingView === 'admin-view') renderAdminTable();
+                if (pendingView === 'admin-view') renderAdminTable();
                 showView(pendingView);
             } else {
                 document.getElementById('loginError').style.display = 'block';
             }
         }
-        document.getElementById('pinInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkPin(); });
+        document.getElementById('pinInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') checkPin(); });
 
+        // ── 인원 관리 ──
         function renderAdminTable() {
             const tbody = document.getElementById('memberTableBody');
             tbody.innerHTML = '';
@@ -528,162 +952,131 @@
                     <td id="td-birth-${index}">${member.birth}</td>
                     <td id="td-phone-${index}">${member.phone}</td>
                     <td id="td-dates-${index}" class="dates-cell">${datesStr}</td>
-                    <td id="td-action-${index}">
+                    <td id="td-action-${index}" style="white-space: nowrap;">
                         <button class="btn-edit" onclick="editRow(${index})">수정</button>
+                        <button class="btn-delete" onclick="deleteMember(${index})">삭제</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-
+        function addNewMember() {
+            members.unshift({ cong: '', name: '', gender: '자매', birth: '', phone: '', dates: [] });
+            saveData();
+            renderAdminTable();
+            editRow(0);
+        }
+        function deleteMember(index) {
+            const memberName = members[index].name || "새 인원";
+            if (confirm(`정말 ${memberName} 님의 데이터를 삭제하시겠습니까?`)) {
+                members.splice(index, 1);
+                saveData();
+                renderAdminTable();
+            }
+        }
         function editRow(index) {
             const member = members[index];
-            document.getElementById(`td-cong-${index}`).innerHTML = `<input type="text" id="edit-cong-${index}" class="edit-input" value="${member.cong}">`;
-            document.getElementById(`td-name-${index}`).innerHTML = `<input type="text" id="edit-name-${index}" class="edit-input" value="${member.name}">`;
-            document.getElementById(`td-gender-${index}`).innerHTML = `<input type="text" id="edit-gender-${index}" class="edit-input" value="${member.gender}">`;
-            document.getElementById(`td-birth-${index}`).innerHTML = `<input type="text" id="edit-birth-${index}" class="edit-input" value="${member.birth}">`;
-            document.getElementById(`td-phone-${index}`).innerHTML = `<input type="text" id="edit-phone-${index}" class="edit-input" value="${member.phone}">`;
-            
-            let gridHtml = '<div class="date-grid" id="grid-dates-'+index+'">';
-            for(let i=1; i<=31; i++) {
-                let dayStr = '2026-05-' + String(i).padStart(2, '0');
-                let isSelected = (member.dates && member.dates.includes(dayStr)) ? 'selected' : '';
+            document.getElementById(`td-cong-${index}`).innerHTML = `<input type="text" id="edit-cong-${index}" class="edit-input" value="${member.cong}" placeholder="회중">`;
+            document.getElementById(`td-name-${index}`).innerHTML = `<input type="text" id="edit-name-${index}" class="edit-input" value="${member.name}" placeholder="이름">`;
+            document.getElementById(`td-gender-${index}`).innerHTML = `<input type="text" id="edit-gender-${index}" class="edit-input" value="${member.gender}" placeholder="형제/자매">`;
+            document.getElementById(`td-birth-${index}`).innerHTML = `<input type="text" id="edit-birth-${index}" class="edit-input" value="${member.birth}" placeholder="출생연도">`;
+            document.getElementById(`td-phone-${index}`).innerHTML = `<input type="text" id="edit-phone-${index}" class="edit-input" value="${member.phone}" placeholder="연락처">`;
+            let gridHtml = `<div class="date-grid" id="grid-dates-${index}">`;
+            for (let i = 1; i <= 31; i++) {
+                const dayStr = '2026-05-' + String(i).padStart(2, '0');
+                const isSelected = (member.dates && member.dates.includes(dayStr)) ? 'selected' : '';
                 gridHtml += `<button class="date-btn ${isSelected}" onclick="this.classList.toggle('selected')" data-date="${dayStr}">${i}</button>`;
             }
             gridHtml += '</div>';
             document.getElementById(`td-dates-${index}`).innerHTML = gridHtml;
             document.getElementById(`td-action-${index}`).innerHTML = `<button class="btn-save" onclick="saveRow(${index})">저장</button>`;
         }
-
         function saveRow(index) {
             members[index].cong = document.getElementById(`edit-cong-${index}`).value;
             members[index].name = document.getElementById(`edit-name-${index}`).value;
             members[index].gender = document.getElementById(`edit-gender-${index}`).value;
             members[index].birth = document.getElementById(`edit-birth-${index}`).value;
             members[index].phone = document.getElementById(`edit-phone-${index}`).value;
-            
             const selectedBtns = document.getElementById(`grid-dates-${index}`).querySelectorAll('.date-btn.selected');
-            const newDates = Array.from(selectedBtns).map(btn => btn.getAttribute('data-date'));
-            members[index].dates = newDates;
-
+            members[index].dates = Array.from(selectedBtns).map(btn => btn.getAttribute('data-date'));
             saveData();
             renderAdminTable();
         }
 
+        // ── 문자 발송 ──
         function renderSmsGrid() {
             const grid = document.getElementById('smsGrid');
             grid.innerHTML = '';
-            
             members.forEach((member, index) => {
+                const isSister = member.gender === '자매';
                 const btn = document.createElement('div');
                 btn.className = 'sms-item-btn';
-                btn.innerHTML = `<span>💬</span> ${member.name} ${member.gender}`;
+                btn.innerHTML = `
+                    <span class="sms-name">${member.name}</span>
+                    <span class="sms-gender ${isSister ? 'sms-gender-s' : 'sms-gender-b'}">${member.gender}</span>
+                `;
                 btn.onclick = () => openSmsModal(index);
                 grid.appendChild(btn);
             });
         }
-
         function openSmsModal(index) {
             currentSmsUserIndex = index;
             const member = members[index];
-            
             document.getElementById('smsSendTargetName').innerText = `${member.name} ${member.gender}에게 메시지 보내기`;
-            
             const select = document.getElementById('sendModalTemplateSelect');
-            select.innerHTML = '<option value="">선택된 템플릿 없음 (직접 입력 가능)</option>';
+            select.innerHTML = '<option value="">템플릿 선택 없음</option>';
             smsTemplates.forEach(t => {
                 const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.text = t.title;
+                opt.value = t.id; opt.text = t.title;
                 select.appendChild(opt);
             });
-            
-            if(smsTemplates.length > 0) {
-                select.value = smsTemplates[smsTemplates.length - 1].id;
-            }
-            
+            if (smsTemplates.length > 0) select.value = smsTemplates[smsTemplates.length - 1].id;
             updateSmsPreview();
             document.getElementById('smsSendModalOverlay').style.display = 'flex';
         }
-
         function updateSmsPreview() {
             const val = document.getElementById('sendModalTemplateSelect').value;
             let rawText = '';
-            
-            if(val !== '') {
+            if (val !== '') {
                 const temp = smsTemplates.find(t => t.id == val);
-                if(temp) rawText = temp.content;
+                if (temp) rawText = temp.content;
             }
-
             const member = members[currentSmsUserIndex];
-            
-            // 배정일자 변환 로직 (예: 5/14, 5/15)
-            const datesStr = (member.dates && member.dates.length > 0) ?
-                member.dates.map(d => {
-                    const parts = d.split('-');
-                    return parts.length === 3 ? `${parseInt(parts[1])}/${parseInt(parts[2])}` : d;
-                }).join(', ') : '배정 없음';
-            
-            const replacedText = rawText
+            const datesStr = (member.dates && member.dates.length > 0)
+                ? member.dates.map(d => { const p = d.split('-'); return p.length === 3 ? `${parseInt(p[1])}/${parseInt(p[2])}` : d; }).join(', ')
+                : '배정 없음';
+            document.getElementById('smsPreviewText').value = rawText
                 .replace(/{이름}/g, member.name)
                 .replace(/{호칭}/g, member.gender)
                 .replace(/{회중}/g, member.cong)
                 .replace(/{배정일자}/g, datesStr);
-            
-            document.getElementById('smsPreviewText').value = replacedText;
         }
-
         function executeSmsSend() {
             const finalMessage = document.getElementById('smsPreviewText').value;
-            if(!finalMessage.trim()) {
-                alert('미리보기 내용을 확인해주세요.');
-                return;
-            }
-
+            if (!finalMessage.trim()) { alert('미리보기 내용을 확인해주세요.'); return; }
             const member = members[currentSmsUserIndex];
-            const encodedMsg = encodeURIComponent(finalMessage);
-            const phoneNumber = member.phone.replace(/-/g, '');
-            
-            window.location.href = `sms:${phoneNumber}?body=${encodedMsg}`;
+            window.location.href = `sms:${member.phone.replace(/-/g, '')}?body=${encodeURIComponent(finalMessage)}`;
         }
 
+        // ── 일자별 명단 ──
         function initDailyView() {
             const grid = document.getElementById('dailyDateGrid');
             grid.innerHTML = '';
-            
             let allDates = new Set();
-            members.forEach(m => {
-                if(m.dates) m.dates.forEach(d => allDates.add(d));
-            });
-
-            const days = ['일', '월', '화', '수', '목', '금', '토'];
-            days.forEach(day => {
-                let div = document.createElement('div');
-                div.style.textAlign = 'center';
-                div.style.fontSize = '12px';
-                div.style.fontWeight = 'bold';
-                div.style.color = '#777';
-                div.style.paddingBottom = '5px';
+            members.forEach(m => { if (m.dates) m.dates.forEach(d => allDates.add(d)); });
+            ['일','월','화','수','목','금','토'].forEach(day => {
+                const div = document.createElement('div');
+                div.style.cssText = 'text-align:center;font-size:11px;font-weight:700;color:#aaa;padding-bottom:4px;';
                 div.innerText = day;
                 grid.appendChild(div);
             });
-
-            for(let i=0; i<5; i++) {
-                let empty = document.createElement('div');
-                grid.appendChild(empty);
-            }
-
-            for(let i=1; i<=31; i++) {
-                let dayStr = '2026-05-' + String(i).padStart(2, '0');
-                let hasData = allDates.has(dayStr);
-                
-                let btn = document.createElement('button');
+            for (let i = 0; i < 5; i++) grid.appendChild(document.createElement('div'));
+            for (let i = 1; i <= 31; i++) {
+                const dayStr = '2026-05-' + String(i).padStart(2, '0');
+                const hasData = allDates.has(dayStr);
+                const btn = document.createElement('button');
                 btn.className = 'date-btn';
-                if(hasData) {
-                    btn.style.borderColor = '#e65100';
-                    btn.style.color = '#e65100';
-                    btn.style.fontWeight = 'bold';
-                }
+                if (hasData) { btn.style.borderColor = '#e65100'; btn.style.color = '#e65100'; btn.style.fontWeight = '700'; }
                 btn.innerText = i;
                 btn.onclick = () => {
                     document.querySelectorAll('#dailyDateGrid .date-btn').forEach(b => b.classList.remove('selected-daily'));
@@ -694,58 +1087,36 @@
             }
             document.getElementById('dailySummaryText').value = '';
         }
-
         function renderDailySummary(selectedDate) {
             const textarea = document.getElementById('dailySummaryText');
-            
-            if(!selectedDate) {
-                textarea.value = '';
-                return;
-            }
-
+            if (!selectedDate) { textarea.value = ''; return; }
             const dateObj = new Date(selectedDate);
-            const days = ['일','월','화','수','목','금','토'];
-            const dayName = days[dateObj.getDay()];
-
-            let dailyMembers = members.filter(m => m.dates && m.dates.includes(selectedDate));
-
-            let summary = `[ ${selectedDate} (${dayName}) 서울 캠페인 참여 명단 ]\n`;
-            summary += `총 인원: ${dailyMembers.length}명\n\n`;
-
-            dailyMembers.forEach((m, idx) => {
-                summary += `${idx + 1}. ${m.name} (${m.gender}) / ${m.cong} / ${m.phone}\n`;
-            });
-
+            const dayName = ['일','월','화','수','목','금','토'][dateObj.getDay()];
+            const dailyMembers = members.filter(m => m.dates && m.dates.includes(selectedDate));
+            let summary = `[ ${selectedDate} (${dayName}) 서울 캠페인 참여 명단 ]\n총 인원: ${dailyMembers.length}명\n\n`;
+            dailyMembers.forEach((m, idx) => { summary += `${idx + 1}. ${m.name} (${m.gender}) / ${m.cong} / ${m.phone}\n`; });
             summary += `\n봉사 참여자 명단 입니다, 확인해 주시기 바랍니다.`;
             textarea.value = summary;
         }
-
         function copyDailySummary() {
             const text = document.getElementById('dailySummaryText').value;
-            if(!text) {
-                alert('복사할 내용이 없습니다. 먼저 달력에서 날짜를 선택해주세요.');
-                return;
-            }
-            
+            if (!text) { alert('복사할 내용이 없습니다. 먼저 날짜를 선택해주세요.'); return; }
             navigator.clipboard.writeText(text).then(() => {
                 const noti = document.getElementById('copyNoti');
                 noti.style.display = 'block';
                 setTimeout(() => noti.style.display = 'none', 2000);
-            }).catch(err => {
-                alert('복사 중 오류가 발생했습니다. 직접 텍스트를 드래그하여 복사해주세요.');
-            });
+            }).catch(() => { alert('복사 중 오류가 발생했습니다. 직접 드래그하여 복사해주세요.'); });
         }
 
-        // 창 크기 변경 시 달력 리렌더링 (모바일-PC 전환 대응)
         window.addEventListener('resize', function() {
-            if(calendarInstance && document.getElementById('calendar-view').style.display !== 'none') {
+            if (calendarInstance && document.getElementById('calendar-view').style.display !== 'none') {
                 calendarInstance.render();
             }
         });
 
         window.onload = function() {
             showView('calendar-view');
-            loadData(); 
+            loadData();
         };
     </script>
 </body>
