@@ -348,8 +348,11 @@
       
       <div id="drive-segments-container"></div>
       
-      <button class="btn btn-ghost btn-full" onclick="addDriveSegment()">➕ 이동 구간 추가</button>
-      <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="addDrive()">💾 하루 전체 구간 일괄 저장</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="addDriveSegment()">➕ 다음 현장 추가</button>
+        <button class="btn btn-ghost" style="flex:1; justify-content:center; border-color:var(--accent); color:var(--accent);" onclick="addDriveSegment(true)">🏠 집으로 복귀</button>
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="addDrive()">💾 하루 운행기록 통합 저장</button>
     </div>
     <div class="recent-list">
       <div class="recent-header"><span>운행 내역</span></div>
@@ -527,21 +530,21 @@
     <div class="modal-title">✏️ 운행 기록 수정</div>
     <input type="hidden" id="edit-d-key">
     <div class="form-grid">
-      <div class="form-group full"><label>날짜</label><input type="date" id="edit-d-date"></div>
-      <div class="form-group"><label>출발지</label><input type="text" id="edit-d-path-from" placeholder="예: 현장A"></div>
-      <div class="form-group"><label>도착지</label><input type="text" id="edit-d-path-to" placeholder="예: 현장B"></div>
-      <div class="form-group"><label>주행거리 (km)</label><input type="number" id="edit-d-km"></div>
+      <div class="form-group"><label>날짜</label><input type="date" id="edit-d-date"></div>
+      <div class="form-group full"><label>이동 경로 (통합)</label><input type="text" id="edit-d-path" placeholder="예: 집 → 현장A → 집"></div>
+      <div class="form-group"><label>총 주행거리 (km)</label><input type="number" id="edit-d-km"></div>
       <div class="form-group"><label>목적</label>
         <select id="edit-d-purpose" onchange="togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap')">
-          <option value="배관 작업">배관 작업 (사업)</option>
+          <option value="배관 청소 작업">배관 청소 작업 (사업)</option>
           <option value="견적">견적 (사업)</option>
-          <option value="개인 이동">개인 이동 (개인)</option>
-          <option value="여행">여행 (개인)</option>
+          <option value="작업 종료 복귀">작업 종료 복귀 (사업)</option>
+          <option value="개인이동">개인이동 (개인)</option>
+          <option value="일괄저장">하루 통합 기록</option>
           <option value="기타">기타 (직접입력)</option>
         </select>
       </div>
       <div class="form-group full" id="edit-d-purpose-other-wrap" style="display:none;">
-        <label>기타 목적 입력</label>
+        <label>목적 상세 (통합 내용)</label>
         <input type="text" id="edit-d-purpose-other">
       </div>
     </div>
@@ -750,7 +753,7 @@
   window.togglePurposeOther = function(selId, wrapId, triggerValue = '기타') {
     const sel = document.getElementById(selId);
     const wrap = document.getElementById(wrapId);
-    if(sel.value === triggerValue) {
+    if(sel.value === triggerValue || sel.value === '일괄저장') {
       wrap.style.display = 'block';
     } else {
       wrap.style.display = 'none';
@@ -817,20 +820,30 @@
     }
   };
 
-  window.addDriveSegment = function() {
+  window.addDriveSegment = function(isReturnHome = false) {
     const container = document.getElementById('drive-segments-container');
     const isFirst = container.children.length === 0;
+    let defaultFrom = '집';
+
+    if (!isFirst) {
+      const lastSegment = container.lastElementChild;
+      const lastTo = lastSegment.querySelector('.ds-path-to').value.trim();
+      defaultFrom = lastTo || '이전 도착지';
+    }
+
+    let defaultTo = isReturnHome ? '집' : '';
+
     const html = `
       <div class="drive-segment-box" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; position:relative; animation:fadeIn 0.3s ease;">
         ${!isFirst ? `<div style="position:absolute; right:12px; top:12px; cursor:pointer; color:var(--red); font-size:12px; font-weight:bold; background:rgba(224,82,82,0.1); padding:4px 8px; border-radius:4px;" onclick="this.closest('.drive-segment-box').remove()">✕ 삭제</div>` : ''}
         <div class="form-grid">
           <div class="form-group">
             <label>출발지</label>
-            <input type="text" class="ds-path-from" placeholder="예: 현장A">
+            <input type="text" class="ds-path-from" value="${defaultFrom}">
           </div>
           <div class="form-group">
             <label>도착지</label>
-            <input type="text" class="ds-path-to" placeholder="예: 현장B">
+            <input type="text" class="ds-path-to" value="${defaultTo}" ${isReturnHome ? 'readonly' : ''} placeholder="예: 1번 현장">
           </div>
           <div class="form-group">
             <label>주행거리 (km)</label>
@@ -839,10 +852,10 @@
           <div class="form-group">
             <label>목적</label>
             <select class="ds-purpose" onchange="toggleSegmentOther(this)">
-              <option value="배관 작업">배관 작업 (사업)</option>
+              <option value="배관 청소 작업" ${!isReturnHome ? 'selected' : ''}>배관 청소 작업 (사업)</option>
               <option value="견적">견적 (사업)</option>
-              <option value="개인 이동">개인 이동 (개인)</option>
-              <option value="여행">여행 (개인)</option>
+              <option value="개인이동">개인이동 (개인)</option>
+              <option value="작업 종료 복귀" ${isReturnHome ? 'selected' : ''}>작업 종료 복귀 (사업)</option>
               <option value="기타">기타 (직접입력)</option>
             </select>
           </div>
@@ -861,23 +874,18 @@
     document.getElementById('edit-d-date').value=v.date||'';
     document.getElementById('edit-d-km').value=v.km||'';
     
-    let pFrom = v.pathFrom || '';
-    let pTo = v.pathTo || '';
-    if(!pFrom && !pTo && v.path) {
-        let parts = v.path.split(' → ');
-        if(parts.length === 2) { pFrom = parts[0]; pTo = parts[1]; }
-        else { pFrom = v.path; }
+    let combinedPath = v.path || '';
+    if(!combinedPath && v.pathFrom && v.pathTo) {
+        combinedPath = `${v.pathFrom} → ${v.pathTo}`;
     }
+    document.getElementById('edit-d-path').value = combinedPath;
     
-    document.getElementById('edit-d-path-from').value=pFrom;
-    document.getElementById('edit-d-path-to').value=pTo;
-    
-    let rp = v.rawPurpose || (['배관 작업', '견적', '개인 이동', '여행'].includes(v.purpose) ? v.purpose : '기타');
+    let rp = v.rawPurpose || (['배관 청소 작업', '견적', '개인이동', '작업 종료 복귀', '일괄저장'].includes(v.purpose) ? v.purpose : '기타');
     
     document.getElementById('edit-d-purpose').value=rp;
     window.togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
     
-    if(rp === '기타') {
+    if(rp === '기타' || rp === '일괄저장') {
       document.getElementById('edit-d-purpose-other').value = v.purpose || '';
     }
     
@@ -887,22 +895,18 @@
   window.saveDrive=function(){
     const key=document.getElementById('edit-d-key').value;
     const rawPurpose = document.getElementById('edit-d-purpose').value;
-    let type = (rawPurpose === '개인 이동' || rawPurpose === '여행') ? '개인' : '사업';
+    let type = (rawPurpose === '개인이동') ? '개인' : '사업';
     let purpose = rawPurpose;
-    const from = document.getElementById('edit-d-path-from').value.trim();
-    const to = document.getElementById('edit-d-path-to').value.trim();
-    const pathStr = (from && to) ? `${from} → ${to}` : (from || to);
+    const pathStr = document.getElementById('edit-d-path').value.trim();
     
-    if (rawPurpose === '기타') {
+    if (rawPurpose === '기타' || rawPurpose === '일괄저장') {
       purpose = document.getElementById('edit-d-purpose-other').value.trim();
-      if (!purpose) { showToast('기타 목적 내용을 입력해주세요', 'error'); return; }
+      if (!purpose) { showToast('상세 목적을 입력해주세요', 'error'); return; }
     }
 
     const data={
       date:document.getElementById('edit-d-date').value,
       type: type,
-      pathFrom: from,
-      pathTo: to,
       path: pathStr,
       rawPurpose: rawPurpose,
       purpose: purpose,
@@ -1102,8 +1106,8 @@
       <div class="recent-item">
         <div class="ri-dot" style="background:${v.type==='사업'?'var(--blue)':'var(--text3)'}"></div>
         <div class="ri-info">
-          <div class="ri-name">${v.path ? `<span style="color:var(--text2)">[${v.path}]</span> ` : ''}${v.purpose||'-'}</div>
-          <div class="ri-meta">${v.date} · ${v.type}</div>
+          <div class="ri-name"><span style="color:var(--text2)">[${v.path||'-'}]</span></div>
+          <div class="ri-meta">${v.date} · ${v.purpose||'-'}</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <div class="ri-amount" style="color:var(--blue)">${v.km}km</div>
@@ -1165,15 +1169,17 @@
     
     const segments = document.querySelectorAll('.drive-segment-box');
     let hasError = false;
-    let validData = [];
     
-    segments.forEach(seg => {
+    let totalKm = 0;
+    let purposes = new Set();
+    let hasBusiness = false;
+    let compositePath = "";
+
+    segments.forEach((seg, i) => {
       const from = seg.querySelector('.ds-path-from').value.trim();
       const to = seg.querySelector('.ds-path-to').value.trim();
-      const pathStr = (from && to) ? `${from} → ${to}` : (from || to);
       const km = Number(seg.querySelector('.ds-km').value);
       const rawPurpose = seg.querySelector('.ds-purpose').value;
-      let type = (rawPurpose === '개인 이동' || rawPurpose === '여행') ? '개인' : '사업';
       let purpose = rawPurpose;
       
       if (rawPurpose === '기타') {
@@ -1181,39 +1187,56 @@
         if (!purpose) { hasError = true; }
       }
       
-      if(!km) { hasError = true; }
+      if(!km || !from || !to) { hasError = true; }
       
-      validData.push({
-        date: date,
-        type: type,
-        pathFrom: from,
-        pathTo: to,
-        path: pathStr,
-        rawPurpose: rawPurpose,
-        purpose: purpose,
-        km: km,
-        createdAt: Date.now()
-      });
+      if (i === 0) {
+          compositePath = `${from} → ${to}`;
+      } else {
+          const prevTo = segments[i-1].querySelector('.ds-path-to').value.trim();
+          if (from === prevTo) {
+              compositePath += ` → ${to}`;
+          } else {
+              compositePath += ` (이동) ${from} → ${to}`;
+          }
+      }
+
+      totalKm += km;
+      purposes.add(purpose);
+
+      if (rawPurpose !== '개인이동') {
+        hasBusiness = true;
+      }
     });
     
     if(hasError) {
-       showToast('모든 구간의 주행거리와 목적을 정확히 입력해주세요', 'error');
+       showToast('모든 구간의 출발/도착지, 주행거리, 목적을 정확히 입력해주세요', 'error');
        return;
     }
     
-    if(validData.length === 0) {
+    if(segments.length === 0) {
        showToast('저장할 이동 구간이 없습니다', 'error');
        return;
     }
     
-    validData.forEach(data => {
-      window.fbPush(window.fbRef(window.fbDB,'drives'), data);
-    });
+    let finalType = hasBusiness ? '사업' : '개인';
+    let finalPurpose = Array.from(purposes).join(', ');
+
+    const data = {
+      date: date,
+      type: finalType,
+      path: compositePath,
+      rawPurpose: '일괄저장',
+      purpose: finalPurpose,
+      km: totalKm,
+      createdAt: Date.now()
+    };
+    
+    window.fbPush(window.fbRef(window.fbDB,'drives'), data);
     
     document.getElementById('drive-segments-container').innerHTML = '';
     window.addDriveSegment();
     
-    showToast(`총 ${validData.length}개의 구간이 성공적으로 일괄 저장되었습니다`, 'success');
+    showToast(`하루 전체 운행기록(${totalKm}km)이 통합 저장되었습니다`, 'success');
   };
 
   window.deleteItem=function(path,key){
@@ -1243,7 +1266,7 @@
     let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
     let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
     let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
-    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>${v.path ? '['+v.path+'] ' : ''}${v.purpose||'-'}</td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
+    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>[${v.path||'-'}]<br><span style="font-size:10px;color:#666;">${v.purpose||'-'}</span></td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
 
     let html = '';
 
@@ -1280,7 +1303,7 @@
 
           <div class="paper-section-title">4. 차량 운행 내역 요약</div>
           <table class="paper-table" style="margin-bottom:5px;">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:50%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
           <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
@@ -1353,7 +1376,7 @@
 
           <div class="paper-section-title">차량 운행 상세 내역</div>
           <table class="paper-table">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">유형</th><th style="width:45%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:50%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
         </div>`;
