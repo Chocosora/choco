@@ -1445,4 +1445,673 @@
   }
 </script>
 </body>
+</html>    document.getElementById('edit-e-amount').value=v.amount||'';
+    document.getElementById('edit-e-vendor').value=v.vendor||'';
+    document.getElementById('edit-e-receipt').value=v.receipt||'카드전표';
+    document.getElementById('edit-e-memo').value=v.memo||'';
+    setTimeout(()=>{
+      const sel=document.getElementById('edit-e-method');
+      if(sel&&v.method)[...sel.options].forEach(o=>{if(o.value===v.method)o.selected=true;});
+    },50);
+    openModal('modal-expense');
+  };
+  window.saveExpense=function(){
+    const key=document.getElementById('edit-e-key').value;
+    
+    let cat = document.getElementById('edit-e-cat').value;
+    if(cat === '기타경비') {
+        const otherVal = document.getElementById('edit-e-cat-other').value.trim();
+        if(otherVal) cat = `기타경비(${otherVal})`;
+    }
+
+    const data={
+      date:document.getElementById('edit-e-date').value,
+      cat:cat,
+      amount:Number(document.getElementById('edit-e-amount').value),
+      method:document.getElementById('edit-e-method').value,
+      vendor:document.getElementById('edit-e-vendor').value.trim(),
+      receipt:document.getElementById('edit-e-receipt').value,
+      memo:document.getElementById('edit-e-memo').value.trim(),
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`expenses/${key}`),data);
+    closeModal('modal-expense');
+    showToast('경비가 수정되었습니다','success');
+  };
+
+  window.toggleSegmentOther = function(sel) {
+    const wrap = sel.closest('.form-grid').querySelector('.ds-purpose-other-wrap');
+    if(sel.value === '기타') {
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      wrap.querySelector('input').value = '';
+    }
+  };
+
+  window.addDriveSegment = function(isReturnHome = false) {
+    const container = document.getElementById('drive-segments-container');
+    const isFirst = container.children.length === 0;
+    let defaultFrom = '집';
+
+    if (!isFirst) {
+      const lastSegment = container.lastElementChild;
+      const lastTo = lastSegment.querySelector('.ds-path-to').value.trim();
+      defaultFrom = lastTo || '이전 도착지';
+    }
+
+    let defaultTo = isReturnHome ? '집' : '';
+
+    const html = `
+      <div class="drive-segment-box" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; position:relative; animation:fadeIn 0.3s ease;">
+        ${!isFirst ? `<div style="position:absolute; right:12px; top:12px; cursor:pointer; color:var(--red); font-size:12px; font-weight:bold; background:rgba(224,82,82,0.1); padding:4px 8px; border-radius:4px;" onclick="this.closest('.drive-segment-box').remove()">✕ 삭제</div>` : ''}
+        <div class="form-grid">
+          <div class="form-group">
+            <label>출발지</label>
+            <input type="text" class="ds-path-from" value="${defaultFrom}">
+          </div>
+          <div class="form-group">
+            <label>도착지</label>
+            <input type="text" class="ds-path-to" value="${defaultTo}" ${isReturnHome ? 'readonly' : ''} placeholder="예: 1번 현장">
+          </div>
+          <div class="form-group">
+            <label>주행거리 (km)</label>
+            <input type="number" class="ds-km" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>목적</label>
+            <select class="ds-purpose" onchange="toggleSegmentOther(this)">
+              <option value="배관 청소 작업" ${!isReturnHome ? 'selected' : ''}>배관 청소 작업 (사업)</option>
+              <option value="견적">견적 (사업)</option>
+              <option value="개인이동">개인이동 (개인)</option>
+              <option value="작업 종료 복귀" ${isReturnHome ? 'selected' : ''}>작업 종료 복귀 (사업)</option>
+              <option value="기타">기타 (직접입력)</option>
+            </select>
+          </div>
+          <div class="form-group full ds-purpose-other-wrap" style="display:none;">
+            <label>기타 목적 내용</label>
+            <input type="text" class="ds-purpose-other" placeholder="예: 자재 구매 등">
+          </div>
+        </div>
+      </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+  };
+
+  window.openEditDrive=function(key){
+    const v=window._drives[key]; if(!v)return;
+    document.getElementById('edit-d-key').value=key;
+    document.getElementById('edit-d-date').value=v.date||'';
+    document.getElementById('edit-d-km').value=v.km||'';
+    
+    let combinedPath = v.path || '';
+    if(!combinedPath && v.pathFrom && v.pathTo) {
+        combinedPath = `${v.pathFrom} → ${v.pathTo}`;
+    }
+    document.getElementById('edit-d-path').value = combinedPath;
+    
+    let rp = v.rawPurpose || (['배관 청소 작업', '견적', '개인이동', '작업 종료 복귀', '일괄저장'].includes(v.purpose) ? v.purpose : '기타');
+    
+    document.getElementById('edit-d-purpose').value=rp;
+    window.togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
+    
+    if(rp === '기타' || rp === '일괄저장') {
+      document.getElementById('edit-d-purpose-other').value = v.purpose || '';
+    }
+    
+    openModal('modal-drive');
+  };
+  
+  window.saveDrive=function(){
+    const key=document.getElementById('edit-d-key').value;
+    const rawPurpose = document.getElementById('edit-d-purpose').value;
+    let type = (rawPurpose === '개인이동') ? '개인' : '사업';
+    let purpose = rawPurpose;
+    const pathStr = document.getElementById('edit-d-path').value.trim();
+    
+    if (rawPurpose === '기타' || rawPurpose === '일괄저장') {
+      purpose = document.getElementById('edit-d-purpose-other').value.trim();
+      if (!purpose) { showToast('상세 목적을 입력해주세요', 'error'); return; }
+    }
+
+    const data={
+      date:document.getElementById('edit-d-date').value,
+      type: type,
+      path: pathStr,
+      rawPurpose: rawPurpose,
+      purpose: purpose,
+      km:Number(document.getElementById('edit-d-km').value)
+    };
+    if(!data.date||!data.km){showToast('날짜와 주행거리를 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
+    closeModal('modal-drive');
+    showToast('운행 기록이 수정되었습니다','success');
+  };
+
+  window.saveOdometer=function(){
+    const val = Number(document.getElementById('d-odometer').value);
+    if(!val) { showToast('누적 주행거리를 입력해주세요', 'error'); return; }
+    const mk = getMonthKey();
+    window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { value: val, updatedAt: Date.now() });
+    showToast('월말 누적 주행거리가 저장되었습니다', 'success');
+  };
+
+  window.selectIcon=function(el){document.querySelectorAll('.icon-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedIcon=el.dataset.icon;};
+  window.selectColor=function(el){document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedColor=el.dataset.color;};
+  window.addPaymentMethod=function(){
+    const name=document.getElementById('pm-name').value.trim();
+    const type=document.getElementById('pm-type').value;
+    if(!name){showToast('이름을 입력해주세요','error');return;}
+    const order=Object.keys(window._paymentMethods).length;
+    window.fbPush(window.fbRef(window.fbDB,'paymentMethods'),{name,type,icon:selectedIcon,color:selectedColor,order});
+    document.getElementById('pm-name').value='';
+    showToast('결제수단이 추가되었습니다','success');
+  };
+  window.openEditPayment=function(key){
+    const m=window._paymentMethods[key]; if(!m)return;
+    document.getElementById('edit-pm-key').value=key;
+    document.getElementById('edit-pm-name').value=m.name||'';
+    document.getElementById('edit-pm-type').value=m.type||'신용카드';
+    openModal('modal-payment');
+  };
+  window.savePayment=function(){
+    const key=document.getElementById('edit-pm-key').value;
+    const name=document.getElementById('edit-pm-name').value.trim();
+    const type=document.getElementById('edit-pm-type').value;
+    if(!name){showToast('이름을 입력해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`paymentMethods/${key}`),{name,type});
+    closeModal('modal-payment');
+    showToast('수정되었습니다','success');
+  };
+  window.deletePayment=function(key,name){
+    if(!confirm(`"${name}" 결제수단을 삭제할까요?`))return;
+    window.fbRemove(window.fbRef(window.fbDB,`paymentMethods/${key}`));
+    showToast('삭제되었습니다');
+  };
+
+  function renderPaymentList(){
+    const methods=Object.entries(window._paymentMethods).sort((a,b)=>(a[1].order||0)-(b[1].order||0));
+    const el=document.getElementById('paymentList'); if(!el)return;
+    if(!methods.length){el.innerHTML='<div class="empty-state" style="padding:20px;">등록된 결제수단이 없어요</div>';return;}
+    el.innerHTML=methods.map(([k,m])=>`
+      <div class="payment-item">
+        <div class="payment-icon" style="background:${m.color}22;border:1px solid ${m.color}44">${m.icon||'💳'}</div>
+        <div class="payment-info"><div class="payment-name">${m.name}</div><div class="payment-type">${m.type}</div></div>
+        <div class="btn-row">
+          <button class="btn btn-edit btn-sm" onclick="openEditPayment('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePayment('${k}','${m.name}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderAll(){
+    renderDashboard();
+    renderRevenueList();
+    renderCommissionList();
+    renderExpenseList();
+    renderDriveList();
+  }
+
+  function renderDashboard(){
+    const revE=filterByMonth(window._revenues),expE=filterByMonth(window._expenses),drvE=filterByMonth(window._drives),comE=filterByMonth(window._commissions);
+    const totalRev=revE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalExp=expE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const profit=totalRev-totalExp-totalCom; 
+    
+    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+    
+    document.getElementById('kpi-revenue').textContent=fmt(totalRev);
+    document.getElementById('kpi-revenue-count').textContent=`${revE.length}건`;
+    document.getElementById('kpi-expense').textContent=fmt(totalExp);
+    document.getElementById('kpi-expense-count').textContent=`${expE.length}건`;
+    document.getElementById('kpi-profit').textContent=fmt(profit);
+    document.getElementById('kpi-profit').style.color=profit>=0?'var(--accent)':'var(--red)';
+    document.getElementById('kpi-drive').textContent=`${totalKm} km`;
+    document.getElementById('kpi-drive-ratio').textContent=`사업용 ${ratio}%`;
+    const max=Math.max(totalRev,totalExp,1);
+    document.getElementById('bar-revenue').style.width=(totalRev/max*100)+'%';
+    document.getElementById('bar-expense').style.width=(totalExp/max*100)+'%';
+    document.getElementById('bar-revenue-amt').textContent=fmt(totalRev);
+    document.getElementById('bar-expense-amt').textContent=fmt(totalExp);
+    
+    const combined=[
+      ...revE.map(([k,v])=>({...v,k,_type:'revenue'})),
+      ...expE.map(([k,v])=>({...v,k,_type:'expense'})),
+      ...comE.map(([k,v])=>({...v,k,_type:'commission'}))
+    ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+    
+    const rl=document.getElementById('recentList');
+    if(!combined.length){rl.innerHTML='<div class="empty-state">아직 기록이 없어요</div>';return;}
+    rl.innerHTML=combined.map(item=>{
+      let isRev=item._type==='revenue';
+      let isCom=item._type==='commission';
+      let color=isRev?'var(--green)':(isCom?'var(--accent)':'var(--red)');
+      let sign=isRev?'+':'-';
+      let label=isRev?(item.site||'현장미상'):(isCom?'본사 수수료':(item.vendor||item.cat||'경비'));
+      let subLabel=isRev?item.method:(isCom?'수수료 송금':item.cat);
+      return `<div class="recent-item"><div class="ri-dot" style="background:${color}"></div><div class="ri-info"><div class="ri-name">${label}</div><div class="ri-meta">${item.date} · ${subLabel}</div></div><div class="ri-amount" style="color:${color}">${sign}${fmt(item.amount)}</div></div>`;
+    }).join('');
+  }
+
+  function renderRevenueList(){
+    const entries=filterByMonth(window._revenues).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('revenueList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">매출 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--green)"></div>
+        <div class="ri-info">
+          <div class="ri-name">${v.site||'-'} <span style="font-size:10px;color:var(--text3)">${v.work||''}</span></div>
+          <div class="ri-meta">${v.date} · ${methodTag(v.method)} · ${v.tax||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--green)">+${fmt(v.amount)}</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditRevenue('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('revenues','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderCommissionList(){
+    const entries=filterByMonth(window._commissions).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('commissionList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">수수료 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--accent)"></div>
+        <div class="ri-info">
+          <div class="ri-name">본사 수수료 <span style="font-size:10px;color:var(--text3)">${v.memo||''}</span></div>
+          <div class="ri-meta">${v.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--accent)">-${fmt(v.amount)}</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('commissions','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderExpenseList(){
+    const entries=filterByMonth(window._expenses).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('expenseList');
+    if(!entries.length){el.innerHTML='<div class="empty-state">경비 내역이 없어요</div>';return;}
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:var(--red)"></div>
+        <div class="ri-info">
+          <div class="ri-name">${v.vendor||'-'} <span style="font-size:10px;background:rgba(224,82,82,0.15);color:var(--red);padding:1px 6px;border-radius:10px;">${v.cat}</span></div>
+          <div class="ri-meta">${v.date} · ${methodTag(v.method)} · ${v.receipt||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--red)">-${fmt(v.amount)}</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditExpense('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('expenses','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderDriveList(){
+    const entries=filterByMonth(window._drives).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const el=document.getElementById('driveList');
+    const totalKm=entries.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=entries.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+    document.getElementById('d-total').textContent=totalKm;
+    document.getElementById('d-biz').textContent=bizKm;
+    document.getElementById('d-ratio').textContent=ratio+'%';
+    document.getElementById('d-ratio-pct').textContent=ratio+'%';
+    document.getElementById('d-ratio-bar').style.width=ratio+'%';
+
+    const mk = getMonthKey();
+    const odoInput = document.getElementById('d-odometer');
+    const odoLabel = document.getElementById('odometer-month-label');
+    if(odoInput) odoInput.value = window._odometers[mk]?.value || '';
+    if(odoLabel) odoLabel.textContent = (currentMonth.getMonth() + 1) + '월말';
+
+    if(!entries.length){el.innerHTML='<div class="empty-state">운행 기록이 없어요</div>';return;}
+    
+    el.innerHTML=entries.map(([k,v])=>`
+      <div class="recent-item">
+        <div class="ri-dot" style="background:${v.type==='사업'?'var(--blue)':'var(--text3)'}"></div>
+        <div class="ri-info">
+          <div class="ri-name"><span style="color:var(--text2)">[${v.path||'-'}]</span></div>
+          <div class="ri-meta">${v.date} · ${v.purpose||'-'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div class="ri-amount" style="color:var(--blue)">${v.km}km</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditDrive('${k}')">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('drives','${k}')">삭제</button>
+        </div>
+      </div>`).join('');
+  }
+
+  window.addRevenue=function(){
+    const data={date:document.getElementById('r-date').value,site:document.getElementById('r-site').value.trim(),amount:Number(document.getElementById('r-amount').value),method:document.getElementById('r-method').value,tax:document.getElementById('r-tax').value,work:document.getElementById('r-work').value.trim(),memo:document.getElementById('r-memo').value.trim(),createdAt:Date.now()};
+    if(!data.date||!data.site||!data.amount){showToast('날짜, 현장명, 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'revenues'),data);
+    ['r-site','r-amount','r-work','r-memo'].forEach(id=>document.getElementById(id).value='');
+    showToast('매출이 저장되었습니다','success');
+  };
+
+  window.addCommission=function(){
+    const data={
+      date:document.getElementById('c-date').value,
+      amount:Number(document.getElementById('c-amount').value),
+      memo:document.getElementById('c-memo').value.trim(),
+      createdAt:Date.now()
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'commissions'),data);
+    
+    document.getElementById('c-amount').value='';
+    document.getElementById('c-memo').value='';
+    showToast('수수료가 저장되었습니다','success');
+  };
+
+  window.addExpense=function(){
+    let cat = document.getElementById('e-cat').value;
+    if(cat === '기타경비') {
+        const otherVal = document.getElementById('e-cat-other').value.trim();
+        if(otherVal) cat = `기타경비(${otherVal})`;
+    }
+
+    const data={
+        date:document.getElementById('e-date').value,
+        cat:cat,
+        amount:Number(document.getElementById('e-amount').value),
+        method:document.getElementById('e-method').value,
+        vendor:document.getElementById('e-vendor').value.trim(),
+        receipt:document.getElementById('e-receipt').value,
+        memo:document.getElementById('e-memo').value.trim(),
+        createdAt:Date.now()
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
+    window.fbPush(window.fbRef(window.fbDB,'expenses'),data);
+    ['e-amount','e-vendor','e-memo'].forEach(id=>document.getElementById(id).value='');
+    showToast('경비가 저장되었습니다','success');
+  };
+
+  window.addDrive=function(){
+    const date = document.getElementById('d-date').value;
+    if(!date) { showToast('날짜를 입력해주세요', 'error'); return; }
+    
+    const segments = document.querySelectorAll('.drive-segment-box');
+    let hasError = false;
+    
+    let totalKm = 0;
+    let purposes = new Set();
+    let hasBusiness = false;
+    let compositePath = "";
+
+    segments.forEach((seg, i) => {
+      const from = seg.querySelector('.ds-path-from').value.trim();
+      const to = seg.querySelector('.ds-path-to').value.trim();
+      const km = Number(seg.querySelector('.ds-km').value);
+      const rawPurpose = seg.querySelector('.ds-purpose').value;
+      let purpose = rawPurpose;
+      
+      if (rawPurpose === '기타') {
+        purpose = seg.querySelector('.ds-purpose-other').value.trim();
+        if (!purpose) { hasError = true; }
+      }
+      
+      if(!km || !from || !to) { hasError = true; }
+      
+      if (i === 0) {
+          compositePath = `${from} → ${to}`;
+      } else {
+          const prevTo = segments[i-1].querySelector('.ds-path-to').value.trim();
+          if (from === prevTo) {
+              compositePath += ` → ${to}`;
+          } else {
+              compositePath += ` (이동) ${from} → ${to}`;
+          }
+      }
+
+      totalKm += km;
+      purposes.add(purpose);
+
+      if (rawPurpose !== '개인이동') {
+        hasBusiness = true;
+      }
+    });
+    
+    if(hasError) {
+       showToast('모든 구간의 출발/도착지, 주행거리, 목적을 정확히 입력해주세요', 'error');
+       return;
+    }
+    
+    if(segments.length === 0) {
+       showToast('저장할 이동 구간이 없습니다', 'error');
+       return;
+    }
+    
+    let finalType = hasBusiness ? '사업' : '개인';
+    let finalPurpose = Array.from(purposes).join(', ');
+
+    const data = {
+      date: date,
+      type: finalType,
+      path: compositePath,
+      rawPurpose: '일괄저장',
+      purpose: finalPurpose,
+      km: totalKm,
+      createdAt: Date.now()
+    };
+    
+    window.fbPush(window.fbRef(window.fbDB,'drives'), data);
+    
+    document.getElementById('drive-segments-container').innerHTML = '';
+    window.addDriveSegment();
+    
+    showToast(`하루 전체 운행기록(${totalKm}km)이 통합 저장되었습니다`, 'success');
+  };
+
+  window.deleteItem=function(path,key){
+    if(!confirm('삭제할까요?'))return;
+    window.fbRemove(window.fbRef(window.fbDB,`${path}/${key}`));
+    showToast('삭제되었습니다');
+  };
+
+  window.generateReport=function(){
+    const month=document.getElementById('report-month').value; if(!month)return;
+    const rType=document.getElementById('report-type').value;
+    
+    const revE=Object.entries(window._revenues).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const expE=Object.entries(window._expenses).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const drvE=Object.entries(window._drives).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const comE=Object.entries(window._commissions).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date)); 
+    
+    const totalRev=revE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalExp=expE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
+    const netProfit=totalRev-totalExp-totalCom;
+    
+    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+
+    let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
+    let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>[${v.path||'-'}]<br><span style="font-size:10px;color:#666;">${v.purpose||'-'}</span></td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
+
+    let html = '';
+
+    if(rType === 'all') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">홈케어의 제왕 월간 종합 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span>총 매출</span><span style="color:#27ae60">${fmt(totalRev)}</span></div>
+            <div class="paper-summary-row"><span>총 수수료 납부</span><span style="color:#e67e22">-${fmt(totalCom)}</span></div>
+            <div class="paper-summary-row"><span>총 매입/경비</span><span style="color:#c0392b">-${fmt(totalExp)}</span></div>
+            <div class="paper-summary-row paper-summary-total"><span>순수익</span><span>${fmt(netProfit)}</span></div>
+          </div>
+
+          <div class="paper-section-title">1. 매출 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:30%">현장명</th><th style="width:25%">작업내용</th><th style="width:15%">결제</th><th style="width:15%">금액</th></tr></thead>
+            <tbody>${revRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">2. 수수료 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:20%">날짜</th><th style="width:60%">메모</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${comRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">3. 매입/경비 내역 요약</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${expRows}</tbody>
+          </table>
+
+          <div class="paper-section-title">4. 차량 운행 내역 요약</div>
+          <table class="paper-table" style="margin-bottom:5px;">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:50%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
+            <tbody>${drvRows}</tbody>
+          </table>
+          <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
+        </div>`;
+    } 
+    else if(rType === 'revenue') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 매출 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 매출</span><span style="color:#27ae60;font-size:16px;">${fmt(totalRev)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 처리 건수</span><span>${revE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">매출 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:30%">현장명</th><th style="width:25%">작업내용</th><th style="width:15%">결제</th><th style="width:15%">금액</th></tr></thead>
+            <tbody>${revRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'commission') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 수수료 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 수수료 납부</span><span style="color:#e67e22;font-size:16px;">${fmt(totalCom)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 납부 건수</span><span>${comE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">수수료 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:20%">날짜</th><th style="width:60%">메모</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${comRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'expense') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 경비/매입 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">해당 월 총 경비</span><span style="color:#c0392b;font-size:16px;">${fmt(totalExp)}</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>총 지출 건수</span><span>${expE.length}건</span></div>
+          </div>
+
+          <div class="paper-section-title">매입/경비 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <tbody>${expRows}</tbody>
+          </table>
+        </div>`;
+    }
+    else if(rType === 'drive') {
+      html = `
+        <div id="printArea" class="paper-report">
+          <div class="paper-title">월간 차량 운행 상세 리포트</div>
+          <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
+          
+          <div class="paper-summary">
+            <div class="paper-summary-row"><span style="font-size:16px;">총 주행 거리</span><span style="font-size:16px;">${totalKm} km</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>사업용 주행 거리</span><span style="color:#2980b9; font-weight:700;">${bizKm} km (${ratio}%)</span></div>
+          </div>
+
+          <div class="paper-section-title">차량 운행 상세 내역</div>
+          <table class="paper-table">
+            <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:50%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
+            <tbody>${drvRows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    document.getElementById('reportOutput').innerHTML = html;
+  };
+
+  window.exportPDF = function() {
+    const element = document.getElementById('printArea');
+    if(!element){ 
+      showToast('먼저 리포트를 생성해주세요', 'error'); 
+      return; 
+    }
+    
+    const month = document.getElementById('report-month').value;
+    const rType = document.getElementById('report-type').value;
+    
+    const typeNames = {
+      'all': '종합',
+      'revenue': '매출',
+      'commission': '수수료',
+      'expense': '경비',
+      'drive': '운행일지'
+    };
+    const fileNameStr = typeNames[rType] || '상세';
+
+    const opt = {
+      margin:       [15, 15, 20, 15], 
+      filename:     `홈케어의제왕_${month}_${fileNameStr}리포트.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    showToast('PDF 파일을 생성중입니다...', 'success');
+    
+    html2pdf().set(opt).from(element).toPdf().get('pdf').then(function(pdf) {
+      const totalPages = pdf.internal.getNumberOfPages();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        pdf.text(`- ${i} / ${totalPages} -`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+    }).save().then(() => {
+       showToast('PDF 다운로드가 완료되었습니다', 'success');
+    });
+  };
+
+  window.showSection=function(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('s-'+id).classList.add('active');
+    const map={dashboard:0,revenue:1,expense:2,drive:3,report:4,settings:5};
+    document.querySelectorAll('.nav-btn')[map[id]]?.classList.add('active');
+  };
+
+  function showToast(msg,type='success'){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.className=`toast ${type} show`;
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+</script>
+</body>
 </html>
