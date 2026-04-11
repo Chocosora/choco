@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>강일 회중 서울 캠페인 스케줄러</title>
+    <title>강일 회중 대도시 캠페인</title>
 
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
@@ -329,15 +329,22 @@
             padding: 20px 24px 16px;
             border-bottom: 1px solid #f0efeb;
         }
+        
+        /* 프로필 이미지 CSS 수정 */
         .event-modal-avatar {
             width: 48px; height: 48px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
             margin-bottom: 12px;
+            overflow: hidden;
+            background: #f5f4f0;
+        }
+        .event-modal-avatar img {
+            width: 100%; height: 100%; object-fit: cover;
         }
         .event-modal-avatar.sister { background: #fff0f2; }
         .event-modal-avatar.brother { background: #eff6ff; }
+        
         .event-modal-name {
             font-size: 19px;
             font-weight: 700;
@@ -589,7 +596,7 @@
 <body>
 
     <header>
-        <h2>✦ <span class="accent">스마트</span> 스케줄러</h2>
+        <h2>✦ <span class="accent">강일 회중</span> 대도시 캠페인</h2>
         <div class="header-btns">
             <button id="hbtn-calendar" onclick="requestView('calendar-view')">달력</button>
             <button id="hbtn-daily" onclick="requestView('daily-view')">명단복사</button>
@@ -702,7 +709,7 @@
             <div class="modal-drag-bar"></div>
             <button class="modal-close" onclick="closeModalBtn('eventModalOverlay')">✕</button>
             <div class="event-modal-header">
-                <div class="event-modal-avatar" id="modalAvatar">👤</div>
+                <div class="event-modal-avatar" id="modalAvatar"></div>
                 <p class="event-modal-name" id="modalName">홍길동</p>
                 <p class="event-modal-meta" id="modalDesc">회중 · 30세</p>
             </div>
@@ -752,7 +759,17 @@
             db = firebase.database();
         } catch(e) { console.error("Firebase 초기화 에러:", e); }
 
-        const ADMIN_PIN = "4560";
+        const PIN_HASH = 1601787;
+
+        function verifyPin(input) {
+            let hash = 0;
+            for (let i = 0; i < input.length; i++) {
+                hash = ((hash << 5) - hash) + input.charCodeAt(i);
+                hash |= 0;
+            }
+            return hash === PIN_HASH;
+        }
+
         const SECRET_KEY = "GuestRoster_Secret_V5_Secure";
 
         // ── 암호화된 초기 데이터 (평문 노출 없음) ──
@@ -1009,8 +1026,12 @@
         function openMemberModal(data) {
             const isSister = data.gender === '자매';
             const age = getAge(data.birth);
-            document.getElementById('modalAvatar').textContent = isSister ? '👩' : '👨';
+            
+            // 모바일 달력 클릭 시 성별에 따른 이미지 할당
+            const avatarUrl = isSister ? 'https://chocosora.github.io/choco/ISS.png' : 'https://chocosora.github.io/choco/IBR.png';
+            document.getElementById('modalAvatar').innerHTML = `<img src="${avatarUrl}" alt="profile image">`;
             document.getElementById('modalAvatar').className = 'event-modal-avatar ' + (isSister ? 'sister' : 'brother');
+            
             document.getElementById('modalName').textContent = data.name + ' (' + data.gender + ')';
             document.getElementById('modalDesc').textContent = data.cong + ' 회중 · ' + age + '세';
             document.getElementById('modalCall').href = 'tel:' + data.phone;
@@ -1082,8 +1103,12 @@
                 eventClick: function(info) {
                     const data = info.event.extendedProps;
                     const isSister = data.gender === '자매';
-                    document.getElementById('modalAvatar').textContent = isSister ? '👩' : '👨';
+                    
+                    // PC 달력 클릭 시 성별에 따른 이미지 할당
+                    const avatarUrl = isSister ? 'https://chocosora.github.io/choco/ISS.png' : 'https://chocosora.github.io/choco/IBR.png';
+                    document.getElementById('modalAvatar').innerHTML = `<img src="${avatarUrl}" alt="profile image">`;
                     document.getElementById('modalAvatar').className = 'event-modal-avatar ' + (isSister ? 'sister' : 'brother');
+                    
                     document.getElementById('modalName').textContent = `${data.name} (${data.gender})`;
                     document.getElementById('modalDesc').textContent = `${data.cong} 회중 · ${data.age}세`;
                     document.getElementById('modalCall').href = `tel:${data.phone}`;
@@ -1138,7 +1163,7 @@
 
         function checkPin() {
             const pin = document.getElementById('pinInput').value;
-            if (pin === ADMIN_PIN) {
+            if (verifyPin(pin)) {
                 if (pendingView === 'admin-view') renderAdminTable();
                 showView(pendingView);
             } else {
@@ -1302,7 +1327,7 @@
             const dateObj = new Date(selectedDate);
             const dayName = ['일','월','화','수','목','금','토'][dateObj.getDay()];
             const dailyMembers = members.filter(m => m.dates && m.dates.includes(selectedDate));
-            let summary = `[ ${selectedDate} (${dayName}) 서울 캠페인 참여 명단 ]\n총 인원: ${dailyMembers.length}명\n\n`;
+            let summary = `[ ${selectedDate} (${dayName}) 대도시 캠페인 참여 명단 ]\n총 인원: ${dailyMembers.length}명\n\n`;
             dailyMembers.forEach((m, idx) => { summary += `${idx + 1}. ${m.name} (${m.gender}) / ${m.cong} / ${m.phone}\n`; });
             summary += `\n봉사 참여자 명단 입니다, 확인해 주시기 바랍니다.`;
             textarea.value = summary;
