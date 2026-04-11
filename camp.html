@@ -29,30 +29,39 @@
         header {
             background: #1a1a1a;
             color: #fff;
-            padding: 0 20px;
+            padding: 0 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 56px;
-            flex-wrap: wrap;
-            gap: 8px;
+            height: 52px;
             position: sticky;
             top: 0;
             z-index: 100;
         }
         h2 {
             margin: 0;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
             letter-spacing: -0.3px;
             color: #fff;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         h2 .accent { color: #a8ff78; }
 
-        .header-btns { display: flex; gap: 6px; }
+        .header-btns {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0 0 0 8px;
+            flex-shrink: 1;
+        }
+        .header-btns::-webkit-scrollbar { display: none; }
         .header-btns button {
-            padding: 7px 13px;
-            border: 1px solid rgba(255,255,255,.15);
+            padding: 6px 11px;
+            border: 1px solid rgba(255,255,255,.18);
             border-radius: 20px;
             cursor: pointer;
             font-weight: 500;
@@ -61,6 +70,7 @@
             color: rgba(255,255,255,.75);
             transition: all .2s;
             white-space: nowrap;
+            flex-shrink: 0;
             font-family: inherit;
         }
         .header-btns button:hover {
@@ -78,8 +88,8 @@
         /* ── 컨테이너 ── */
         .container {
             max-width: 1400px;
-            margin: 20px auto;
-            padding: 0 20px 40px;
+            margin: 0 auto;
+            padding: 12px 12px 40px;
             width: 100%;
         }
 
@@ -88,33 +98,33 @@
         /* ── 달력 ── */
         #calendar-view {
             background: #fff;
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+            box-shadow: 0 2px 16px rgba(0,0,0,.06);
         }
 
         .cal-legend-bar {
             display: flex;
-            gap: 16px;
+            gap: 14px;
             align-items: center;
-            padding: 12px 20px 0;
-            font-size: 12px;
+            padding: 10px 16px 0;
+            font-size: 11px;
             color: #888;
         }
-        .cal-legend-bar span { display: flex; align-items: center; gap: 5px; }
-        .cal-legend-bar i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .cal-legend-bar span { display: flex; align-items: center; gap: 4px; }
+        .cal-legend-bar i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
         .legend-s { background: #f43f5e; }
         .legend-b { background: #3b82f6; }
 
         /* FullCalendar 스타일 */
         .fc { --fc-border-color: #f0efeb; font-family: inherit; }
         .fc .fc-toolbar {
-            padding: 16px 20px 12px;
+            padding: 12px 14px 10px;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
         .fc .fc-toolbar-title {
-            font-size: 18px !important;
+            font-size: 16px !important;
             font-weight: 700 !important;
             color: #1a1a1a !important;
             letter-spacing: -0.5px;
@@ -123,9 +133,9 @@
             background: #f5f4f0 !important;
             color: #1a1a1a !important;
             border: none !important;
-            border-radius: 10px !important;
-            padding: 7px 14px !important;
-            font-size: 13px !important;
+            border-radius: 8px !important;
+            padding: 6px 11px !important;
+            font-size: 12px !important;
             font-weight: 500 !important;
             box-shadow: none !important;
             transition: background .15s !important;
@@ -134,16 +144,17 @@
         .fc .fc-button:hover { background: #ebe9e4 !important; }
         .fc .fc-button-active,
         .fc .fc-today-button { background: #1a1a1a !important; color: #fff !important; }
+
         .fc .fc-col-header-cell {
-            padding: 10px 0 !important;
+            padding: 8px 0 !important;
             background: #faf9f6;
             border-bottom: 1px solid #f0efeb !important;
         }
         .fc .fc-col-header-cell-cushion {
-            font-size: 11px !important;
-            font-weight: 600 !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
             color: #aaa !important;
-            letter-spacing: .6px;
+            letter-spacing: .5px;
             text-decoration: none !important;
             text-transform: uppercase;
         }
@@ -151,28 +162,36 @@
         .fc .fc-col-header-cell:nth-child(7) .fc-col-header-cell-cushion { color: #3b82f6 !important; }
 
         .fc .fc-daygrid-day { vertical-align: top; }
-        .fc .fc-daygrid-day-frame { padding: 6px !important; min-height: 90px; }
-        .fc .fc-daygrid-day-top { flex-direction: row !important; align-items: center; gap: 6px; margin-bottom: 4px; }
+
+        /* 모바일 셀 높이 */
+        .fc .fc-daygrid-day-frame {
+            padding: 4px !important;
+            min-height: 72px;
+        }
+        .fc .fc-daygrid-day-top {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 2px;
+        }
         .fc .fc-daygrid-day-number {
-            font-size: 12px !important;
+            font-size: 11px !important;
             font-weight: 600 !important;
             color: #555 !important;
             padding: 0 !important;
             text-decoration: none !important;
             line-height: 1;
         }
-        /* 요일 색상 */
         .fc-day-sun .fc-daygrid-day-number { color: #f43f5e !important; }
         .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
 
-        /* 오늘 날짜 */
         .fc .fc-day-today { background: #fffbf0 !important; }
         .fc .fc-day-today .fc-daygrid-day-number {
             background: #1a1a1a !important;
             color: #fff !important;
             border-radius: 50% !important;
-            width: 22px !important;
-            height: 22px !important;
+            width: 20px !important;
+            height: 20px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -180,29 +199,30 @@
 
         /* 총 인원 배지 */
         .day-count-badge {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             background: #1a1a1a;
             color: #fff;
-            border-radius: 10px;
-            padding: 1px 6px;
+            border-radius: 8px;
+            padding: 1px 5px;
             line-height: 1.6;
-            letter-spacing: .3px;
+            letter-spacing: .2px;
+            white-space: nowrap;
         }
 
-        /* 이벤트 칩 */
+        /* 이벤트 칩 - 모바일 최적화 */
         .fc-event {
             border: none !important;
-            border-radius: 6px !important;
-            padding: 2px 7px !important;
-            font-size: 11px !important;
-            font-weight: 500 !important;
+            border-radius: 4px !important;
+            padding: 1px 4px !important;
+            font-size: 10px !important;
+            font-weight: 600 !important;
             cursor: pointer !important;
-            margin-bottom: 2px !important;
-            line-height: 1.55 !important;
-            transition: opacity .15s, transform .1s !important;
+            margin-bottom: 1px !important;
+            line-height: 1.5 !important;
+            transition: opacity .15s !important;
         }
-        .fc-event:hover { opacity: .82 !important; transform: scale(1.02) !important; }
+        .fc-event:hover { opacity: .82 !important; }
         .fc-event.gender-sister {
             background: #fff0f2 !important;
             color: #c0132b !important;
@@ -211,30 +231,39 @@
             background: #eff6ff !important;
             color: #1d4ed8 !important;
         }
-        .fc-event .fc-event-title { display: flex; align-items: center; gap: 5px; }
+        /* 모바일에서 이름 앞 도트 숨김 */
+        .fc-event .fc-event-title { display: flex; align-items: center; gap: 3px; }
         .fc-event .fc-event-title::before {
             content: '';
             display: inline-block;
-            width: 5px; height: 5px;
+            width: 4px; height: 4px;
             border-radius: 50%;
             flex-shrink: 0;
         }
         .fc-event.gender-sister .fc-event-title::before { background: #f43f5e; }
         .fc-event.gender-brother .fc-event-title::before { background: #60a5fa; }
 
-        /* 달력 높이: PC 화면 꽉 차게 */
-        #calendar { height: calc(100vh - 148px); min-height: 600px; }
-        @media (max-width: 768px) {
-            #calendar { height: auto; min-height: unset; }
-            .fc-event { font-size: 10px !important; padding: 1px 5px !important; }
-            .fc-event .fc-event-title::before { display: none; }
-            .fc .fc-toolbar { padding: 12px 14px 8px; }
-            .fc .fc-toolbar-title { font-size: 15px !important; }
-            .fc .fc-button { padding: 6px 11px !important; font-size: 12px !important; }
-            .fc .fc-daygrid-day-frame { min-height: 70px; }
+        /* 달력 높이 */
+        #calendar { height: auto; }
+
+        /* PC */
+        @media (min-width: 769px) {
+            .container { padding: 20px 20px 40px; }
+            header { padding: 0 20px; height: 56px; }
+            h2 { font-size: 15px; }
+            .header-btns button { padding: 7px 13px; font-size: 12px; gap: 6px; }
+            #calendar { height: calc(100vh - 148px); min-height: 600px; }
+            .fc .fc-daygrid-day-frame { min-height: 110px; padding: 6px !important; }
+            .fc .fc-toolbar { padding: 16px 20px 12px; }
+            .fc .fc-toolbar-title { font-size: 18px !important; }
+            .fc .fc-button { padding: 7px 14px !important; font-size: 13px !important; border-radius: 10px !important; }
+            .fc .fc-daygrid-day-number { font-size: 12px !important; }
+            .fc .fc-day-today .fc-daygrid-day-number { width: 22px !important; height: 22px !important; }
+            .day-count-badge { font-size: 10px; padding: 1px 6px; }
+            .fc-event { font-size: 11px !important; padding: 2px 7px !important; border-radius: 6px !important; }
         }
 
-        /* ── 이벤트 팝업 모달 (개선) ── */
+        /* ── 이벤트 팝업 모달 ── */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -242,19 +271,40 @@
             background: rgba(10,10,10,.45);
             z-index: 1000;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end;
             backdrop-filter: blur(4px);
-            padding: 20px;
+            padding: 0;
+        }
+        @media (min-width: 769px) {
+            .modal-overlay { align-items: center; padding: 20px; }
         }
         .modal-content {
             background: #fff;
-            border-radius: 20px;
+            border-radius: 20px 20px 0 0;
             width: 100%;
-            max-width: 340px;
-            box-shadow: 0 24px 60px rgba(0,0,0,.18);
+            max-width: 100%;
+            box-shadow: 0 -8px 40px rgba(0,0,0,.15);
             position: relative;
             overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
+        @media (min-width: 769px) {
+            .modal-content {
+                border-radius: 20px;
+                max-width: 340px;
+                box-shadow: 0 24px 60px rgba(0,0,0,.18);
+                padding-bottom: 0;
+            }
+        }
+        /* 모달 상단 드래그 인디케이터 */
+        .modal-drag-bar {
+            width: 36px; height: 4px;
+            background: #e5e3dd;
+            border-radius: 2px;
+            margin: 10px auto 0;
+        }
+        @media (min-width: 769px) { .modal-drag-bar { display: none; } }
+
         .modal-close {
             position: absolute;
             top: 14px; right: 14px;
@@ -273,36 +323,30 @@
         }
         .modal-close:hover { background: #e5e3dd; color: #1a1a1a; }
 
-        /* 이벤트 팝업 내부 */
         .event-modal-header {
-            padding: 28px 24px 20px;
+            padding: 20px 24px 16px;
             border-bottom: 1px solid #f0efeb;
         }
         .event-modal-avatar {
-            width: 52px; height: 52px;
+            width: 48px; height: 48px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 20px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
         .event-modal-avatar.sister { background: #fff0f2; }
         .event-modal-avatar.brother { background: #eff6ff; }
         .event-modal-name {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             letter-spacing: -0.5px;
-            margin: 0 0 4px;
+            margin: 0 0 3px;
             color: #1a1a1a;
         }
-        .event-modal-meta {
-            font-size: 13px;
-            color: #888;
-            margin: 0;
-        }
+        .event-modal-meta { font-size: 13px; color: #888; margin: 0; }
         .event-modal-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0;
         }
         .event-action-btn {
             display: flex;
@@ -318,36 +362,26 @@
             background: transparent;
             font-family: inherit;
         }
-        .event-action-btn:first-child {
-            border-right: 1px solid #f0efeb;
-        }
+        .event-action-btn:first-child { border-right: 1px solid #f0efeb; }
         .event-action-btn:hover { background: #faf9f6; }
         .event-action-icon {
-            width: 40px; height: 40px;
+            width: 44px; height: 44px;
             border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
         }
         .icon-call { background: #eff6ff; }
         .icon-sms  { background: #f0fdf4; }
-        .event-action-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #1a1a1a;
-            letter-spacing: .1px;
-        }
-        .event-action-sub {
-            font-size: 11px;
-            color: #aaa;
-        }
+        .event-action-label { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+        .event-action-sub { font-size: 11px; color: #aaa; }
 
         /* ── 로그인 ── */
         .login-box {
             text-align: center;
-            padding: 60px 15px;
+            padding: 48px 15px;
             background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+            border-radius: 14px;
+            box-shadow: 0 2px 16px rgba(0,0,0,.06);
         }
         .login-box h3 { color: #1a1a1a; margin-top: 0; font-size: 18px; font-weight: 700; }
         .login-box p { color: #888; font-size: 14px; }
@@ -384,73 +418,107 @@
         /* ── 관리자 / SMS 공통 패널 ── */
         .panel-wrap {
             background: #fff;
-            border-radius: 16px;
-            padding: 24px 20px;
-            box-shadow: 0 2px 20px rgba(0,0,0,.06);
+            border-radius: 14px;
+            padding: 20px 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,.06);
+        }
+        @media (min-width: 769px) {
+            .panel-wrap { padding: 24px 20px; border-radius: 16px; }
         }
         .panel-title {
-            font-size: 17px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: -0.4px;
             margin: 0 0 4px;
             color: #1a1a1a;
         }
-        .panel-sub {
-            font-size: 12px;
-            color: #aaa;
-            margin: 0 0 18px;
-        }
+        .panel-sub { font-size: 12px; color: #aaa; margin: 0 0 16px; }
 
         /* ── 테이블 ── */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #f0efeb; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-        th, td { border-bottom: 1px solid #f0efeb; padding: 12px 10px; text-align: center; word-break: keep-all; }
-        th { background: #faf9f6; color: #888; font-weight: 600; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; border-top: 2px solid #1a1a1a; border-bottom: 1px solid #e5e3dd; white-space: nowrap; }
-        .dates-cell { max-width: 200px; font-size: 11px; text-align: left; line-height: 1.6; color: #888; }
-        .edit-input { width: 100%; padding: 8px 10px; box-sizing: border-box; text-align: center; font-size: 12px; border: 1.5px solid #e5e3dd; border-radius: 8px; font-family: inherit; transition: border .15s; }
+        .table-responsive {
+            width: 100%; overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 1px solid #f0efeb;
+            margin-top: 14px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 680px; }
+        th, td { border-bottom: 1px solid #f0efeb; padding: 10px 8px; text-align: center; word-break: keep-all; }
+        th {
+            background: #faf9f6; color: #888; font-weight: 600;
+            font-size: 10px; letter-spacing: .4px; text-transform: uppercase;
+            border-top: 2px solid #1a1a1a; border-bottom: 1px solid #e5e3dd;
+            white-space: nowrap;
+        }
+        .dates-cell { max-width: 180px; font-size: 11px; text-align: left; line-height: 1.6; color: #888; }
+        .edit-input {
+            width: 100%; padding: 7px 8px; box-sizing: border-box;
+            text-align: center; font-size: 12px;
+            border: 1.5px solid #e5e3dd; border-radius: 8px;
+            font-family: inherit; transition: border .15s;
+        }
         .edit-input:focus { border-color: #1a1a1a; outline: none; }
 
         /* 날짜 선택 그리드 */
-        .date-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; background: #faf9f6; border-radius: 10px; border: 1px solid #f0efeb; }
-        .date-btn { padding: 8px 0; font-size: 12px; border: 1px solid #e5e3dd; background: white; border-radius: 6px; cursor: pointer; color: #555; transition: .15s; font-family: inherit; }
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px; padding: 8px;
+            background: #faf9f6;
+            border-radius: 10px; border: 1px solid #f0efeb;
+        }
+        .date-btn {
+            padding: 7px 0; font-size: 11px;
+            border: 1px solid #e5e3dd; background: white;
+            border-radius: 5px; cursor: pointer; color: #555;
+            transition: .15s; font-family: inherit;
+        }
         .date-btn.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; font-weight: 700; }
         .date-btn.selected-daily { background: #e65100 !important; color: white !important; border-color: #e65100 !important; font-weight: bold; }
 
         /* 버튼들 */
-        .btn-add-member { background: #1a1a1a; color: white; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-bottom: 10px; font-size: 13px; font-family: inherit; transition: background .15s; }
+        .btn-add-member {
+            background: #1a1a1a; color: white; border: none;
+            padding: 10px 16px; border-radius: 10px; font-weight: 700;
+            cursor: pointer; margin-bottom: 10px; font-size: 13px;
+            font-family: inherit; transition: background .15s;
+        }
         .btn-add-member:hover { background: #333; }
-        .btn-edit { background: #f5f4f0; border: none; padding: 7px 11px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #555; font-size: 12px; transition: background .15s; font-family: inherit; }
+        .btn-edit { background: #f5f4f0; border: none; padding: 6px 10px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #555; font-size: 12px; transition: background .15s; font-family: inherit; }
         .btn-edit:hover { background: #ebe9e4; }
-        .btn-delete { background: #fff0f2; border: none; padding: 7px 11px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #c0132b; margin-top: 4px; font-size: 12px; transition: background .15s; font-family: inherit; }
+        .btn-delete { background: #fff0f2; border: none; padding: 6px 10px; cursor: pointer; border-radius: 7px; font-weight: 600; color: #c0132b; margin-top: 4px; font-size: 12px; transition: background .15s; font-family: inherit; }
         .btn-delete:hover { background: #ffd7de; }
-        .btn-save { background: #1a1a1a; border: none; padding: 7px 11px; color: white; cursor: pointer; border-radius: 7px; font-weight: 700; font-size: 12px; font-family: inherit; transition: background .15s; }
+        .btn-save { background: #1a1a1a; border: none; padding: 6px 10px; color: white; cursor: pointer; border-radius: 7px; font-weight: 700; font-size: 12px; font-family: inherit; transition: background .15s; }
         .btn-save:hover { background: #333; }
 
         /* ── 문자 발송 ── */
-        .template-box { background: #faf9f6; padding: 18px; border-radius: 14px; border: 1px solid #f0efeb; margin-bottom: 20px; }
-        .template-controls { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; margin-bottom: 10px; }
+        .template-box {
+            background: #faf9f6; padding: 16px;
+            border-radius: 12px; border: 1px solid #f0efeb; margin-bottom: 18px;
+        }
+        .template-controls { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; margin-bottom: 10px; }
+        @media (min-width: 769px) { .template-controls { flex-direction: row; } }
         .template-controls select,
         .template-controls input {
             width: 100%; padding: 11px 14px; border-radius: 10px;
             border: 1.5px solid #e5e3dd; font-size: 14px;
-            font-family: inherit; background: #fff;
-            transition: border .15s; outline: none;
+            font-family: inherit; background: #fff; transition: border .15s; outline: none;
         }
         .template-controls select:focus,
         .template-controls input:focus { border-color: #1a1a1a; }
         textarea {
-            width: 100%; padding: 14px; box-sizing: border-box;
+            width: 100%; padding: 12px; box-sizing: border-box;
             border: 1.5px solid #e5e3dd; border-radius: 10px;
             font-size: 14px; resize: none; margin-bottom: 10px;
             line-height: 1.6; font-family: inherit; background: #fff;
             transition: border .15s; outline: none;
         }
         textarea:focus { border-color: #1a1a1a; }
-        .template-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .template-actions { display: flex; gap: 8px; }
         .btn-save-temp, .btn-delete-temp {
             flex: 1; padding: 13px; border-radius: 10px; cursor: pointer;
-            font-weight: 700; font-size: 13px; border: none; color: white; font-family: inherit;
-            transition: opacity .15s;
+            font-weight: 700; font-size: 13px; border: none; color: white;
+            font-family: inherit; transition: opacity .15s;
         }
         .btn-save-temp:hover, .btn-delete-temp:hover { opacity: .85; }
         .btn-save-temp { background: #1a1a1a; }
@@ -458,19 +526,22 @@
 
         .member-sms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 10px; margin-top: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px; margin-top: 14px;
+        }
+        @media (min-width: 769px) {
+            .member-sms-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
         }
         .sms-item-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; padding: 16px 10px;
+            gap: 4px; padding: 14px 8px;
             background: #fff; border: 1.5px solid #f0efeb;
             border-radius: 12px; cursor: pointer; transition: all .15s;
         }
         .sms-item-btn:hover { border-color: #1a1a1a; background: #faf9f6; }
-        .sms-item-btn .sms-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+        .sms-item-btn .sms-name { font-size: 13px; font-weight: 700; color: #1a1a1a; }
         .sms-item-btn .sms-gender {
-            font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 20px;
+            font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px;
         }
         .sms-gender-s { background: #fff0f2; color: #c0132b; }
         .sms-gender-b { background: #eff6ff; color: #1d4ed8; }
@@ -480,14 +551,14 @@
         .preview-label { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: .5px; text-transform: uppercase; margin: 14px 0 6px; display: block; }
         .send-modal-select {
             width: 100%; padding: 11px 14px; border-radius: 10px;
-            border: 1.5px solid #e5e3dd; margin-bottom: 4px; font-size: 14px;
-            font-family: inherit; background: #fff; outline: none;
+            border: 1.5px solid #e5e3dd; margin-bottom: 4px;
+            font-size: 14px; font-family: inherit; background: #fff; outline: none;
         }
         .send-modal-select:focus { border-color: #1a1a1a; }
         #smsPreviewText, #dailySummaryText {
-            width: 100%; background: #faf9f6; padding: 14px;
+            width: 100%; background: #faf9f6; padding: 12px;
             border: 1.5px solid #f0efeb; border-radius: 10px;
-            font-size: 13px; color: #444; height: 160px;
+            font-size: 13px; color: #444; height: 150px;
             font-family: inherit; line-height: 1.6; resize: none;
         }
         .btn-execute-sms {
@@ -498,21 +569,18 @@
         .btn-execute-sms:hover { opacity: .88; }
 
         /* 명단 복사 */
-        .daily-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .daily-actions {
+            display: flex; flex-direction: column; gap: 10px; margin-top: 10px;
+        }
+        @media (min-width: 769px) {
+            .daily-actions { flex-direction: row; align-items: center; }
+        }
 
         /* 코드 태그 */
         .code-tag {
             display: inline-block; background: #f0efeb; color: #1a1a1a;
             padding: 1px 6px; border-radius: 5px; font-size: 12px;
             font-family: monospace;
-        }
-
-        /* PC 대응 */
-        @media (min-width: 769px) {
-            header { flex-wrap: nowrap; }
-            .template-controls { flex-direction: row; }
-            .daily-actions { flex-direction: row; align-items: center; }
-            .fc .fc-daygrid-day-frame { min-height: 110px; }
         }
     </style>
 </head>
@@ -580,7 +648,7 @@
                     </select>
                     <input type="text" id="templateTitle" placeholder="템플릿 제목 (예: 첫 안내 문자)">
                 </div>
-                <textarea id="smsTextarea" placeholder="문자 내용을 입력해주세요." style="height: 180px;"></textarea>
+                <textarea id="smsTextarea" placeholder="문자 내용을 입력해주세요." style="height: 160px;"></textarea>
                 <div class="template-actions">
                     <button class="btn-save-temp" id="btnSaveTemp" onclick="saveTemplateToFirebase()">저장</button>
                     <button class="btn-delete-temp" onclick="deleteTemplate()" id="btnDeleteTemp" style="display:none;">삭제</button>
@@ -596,7 +664,7 @@
             <div class="template-box">
                 <p class="panel-title">일자별 참여 명단 복사</p>
                 <p style="color: #888; font-size: 13px; margin: 5px 0 14px;">날짜를 선택하면 해당 일자의 참석 명단이 표시됩니다.</p>
-                <div id="dailyDateGrid" class="date-grid" style="margin: 0 auto 16px; max-width: 350px; gap: 6px;"></div>
+                <div id="dailyDateGrid" class="date-grid" style="margin: 0 auto 16px; max-width: 350px; gap: 5px;"></div>
                 <textarea id="dailySummaryText" style="height: 200px;" placeholder="날짜를 선택하시면 명단이 표시됩니다." readonly></textarea>
                 <div class="daily-actions">
                     <button class="btn-execute-sms" style="background:#1a1a1a; margin-top:0;" onclick="copyDailySummary()">텍스트 복사하기</button>
@@ -606,8 +674,10 @@
         </div>
     </div>
 
+    <!-- 이벤트 팝업 모달 -->
     <div class="modal-overlay" id="eventModalOverlay" onclick="closeModal('eventModalOverlay', event)">
         <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-drag-bar"></div>
             <button class="modal-close" onclick="closeModalBtn('eventModalOverlay')">✕</button>
             <div class="event-modal-header">
                 <div class="event-modal-avatar" id="modalAvatar">👤</div>
@@ -629,10 +699,12 @@
         </div>
     </div>
 
+    <!-- SMS 발송 모달 -->
     <div class="modal-overlay" id="smsSendModalOverlay" onclick="closeModal('smsSendModalOverlay', event)">
-        <div class="modal-content" onclick="event.stopPropagation()" style="padding:24px 20px;">
+        <div class="modal-content" onclick="event.stopPropagation()" style="padding:20px 18px;">
+            <div class="modal-drag-bar"></div>
             <button class="modal-close" onclick="closeModalBtn('smsSendModalOverlay')">✕</button>
-            <h3 id="smsSendTargetName" style="margin:0 0 16px; font-size:16px; font-weight:700; letter-spacing:-0.4px;">메시지 보내기</h3>
+            <h3 id="smsSendTargetName" style="margin:10px 0 14px; font-size:15px; font-weight:700; letter-spacing:-0.4px;">메시지 보내기</h3>
             <label class="preview-label">템플릿 선택</label>
             <select class="send-modal-select" id="sendModalTemplateSelect" onchange="updateSmsPreview()"></select>
             <label class="preview-label">미리보기</label>
@@ -662,33 +734,14 @@
         const ADMIN_PIN = "4560";
         const SECRET_KEY = "GuestRoster_Secret_V5_Secure";
 
+        // ── 암호화된 초기 데이터 (평문 노출 없음) ──
+        const ENCRYPTED_INITIAL_DATA = "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";
+
         let calendarInstance = null;
         let pendingView = '';
         let members = [];
         let smsTemplates = [];
         let currentSmsUserIndex = null;
-
-        const initialData = [
-            { cong: '경기이천부발', name: '진보람', gender: '자매', birth: '1994', phone: '010-2572-4132', dates: ['2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17'] },
-            { cong: '경기이천부발', name: '김지윤', gender: '형제', birth: '1990', phone: '010-2439-5207', dates: ['2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17'] },
-            { cong: '경기안산고잔동부', name: '김지민', gender: '형제', birth: '1993', phone: '010-6586-1935', dates: ['2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17'] },
-            { cong: '충남천안입장', name: '김지윤', gender: '자매', birth: '1996', phone: '010-9364-0947', dates: ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-07'] },
-            { cong: '경기안성죽산', name: '박하경', gender: '자매', birth: '1993', phone: '010-6443-6663', dates: ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-07'] },
-            { cong: '충남천안입장', name: '김채연', gender: '자매', birth: '1997', phone: '010-2795-3817', dates: ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-07'] },
-            { cong: '충남천안직산남부', name: '권영인', gender: '자매', birth: '1996', phone: '010-9439-6186', dates: ['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-07'] },
-            { cong: '경기이천동부', name: '장선영', gender: '자매', birth: '1976', phone: '010-8999-0594', dates: ['2026-05-03', '2026-05-05', '2026-05-23', '2026-05-24'] },
-            { cong: '경기이천동부', name: '박한규', gender: '형제', birth: '1976', phone: '010-8855-0594', dates: ['2026-05-03', '2026-05-05', '2026-05-23', '2026-05-24'] },
-            { cong: '경기이천동부', name: '이진옥', gender: '자매', birth: '1996', phone: '010-2533-1253', dates: ['2026-05-03', '2026-05-05', '2026-05-23', '2026-05-24'] },
-            { cong: '경기이천동부', name: '김어진', gender: '형제', birth: '1999', phone: '010-5283-3802', dates: ['2026-05-03', '2026-05-05', '2026-05-23', '2026-05-24'] },
-            { cong: '충북충주서부', name: '김여진', gender: '자매', birth: '2000', phone: '010-8905-0274', dates: ['2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25'] },
-            { cong: '충북충주서부', name: '김현아', gender: '자매', birth: '2002', phone: '010-3783-4783', dates: ['2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25'] },
-            { cong: '대구북부', name: '최민호', gender: '형제', birth: '1999', phone: '010-9904-8873', dates: ['2026-05-21', '2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25'] },
-            { cong: '대구북부', name: '김영인', gender: '형제', birth: '1997', phone: '010-4413-0063', dates: ['2026-05-21', '2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25'] },
-            { cong: '경기성남서부', name: '황한빈', gender: '형제', birth: '1998', phone: '010-2345-7798', dates: ['2026-05-02', '2026-05-05', '2026-05-17', '2026-05-21', '2026-05-25'] },
-            { cong: '경기김포동부', name: '신여은', gender: '자매', birth: '2005', phone: '010-6353-7165', dates: ['2026-05-01', '2026-05-03', '2026-05-08', '2026-05-15', '2026-05-16', '2026-05-17', '2026-05-22', '2026-05-24'] },
-            { cong: '경기고양정발', name: '윤미경', gender: '자매', birth: '1989', phone: '010-2040-1427', dates: ['2026-05-01', '2026-05-03', '2026-05-08', '2026-05-10', '2026-05-15', '2026-05-17', '2026-05-22', '2026-05-24', '2026-05-25'] },
-            { cong: '경기김포동부', name: '현인세', gender: '형제', birth: '1990', phone: '010-6735-8003', dates: ['2026-05-02'] }
-        ];
 
         function encryptData(data) { return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString(); }
         function decryptData(ciphertext) {
@@ -701,10 +754,16 @@
                 db.ref('roster/encryptedMembers').once('value').then((snapshot) => {
                     if (snapshot.exists()) {
                         const decrypted = decryptData(snapshot.val());
-                        members = decrypted ? decrypted : initialData;
-                    } else fallbackLocalData();
+                        if (decrypted && decrypted.length > 0) {
+                            members = decrypted;
+                        } else {
+                            loadEncryptedInitialData();
+                        }
+                    } else {
+                        loadEncryptedInitialData();
+                    }
                     finalizeLoad();
-                }).catch(() => { fallbackLocalData(); finalizeLoad(); });
+                }).catch(() => { loadEncryptedInitialData(); finalizeLoad(); });
 
                 db.ref('settings/smsTemplatesList').once('value').then((snapshot) => {
                     if (snapshot.exists()) smsTemplates = snapshot.val();
@@ -712,21 +771,30 @@
                     renderTemplateDropdown();
                 }).catch(() => { fallbackLocalTemplates(); renderTemplateDropdown(); });
             } else {
-                fallbackLocalData();
+                const saved = localStorage.getItem('encryptedMembersDataV5');
+                if (saved) {
+                    const dec = decryptData(saved);
+                    members = (dec && dec.length > 0) ? dec : loadEncryptedInitialData();
+                } else {
+                    loadEncryptedInitialData();
+                }
                 fallbackLocalTemplates();
                 finalizeLoad();
                 renderTemplateDropdown();
             }
         }
 
-        function fallbackLocalData() {
-            const saved = localStorage.getItem('encryptedMembersDataV5');
-            members = saved ? (decryptData(saved) || initialData) : initialData;
+        function loadEncryptedInitialData() {
+            const dec = decryptData(ENCRYPTED_INITIAL_DATA);
+            members = dec || [];
+            return members;
         }
+
         function fallbackLocalTemplates() {
             const local = localStorage.getItem('smsTemplatesListData');
             if (local) smsTemplates = JSON.parse(local);
         }
+
         function finalizeLoad() {
             if (!calendarInstance) initCalendar();
             else {
@@ -751,8 +819,7 @@
             select.innerHTML = '<option value="new">+ 새 템플릿 작성</option>';
             smsTemplates.forEach((temp) => {
                 const opt = document.createElement('option');
-                opt.value = temp.id;
-                opt.text = temp.title;
+                opt.value = temp.id; opt.text = temp.title;
                 select.appendChild(opt);
             });
             loadSelectedTemplate();
@@ -849,20 +916,18 @@
                 initialDate: '2026-05-01',
                 locale: 'ko',
                 headerToolbar: headerToolbarOpt,
-                height: isMobile ? 'auto' : '100%',
-                contentHeight: isMobile ? 'auto' : undefined,
+                height: 'auto',
+                contentHeight: 'auto',
+                expandRows: false,
                 events: generateCalendarEvents(),
                 eventDisplay: 'block',
-                dayMaxEvents: false,   // ← 모든 이벤트 표시 (숨김 없음)
+                dayMaxEvents: false,
                 dayCellDidMount: function(info) {
-                    // 날짜 옆 총 인원 배지 추가
-                    // 수정된 부분: 로컬 타임존 기반으로 날짜 문자열(YYYY-MM-DD)을 생성하여 하루 밀림 방지
                     const d = info.date;
                     const year = d.getFullYear();
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const day = String(d.getDate()).padStart(2, '0');
                     const dateStr = `${year}-${month}-${day}`;
-                    
                     const count = members.filter(m => m.dates && m.dates.includes(dateStr)).length;
                     if (count > 0) {
                         const top = info.el.querySelector('.fc-daygrid-day-top');
@@ -918,8 +983,9 @@
                 document.getElementById(id).style.display = 'none';
             });
             document.getElementById(viewId).style.display = 'block';
-
-            if (viewId === 'calendar-view' && calendarInstance) calendarInstance.render();
+            if (viewId === 'calendar-view' && calendarInstance) {
+                setTimeout(() => calendarInstance.render(), 50);
+            }
             if (viewId === 'login-view') {
                 document.getElementById('pinInput').value = '';
                 document.getElementById('loginError').style.display = 'none';
@@ -927,7 +993,6 @@
             }
             if (viewId === 'sms-view') renderSmsGrid();
             if (viewId === 'daily-view') initDailyView();
-
             setActiveHeaderBtn(viewId === 'login-view' ? pendingView : viewId);
         }
 
@@ -1070,7 +1135,7 @@
             members.forEach(m => { if (m.dates) m.dates.forEach(d => allDates.add(d)); });
             ['일','월','화','수','목','금','토'].forEach(day => {
                 const div = document.createElement('div');
-                div.style.cssText = 'text-align:center;font-size:11px;font-weight:700;color:#aaa;padding-bottom:4px;';
+                div.style.cssText = 'text-align:center;font-size:10px;font-weight:700;color:#aaa;padding-bottom:3px;';
                 div.innerText = day;
                 grid.appendChild(div);
             });
@@ -1114,7 +1179,7 @@
 
         window.addEventListener('resize', function() {
             if (calendarInstance && document.getElementById('calendar-view').style.display !== 'none') {
-                calendarInstance.render();
+                setTimeout(() => calendarInstance.render(), 50);
             }
         });
 
