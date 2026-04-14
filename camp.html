@@ -253,6 +253,8 @@
         .fc .fc-daygrid-day-number { font-size: 12px !important; font-weight: 600 !important; color: #555 !important; padding: 0 !important; text-decoration: none !important; line-height: 1; }
         .fc-day-sun .fc-daygrid-day-number { color: #f43f5e !important; }
         .fc-day-sat .fc-daygrid-day-number { color: #3b82f6 !important; }
+        .fc-day[data-date="2026-05-01"]:not(.fc-day-today) .fc-daygrid-day-number,
+        .fc-day[data-date="2026-05-25"]:not(.fc-day-today) .fc-daygrid-day-number { color: #f43f5e !important; }
         .fc .fc-day-today { background: #fffbf0 !important; }
         .fc .fc-day-today .fc-daygrid-day-number { background: #1a1a1a !important; color: #fff !important; border-radius: 50% !important; width: 22px !important; height: 22px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
         .day-count-badge { font-size: 10px; font-weight: 700; background: #1a1a1a; color: #fff; border-radius: 10px; padding: 1px 6px; line-height: 1.6; letter-spacing: .3px; }
@@ -971,7 +973,7 @@
                 numEl.textContent = d;
                 // 요일 색 (오늘 셀 제외 - CSS가 처리)
                 if (!isToday) {
-                    if (dayOfWeek === 0) numEl.style.color = '#f43f5e';
+                    if (dayOfWeek === 0 || dateStr === '2026-05-01' || dateStr === '2026-05-25') numEl.style.color = '#f43f5e';
                     else if (dayOfWeek === 6) numEl.style.color = '#3b82f6';
                 }
                 top.appendChild(numEl);
