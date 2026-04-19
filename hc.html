@@ -121,6 +121,7 @@
             const [parsedAddress, setParsedAddress] = useState('');
             const [parsedDetails, setParsedDetails] = useState('');
             const [phoneNumber, setPhoneNumber] = useState(''); 
+            const [notes, setNotes] = useState(''); // 참고사항 상태 추가
             
             const [tasks, setTasks] = useState([{ description: '', amount: '', materialCost: '' }]);
             const [jobDate, setJobDate] = useState(todayStr); 
@@ -367,6 +368,7 @@
                     address: parsedAddress,
                     details: parsedDetails,
                     phoneNumber: phoneNumber,
+                    notes: notes, // 메모 내용 저장
                     tasks: filteredTasks,
                     totalAmount: displayWorkCost, 
                     totalMaterialCost: displayMaterialCost,
@@ -413,6 +415,7 @@
                 setParsedAddress(job.address);
                 setParsedDetails(job.details || '');
                 setPhoneNumber(job.phoneNumber || ''); 
+                setNotes(job.notes || ''); // 편집 시 기존 메모 불러오기
                 
                 if (job.tasks && job.tasks.length > 0) {
                     const convertedTasks = job.tasks.map(t => ({
@@ -440,6 +443,7 @@
                 setParsedAddress('');
                 setParsedDetails('');
                 setPhoneNumber(''); 
+                setNotes(''); // 입력란 초기화 시 메모도 함께 초기화
                 setTasks([{ description: '', amount: '', materialCost: '' }]);
                 setVisitTime('09:00');
                 setEditingId(null);
@@ -646,18 +650,18 @@
             };
 
             const renderInputForm = () => (
-                <section ref={inputSectionRef} className={`rounded-3xl p-5 shadow-sm border relative overflow-hidden bg-white border-slate-100`}>
-                    <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-50'}`}></div>
+                <section ref={inputSectionRef} className={`rounded-3xl p-6 shadow-xl border-2 relative overflow-hidden bg-slate-50 border-slate-300 mt-8`}>
+                    <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-100'}`}></div>
                     
-                    <h2 className={`text-sm font-bold mb-3 flex items-center gap-2 ${editingId ? 'text-teal-700' : 'text-slate-500'}`}>
+                    <h2 className={`text-base font-extrabold mb-4 flex items-center gap-2 ${editingId ? 'text-teal-700' : 'text-slate-700'}`}>
                         {editingId ? (
                             <>
-                                <span className="bg-teal-600 text-white px-2 py-0.5 rounded-md text-xs">EDIT</span>
+                                <span className="bg-teal-600 text-white px-2.5 py-1 rounded-md text-xs">수정 모드</span>
                                 작업 내용 수정
                             </>
                         ) : (
                             <>
-                                <span className="bg-teal-100 text-teal-600 px-2 py-0.5 rounded-md text-xs">NEW</span>
+                                <span className="bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-xs shadow-sm">새 입력</span>
                                 {currentView === 'consultations' ? '새 상담 고객 추가' : '새 현장 추가'}
                             </>
                         )}
@@ -713,9 +717,9 @@
                         </div>
                     </div>
 
-                    <div className="h-px bg-slate-200 w-full mb-4"></div>
+                    <div className="h-px bg-slate-200 w-full mb-4 mt-2"></div>
 
-                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">2. 현장 방문 일정 및 작업 내역 (금액)</label>
+                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">2. 방문 일정 및 작업 내역 (금액)</label>
                     <div className="mb-5 space-y-3">
                         <div className="flex items-center gap-2 mb-4">
                             {currentView !== 'consultations' && (
@@ -735,7 +739,7 @@
                                 <button
                                     type="button"
                                     onClick={() => setTimeModalOpen(true)}
-                                    className="w-full px-3 py-2.5 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 flex items-center justify-center gap-2 active:bg-slate-50"
+                                    className="w-full px-3 py-2.5 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 flex items-center justify-center gap-2 active:bg-slate-50 shadow-sm"
                                 >
                                     <Clock className="w-4 h-4 text-teal-500" />
                                     {visitTime}
@@ -745,10 +749,10 @@
                         
                         <div className="space-y-3">
                             {tasks.map((task, index) => (
-                                <div key={index} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl relative">
+                                <div key={index} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-xl relative shadow-sm">
                                     <input 
                                         type="text"
-                                        className="w-full px-3 py-2.5 bg-white rounded-lg text-sm text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                        className="w-full px-3 py-2.5 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                                         placeholder="내용 (예: 수전 교체)"
                                         value={task.description}
                                         onChange={(e) => handleTaskChange(index, 'description', e.target.value)}
@@ -757,7 +761,7 @@
                                         <div className="flex-1 relative">
                                             <input 
                                                 type="number" step="0.1"
-                                                className="w-full px-3 py-2.5 pr-8 bg-white rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
+                                                className="w-full px-3 py-2.5 pr-8 bg-slate-50 rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
                                                 placeholder="작업비 (예: 10.5)"
                                                 value={task.amount}
                                                 onChange={(e) => handleTaskChange(index, 'amount', e.target.value)}
@@ -767,7 +771,7 @@
                                         <div className="flex-1 relative">
                                             <input 
                                                 type="number" step="0.1"
-                                                className="w-full px-3 py-2.5 pr-8 bg-white rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
+                                                className="w-full px-3 py-2.5 pr-8 bg-slate-50 rounded-lg text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-right"
                                                 placeholder="자재비 (예: 5)"
                                                 value={task.materialCost}
                                                 onChange={(e) => handleTaskChange(index, 'materialCost', e.target.value)}
@@ -784,11 +788,11 @@
                             ))}
                         </div>
                         
-                        <button onClick={addTask} className="w-full py-2 border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:border-teal-300 hover:text-teal-600 flex items-center justify-center gap-1">
+                        <button onClick={addTask} className="w-full py-2.5 bg-white border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 hover:border-teal-300 hover:text-teal-600 flex items-center justify-center gap-1 shadow-sm">
                             <Plus className="w-4 h-4" /> 내역 추가
                         </button>
                         
-                        <div className="bg-teal-50 p-4 rounded-xl space-y-2 border border-teal-100 mt-2 shadow-sm">
+                        <div className="bg-teal-50/50 p-4 rounded-xl space-y-2 border border-teal-100 mt-2 shadow-sm">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-bold text-slate-600">총 작업비</span>
                                 <span className="text-sm font-extrabold text-slate-800">{displayWorkCost.toLocaleString()} 원</span>
@@ -804,10 +808,19 @@
                         </div>
                     </div>
 
+                    <div className="h-px bg-slate-200 w-full mb-4 mt-2"></div>
+                    <label className="block text-xs font-bold text-slate-400 mb-2 ml-1">3. 참고사항 (선택)</label>
+                    <textarea 
+                        className="w-full p-4 bg-white rounded-2xl text-slate-700 text-sm border border-slate-200 focus:ring-2 focus:ring-teal-500 resize-none h-20 mb-5 leading-relaxed placeholder:text-slate-400 outline-none"
+                        placeholder="현장 특이사항이나 고객 요청사항 등 메모를 입력하세요."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                    />
+
                     <div className="flex gap-3 mt-6">
                         <button 
                             onClick={resetForm} 
-                            className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 flex items-center justify-center gap-1"
+                            className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 flex items-center justify-center gap-1 shadow-sm"
                         >
                             {editingId ? <><X className="w-4 h-4"/> 취소</> : '초기화'}
                         </button>
@@ -1028,12 +1041,16 @@
                                             const isEditing = editingId === job.key;
                                             const currentStatus = job.status || 'pending';
                                             const cardOpacity = currentStatus === 'completed' || currentStatus === 'cancelled' ? 'opacity-85' : 'opacity-100';
+                                            
+                                            let statusBorder = 'border-l-slate-700';
+                                            if (currentStatus === 'completed') statusBorder = 'border-l-teal-500';
+                                            if (currentStatus === 'cancelled') statusBorder = 'border-l-red-500';
 
                                             return (
-                                            <div key={job.key} className={`rounded-2xl p-5 shadow-sm border ${cardOpacity} ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-teal-100 hover:shadow-md'}`}>
+                                            <div key={job.key} className={`rounded-2xl p-5 shadow border ${cardOpacity} ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : `bg-white border-slate-200 border-l-[6px] hover:shadow-md ${statusBorder}`}`}>
                                                 <div className="flex flex-wrap gap-1.5 mb-3 items-center">
                                                     {job.visitTime && (
-                                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-teal-100 text-teal-700">
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                                             <Clock className="w-3 h-3 mr-1" />
                                                             {job.visitTime}
                                                         </span>
@@ -1055,6 +1072,13 @@
                                                         <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
                                                             {job.details}
                                                         </p>
+                                                    )}
+
+                                                    {job.notes && (
+                                                        <div className="mt-2 mb-3 bg-blue-50/70 p-3 rounded-lg border border-blue-100 flex gap-2 shadow-sm">
+                                                            <span className="text-xs font-bold text-blue-700 mt-0.5 whitespace-nowrap flex-shrink-0">참고</span>
+                                                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{job.notes}</p>
+                                                        </div>
                                                     )}
                                                     
                                                     {job.phoneNumber && (
@@ -1193,7 +1217,7 @@
                                     </div>
                                 )}
 
-                                <div className="border-t-2 border-dashed border-slate-200 w-full my-6"></div>
+                                <div className="border-t-[3px] border-slate-300 w-full my-10 shadow-sm"></div>
 
                                 {renderInputForm()}
                             </div>
@@ -1218,7 +1242,7 @@
                                             const isEditing = editingId === job.key;
 
                                             return (
-                                                <div key={job.key} className={`rounded-2xl p-5 shadow-sm border ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-teal-100 hover:shadow-md'}`}>
+                                                <div key={job.key} className={`rounded-2xl p-5 shadow border ${isEditing ? 'ring-2 ring-teal-500 border-teal-500 bg-teal-50' : 'bg-white border-slate-200 border-l-[6px] border-l-slate-700 hover:shadow-md'}`}>
                                                     <div className="flex flex-wrap gap-1.5 mb-3 items-center">
                                                         <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                                             상담 대기 중
@@ -1247,6 +1271,13 @@
                                                             <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
                                                                 {job.details}
                                                             </p>
+                                                        )}
+
+                                                        {job.notes && (
+                                                            <div className="mt-2 mb-3 bg-blue-50/70 p-3 rounded-lg border border-blue-100 flex gap-2 shadow-sm">
+                                                                <span className="text-xs font-bold text-blue-700 mt-0.5 whitespace-nowrap flex-shrink-0">참고</span>
+                                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{job.notes}</p>
+                                                            </div>
                                                         )}
 
                                                         {job.phoneNumber && (
@@ -1308,7 +1339,7 @@
                                     )}
                                 </section>
 
-                                <div className="border-t-2 border-dashed border-slate-200 w-full my-6"></div>
+                                <div className="border-t-[3px] border-slate-300 w-full my-10 shadow-sm"></div>
 
                                 {renderInputForm()}
                             </div>
@@ -1425,7 +1456,6 @@
                                 <div className="overflow-y-auto space-y-4 pr-1 pb-4 flex-1">
                                     {editingTemplatesData.map((template, idx) => (
                                         <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 relative">
-                                            {/* 삭제 버튼 추가 */}
                                             <button 
                                                 onClick={() => {
                                                     const newData = editingTemplatesData.filter((_, i) => i !== idx);
@@ -1460,7 +1490,6 @@
                                         </div>
                                     ))}
                                     
-                                    {/* 새 템플릿 추가 버튼 */}
                                     <button 
                                         onClick={() => setEditingTemplatesData([...editingTemplatesData, { title: '새 템플릿', body: '' }])}
                                         className="w-full py-3 border-2 border-dashed border-teal-200 text-teal-600 rounded-xl text-sm font-bold hover:bg-teal-50 hover:border-teal-300 flex items-center justify-center gap-1"
