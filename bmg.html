@@ -529,28 +529,19 @@
   <div class="modal-box">
     <div class="modal-title">✏️ 운행 기록 수정</div>
     <input type="hidden" id="edit-d-key">
-    <div class="form-grid">
-      <div class="form-group"><label>날짜</label><input type="date" id="edit-d-date"></div>
-      <div class="form-group full"><label>이동 경로 (통합)</label><input type="text" id="edit-d-path" placeholder="예: 집 → 현장A → 집"></div>
-      <div class="form-group"><label>총 주행거리 (km)</label><input type="number" id="edit-d-km"></div>
-      <div class="form-group"><label>목적</label>
-        <select id="edit-d-purpose" onchange="togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap')">
-          <option value="배관 청소 작업">배관 청소 작업 (사업)</option>
-          <option value="견적">견적 (사업)</option>
-          <option value="작업 종료 복귀">작업 종료 복귀 (사업)</option>
-          <option value="개인이동">개인이동 (개인)</option>
-          <option value="일괄저장">하루 통합 기록</option>
-          <option value="기타">기타 (직접입력)</option>
-        </select>
-      </div>
-      <div class="form-group full" id="edit-d-purpose-other-wrap" style="display:none;">
-        <label>목적 상세 (통합 내용)</label>
-        <input type="text" id="edit-d-purpose-other">
-      </div>
+    <div class="form-grid" style="margin-bottom:10px;">
+      <div class="form-group full"><label>기록 날짜</label><input type="date" id="edit-d-date"></div>
     </div>
-    <div class="modal-footer">
+    
+    <div id="edit-drive-segments-container"></div>
+    
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost" style="flex:1; justify-content:center;" onclick="addEditDriveSegment()">➕ 다음 현장 추가</button>
+      <button class="btn btn-ghost" style="flex:1; justify-content:center; border-color:var(--accent); color:var(--accent);" onclick="addEditDriveSegment(true)">🏠 집으로 복귀</button>
+    </div>
+    <div class="modal-footer" style="margin-top:14px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-drive')">취소</button>
-      <button class="btn btn-primary" onclick="saveDrive()">💾 저장</button>
+      <button class="btn btn-primary" onclick="saveDrive()">💾 통합 저장</button>
     </div>
   </div>
 </div>
@@ -866,56 +857,6 @@
         </div>
       </div>`;
     container.insertAdjacentHTML('beforeend', html);
-  };
-
-  window.openEditDrive=function(key){
-    const v=window._drives[key]; if(!v)return;
-    document.getElementById('edit-d-key').value=key;
-    document.getElementById('edit-d-date').value=v.date||'';
-    document.getElementById('edit-d-km').value=v.km||'';
-    
-    let combinedPath = v.path || '';
-    if(!combinedPath && v.pathFrom && v.pathTo) {
-        combinedPath = `${v.pathFrom} → ${v.pathTo}`;
-    }
-    document.getElementById('edit-d-path').value = combinedPath;
-    
-    let rp = v.rawPurpose || (['배관 청소 작업', '견적', '개인이동', '작업 종료 복귀', '일괄저장'].includes(v.purpose) ? v.purpose : '기타');
-    
-    document.getElementById('edit-d-purpose').value=rp;
-    window.togglePurposeOther('edit-d-purpose', 'edit-d-purpose-other-wrap');
-    
-    if(rp === '기타' || rp === '일괄저장') {
-      document.getElementById('edit-d-purpose-other').value = v.purpose || '';
-    }
-    
-    openModal('modal-drive');
-  };
-  
-  window.saveDrive=function(){
-    const key=document.getElementById('edit-d-key').value;
-    const rawPurpose = document.getElementById('edit-d-purpose').value;
-    let type = (rawPurpose === '개인이동') ? '개인' : '사업';
-    let purpose = rawPurpose;
-    const pathStr = document.getElementById('edit-d-path').value.trim();
-    
-    if (rawPurpose === '기타' || rawPurpose === '일괄저장') {
-      purpose = document.getElementById('edit-d-purpose-other').value.trim();
-      if (!purpose) { showToast('상세 목적을 입력해주세요', 'error'); return; }
-    }
-
-    const data={
-      date:document.getElementById('edit-d-date').value,
-      type: type,
-      path: pathStr,
-      rawPurpose: rawPurpose,
-      purpose: purpose,
-      km:Number(document.getElementById('edit-d-km').value)
-    };
-    if(!data.date||!data.km){showToast('날짜와 주행거리를 확인해주세요','error');return;}
-    window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
-    closeModal('modal-drive');
-    showToast('운행 기록이 수정되었습니다','success');
   };
 
   window.saveOdometer=function(){
@@ -1443,6 +1384,191 @@
     t.textContent=msg;t.className=`toast ${type} show`;
     setTimeout(()=>t.classList.remove('show'),2500);
   }
+
+  function parseDriveSegments(v) {
+      let segments = [];
+      let combinedPath = v.path || '';
+      if(!combinedPath && v.pathFrom && v.pathTo) combinedPath = v.pathFrom + ' → ' + v.pathTo;
+      
+      if (!combinedPath) {
+          segments.push({ from: '', to: '', km: v.km || '', rawPurpose: v.rawPurpose || '기타', purpose: v.purpose || '' });
+          return segments;
+      }
+
+      let paths = combinedPath.split('(이동)');
+      paths.forEach(p => {
+          let nodes = p.split('→').map(s=>s.trim());
+          for(let i=0; i<nodes.length-1; i++) {
+              segments.push({
+                  from: nodes[i], 
+                  to: nodes[i+1],
+                  km: '', 
+                  rawPurpose: '배관 청소 작업',
+                  purpose: ''
+              });
+          }
+      });
+
+      if(segments.length === 0) {
+          segments.push({ from: combinedPath, to: '', km: v.km, rawPurpose: v.rawPurpose, purpose: v.purpose });
+      } else {
+          segments[0].km = v.km || 0;
+          let rp = v.rawPurpose || (['배관 청소 작업', '견적', '개인이동', '작업 종료 복귀', '일괄저장'].includes(v.purpose) ? v.purpose : '기타');
+          
+          if (rp === '일괄저장' || rp === '기타') {
+              segments[0].rawPurpose = '기타';
+              segments[0].purpose = v.purpose || '';
+          } else {
+              segments[0].rawPurpose = rp;
+          }
+      }
+      return segments;
+  }
+
+  window.addEditDriveSegment = function(isReturnHome = false, data = null) {
+    const container = document.getElementById('edit-drive-segments-container');
+    const isFirst = container.children.length === 0;
+    let defaultFrom = data ? data.from : '집';
+    let defaultTo = data ? data.to : (isReturnHome ? '집' : '');
+    let km = data ? data.km : '';
+    let rawPurpose = data ? data.rawPurpose : (isReturnHome ? '작업 종료 복귀' : '배관 청소 작업');
+    let purposeStr = data ? data.purpose : '';
+
+    if (!data && !isFirst) {
+      const lastSegment = container.lastElementChild;
+      const lastTo = lastSegment.querySelector('.edit-ds-path-to').value.trim();
+      defaultFrom = lastTo || '이전 도착지';
+    }
+
+    const html = `
+      <div class="edit-drive-segment-box" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; position:relative; animation:fadeIn 0.3s ease;">
+        ${!isFirst ? `<div style="position:absolute; right:12px; top:12px; cursor:pointer; color:var(--red); font-size:12px; font-weight:bold; background:rgba(224,82,82,0.1); padding:4px 8px; border-radius:4px;" onclick="this.closest('.edit-drive-segment-box').remove()">✕ 삭제</div>` : ''}
+        <div class="form-grid">
+          <div class="form-group">
+            <label>출발지</label>
+            <input type="text" class="edit-ds-path-from" value="${defaultFrom}">
+          </div>
+          <div class="form-group">
+            <label>도착지</label>
+            <input type="text" class="edit-ds-path-to" value="${defaultTo}" ${isReturnHome && !data ? 'readonly' : ''} placeholder="예: 1번 현장">
+          </div>
+          <div class="form-group">
+            <label>주행거리 (km)</label>
+            <input type="number" class="edit-ds-km" placeholder="0" value="${km}">
+          </div>
+          <div class="form-group">
+            <label>목적</label>
+            <select class="edit-ds-purpose" onchange="window.toggleEditSegmentOther(this)">
+              <option value="배관 청소 작업" ${rawPurpose==='배관 청소 작업'?'selected':''}>배관 청소 작업 (사업)</option>
+              <option value="견적" ${rawPurpose==='견적'?'selected':''}>견적 (사업)</option>
+              <option value="개인이동" ${rawPurpose==='개인이동'?'selected':''}>개인이동 (개인)</option>
+              <option value="작업 종료 복귀" ${rawPurpose==='작업 종료 복귀'?'selected':''}>작업 종료 복귀 (사업)</option>
+              <option value="기타" ${rawPurpose==='기타'?'selected':''}>기타 (직접입력)</option>
+            </select>
+          </div>
+          <div class="form-group full edit-ds-purpose-other-wrap" style="display:${rawPurpose==='기타'?'block':'none'};">
+            <label>기타 목적 내용</label>
+            <input type="text" class="edit-ds-purpose-other" placeholder="예: 자재 구매 등" value="${purposeStr}">
+          </div>
+        </div>
+      </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+  };
+
+  window.toggleEditSegmentOther = function(sel) {
+    const wrap = sel.closest('.form-grid').querySelector('.edit-ds-purpose-other-wrap');
+    if(sel.value === '기타') {
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+      wrap.querySelector('input').value = '';
+    }
+  };
+
+  window.openEditDrive=function(key){
+    const v=window._drives[key]; if(!v)return;
+    document.getElementById('edit-d-key').value=key;
+    document.getElementById('edit-d-date').value=v.date||'';
+    
+    const container = document.getElementById('edit-drive-segments-container');
+    container.innerHTML = '';
+    
+    let segmentsData = parseDriveSegments(v);
+    segmentsData.forEach(seg => window.addEditDriveSegment(false, seg));
+
+    openModal('modal-drive');
+  };
+  
+  window.saveDrive=function(){
+    const key=document.getElementById('edit-d-key').value;
+    const date = document.getElementById('edit-d-date').value;
+    if(!date) { showToast('날짜를 입력해주세요', 'error'); return; }
+    
+    const segments = document.querySelectorAll('.edit-drive-segment-box');
+    let hasError = false;
+    let totalKm = 0;
+    let purposes = new Set();
+    let hasBusiness = false;
+    let compositePath = "";
+
+    segments.forEach((seg, i) => {
+      const from = seg.querySelector('.edit-ds-path-from').value.trim();
+      const to = seg.querySelector('.edit-ds-path-to').value.trim();
+      const km = Number(seg.querySelector('.edit-ds-km').value);
+      const rawPurpose = seg.querySelector('.edit-ds-purpose').value;
+      let purpose = rawPurpose;
+      
+      if (rawPurpose === '기타') {
+        purpose = seg.querySelector('.edit-ds-purpose-other').value.trim();
+        if (!purpose) { hasError = true; }
+      }
+      
+      if(!from || !to) { hasError = true; }
+      
+      if (i === 0) {
+          compositePath = from + ' → ' + to;
+      } else {
+          const prevTo = segments[i-1].querySelector('.edit-ds-path-to').value.trim();
+          if (from === prevTo) {
+              compositePath += ' → ' + to;
+          } else {
+              compositePath += ' (이동) ' + from + ' → ' + to;
+          }
+      }
+
+      totalKm += km;
+      purposes.add(purpose);
+
+      if (rawPurpose !== '개인이동') {
+        hasBusiness = true;
+      }
+    });
+    
+    if(hasError) {
+       showToast('모든 구간의 출발/도착지, 목적을 정확히 입력해주세요', 'error');
+       return;
+    }
+    if(segments.length === 0) {
+       showToast('저장할 이동 구간이 없습니다', 'error');
+       return;
+    }
+
+    let finalType = hasBusiness ? '사업' : '개인';
+    let finalPurpose = Array.from(purposes).join(', ');
+
+    const data={
+      date: date,
+      type: finalType,
+      path: compositePath,
+      rawPurpose: segments.length > 1 ? '일괄저장' : segments[0].querySelector('.edit-ds-purpose').value,
+      purpose: finalPurpose,
+      km: totalKm
+    };
+
+    window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
+    closeModal('modal-drive');
+    showToast('운행 기록이 수정되었습니다','success');
+  };
 </script>
 </body>
 </html>
