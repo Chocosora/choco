@@ -593,6 +593,20 @@
             padding: 1px 6px; border-radius: 5px; font-size: 12px;
             font-family: monospace;
         }
+        
+        /* ── 주차별 필터 버튼 ── */
+        .week-filter-wrap {
+            display: flex; gap: 6px; margin-bottom: 14px;
+            overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        }
+        .week-filter-wrap::-webkit-scrollbar { display: none; }
+        .filter-btn {
+            padding: 7px 14px; border: 1.5px solid #e5e3dd; border-radius: 20px;
+            background: #fff; color: #555; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all .15s; white-space: nowrap; font-family: inherit;
+        }
+        .filter-btn:hover { background: #faf9f6; }
+        .filter-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -687,8 +701,18 @@
                 </div>
                 <div id="saveNoti" style="color:#22c55e; font-size:13px; margin-top:10px; display:none; text-align:center; font-weight:700;">저장되었습니다!</div>
             </div>
+
             <p class="panel-title" style="margin-bottom:4px;">발송 대상 선택</p>
-            <p class="panel-sub" style="margin-bottom:0;">아래에서 발송할 사람을 선택하세요</p>
+            <p class="panel-sub" style="margin-bottom:12px;">주차를 선택하면 해당 기간에 배정된 인원만 표시됩니다.</p>
+            
+            <div class="week-filter-wrap">
+                <button class="filter-btn active" onclick="applySmsFilter(0)">전체 인원</button>
+                <button class="filter-btn" onclick="applySmsFilter(1)">1주차 (1~3일)</button>
+                <button class="filter-btn" onclick="applySmsFilter(2)">2주차 (4~10일)</button>
+                <button class="filter-btn" onclick="applySmsFilter(3)">3주차 (11~17일)</button>
+                <button class="filter-btn" onclick="applySmsFilter(4)">4주차 (18~25일)</button>
+            </div>
+
             <div class="member-sms-grid" id="smsGrid"></div>
         </div>
 
@@ -774,7 +798,6 @@
 
         const SECRET_KEY = "GuestRoster_Secret_V5_Secure";
 
-        // ── 암호화된 초기 데이터 (평문 노출 없음) ──
         const ENCRYPTED_INITIAL_DATA = "U2FsdGVkX1/gUBXYvNkCTUhsr8qoA3EscD+WjcIZMH0z7mYc5kscQHzAtPHf4SxmaukJj2xKEff2+v+oVlS9SioJSBVyhBJ4cuEIRi6y1aFbrGn0Y8NH40qAsNIBa1rXowub64o9RpT24tEun7dvRSBcRYmoxa+qxJ/0SbJddtmWnDG0A0mtJub+tUCQGg8AZvbpvlfPW8/fRFtRldnEg1DerbgQ6exfDRquyDH9Rz4Lb1UT2TmiMVMRR+8C+ZW32283VDqyfdBE59t5a2gufbn6/CP7uzQbztG/QWQghbhqgeesyOBxhjX8S6KNFb+Vteid93Sue+N1T7pknsJc/eoqoJ9bP+8wvfmCV3DQeloyYLcC+8dFCxoOi9cPy7F4VqvPiF1T5Orqb5XI7tMjrNuNUvFMsGCD78HYNE4dvOTll/J2OO4Nkk5JzGGhSkW5ZXqf1pV3qEd+sHJDsfVSLAsvya6aeGht9dxwtULA5O7ci0cdbZ42Wb6tOqSe1ME1JSDU4YELgnCOEbXbjRcKH37jFYbd/jpcz2vBAE5kqJvesNMsEFWt3AcrsRnUGof4VzNCQdfk4jeb6yuuJilUNx58Zm7Qe8VJ1CPInYYIUerqZpmqG4Uos8G9Jh4FLQdO6Df3227LH75NZwVpJZLC+iWGYpovmWKSL+AzAq+/9mFSPiHumRO5R7o1NqQ4vK59lgyp80/aFv8rSq57SabPVFuJzeSCHpV5qa1Zz9WIY0HVv5kaUqnD9+SKxUNe3UaZflxtQUrojUhoouhRCBN59i6yBVFL/AZi/xQn7ZjPVYTWHxoFL7N69kaQ3QDzeUrs7Eh4E0UI76Ig1qf9byAiOeYsHSn8UprWyNvmfJPOlPdjc7Hr+MJNWdmj28ljlYrJuydXV2XOJEEex9uStIiXlv+LgDuaX3xXsE22eagb5ktKjdvey7RqRMCuZS+rZjEd/p9sq68BlNHbwMPp9JvncnmCY8P4/GGgje1KpFHH4pDE08jFtxFmKZ6SIHX1ZrjDdbhHHaqsx8kFTIzpFKFFYFuVgNUHizrNeCVW1VgIJEpGNafwRShnhUdIKcIB7wrrJkoQ+6ae3jXBeFztU2eD68EHW7iilIxts7qZL/vQO2B5a5H9xwQrhKajRmEt2kjbkAKoCArgA80sDrgLltcDBUge/D2TOkpPzN6gXXkRCNMhgCaPAgfLjkzn2ZWVKBPIcAUMfpFR7deKYuBcTtQBb4NVUhgUk+tqUc04BY8GByV+d8F+wjaGhU9lBj3pzXCtJcYISnE+U51Gw3SBdqy+tJfn0qeZ0qRHnTP3a/DCOmwqhYM92vYit4jktyC1d0EehUbSF87zP/NJMUBkJJPSPhjZYJiSpBXw0COxvK+r5d5beQ2zK+q1+UYDgRomjBzfJeczqeDHzSvDxfARbl1zFrZZ/o430bpybQwxPTldQPy72YEIaPKf84jhiykml0VEjXX545ZWR7zPuCQA6lPFLw2EUPB3ACl6sNMIMTMly31RpM+Ac2uatlH16JXAGK79KU5dt8siW6tx3F+M5hSdqhsseNFyJL3CzJhRBDxFaqpw8Sb7Yaa/hsWl+PHTGsAuARfuYRZY6EJr62F74kZwd57H8FOPDiIaIbI63ttIA1/St5oxDEPSq5I53ZdtkuKbIsPAm8dh5pgPC++4A3sWpd7D68i/H/cre79QGi/5mQpgyz+qn76+6KlnBZjoBJRicrPesATYUIpL9JAgwxQqkUnNNkiseW5EIrRJSXWYw9icqk9sPXFvXSUdrWuM4tsVRjHOxNCL7iUQ12zfqnzV/Ko20S6KkZ9ptBh9VBxCDSKB1kArumm06eJULaxchSZt5wNKV1EJD+bzfoGa/+TCABc7XLD1ZRbFrso5Bg8lcgaffTEAlEvlI503FlDgyVQXTlSTsOOV6SaBxYmGoJxBQVPdndNp/GuYVAwxwy0c1qUIiFr273rmOuPReEJ+obQet8RZnrcglYnpC3ImwdGpJ2rxgE6PX0SgKqKjbE0WKMSi7ieOVQNrx3xcrZIPNDiqTNKbJcbF9g7THLkobcgomBF81cFKXs4JUMUzZdD4r/Je0QVXkmSWheSAocD5RUZfkSsIYH1WX/0GCmxh49BDVMscny1eTSlnEw7alO1TH3NVRYjqlTDbm5jrDgTvbfKzx+rLnvDsAVUKH867wd2SVZ3hhFuDH/+lb8JFfnqM4kKbIKf/o3HgveSB8jSnKHWxmbHajtfE16uqrKZWM1T2LFaHkgXdoP6MmvJ0mY3qIeCk0xO/MiJrZC6lxMTYBYYz9h1L+u6hUIIhkXvNHNBtRDyloU2Mxq3XLtXfR20pSfTSzPUMYZYO8sUlJGzjAF1x2bOXiQ/Bcwn8DLQ8fJSOi93aPNcC4lj3mPGUh61ed6XFW17NjCG2KqS6UQnmphrGFduErR+DX8vqBLSlh5wJIDbZYy/lKy14JSMLys/hfVXH+abksRkbGnN5oTpT/PdJdfX6eVyac8FsqOK4oLns0MImeXFRfYbg4zy/k9pPSFA/Aq2HQmCAKmsaYnm8rZ/QJI+xn+r6p03XBG2JfVYUFZ3x1Q3EdSknP/qSQHdycgapuyjqLp9dvggsLSOY7yqWe3zxQZl9g5I6TnAJWTYQsKHqlTjjoEfg8Pihd4IdfYtjOMXhFUlkV0lEJj8Qm4gPEJvrzL0+6fWWcto7HtLOGlYcKGlCyn4tlQ/z3onWkhC5zFXoMl1je2WXHkKLropklBr0i4IvtE4obPCmNr+bsA3xFPsNBzYa89iOtVvDSjGAhtF0y1a7WuuvJYQAnGc2kvDbleC1WDNd94BwiEH5DV7o3IRBnCMAi6LV8OUHMpmqmqjaKnEOluhGkbUj8Ow4LxssN+QSrC9YBoGs0OMofbUA7NR+JKq7ObexSVYodmnoAAmPk6yXUPfZmKQttsp2lYKNwz1YDam2OzkRf0jIaIWBUfOVTG7rNBU9vwdQflcP2gUC8xonry/4CsYfkHubH/fMgdvFWhnmH0ETqNoowoXxvCFzpQp4BOoHWXaLBWqxb6474t0i5ydx6is0ZcNTqrTCryxpusXYIsDMvLeYGetnbu0iKEGnhLR12xmsnPtTBD1hu5GVU2cQaGC8YaAoLwld360W2IgdvMcBlNooUiWHE+FC+IVio1Yq5huUQQZQvi0njWTWfW48gVWAYUCMB5SYvpaG37tWYAbUIw+PI1kSkEuXxxhAD0LvNoUYfqXJwHvYs0JtoKPYjg/zEIZchWdb+EbKK0wuaJGGkEQXrEd5sA0wPBkfDWkKHShKE+7rOHDKFU/f846I8HsFk1QYbQvtXPe/iiLWJJpkcmeN9nGBbLM2sxSEByFMuxIqmDUiSHBq+QPiRnIf4Ayg38SLkagjeKCiaRyEqiJ9vA/KVda8XsWMJcDvh8f7nW09AAONuPyahWikXwoY116YIWLcblGkEJnvdTEA9Gku6YxwunM379EXBPRfMnRWGR+Nb+XTGiv3rwlOafqxUCFjS7xCDqRBZIHX5uQCZdwOsySduDXXOIDdR3e4rEty2FdeHXcSQVzJRpTlzPFkuf8wg3WJ/taU05rY63ymHO8aXMiDkhszG1ZfqoV/A+gcjRnpfXos17vhdGS+yRJRfr88VXTTZde5h1G+0m/pURwPPJt8BFY9tVTdH2eru5oyg6Mlqu4c8rTUPVb/RJqXeYj+RML1AnMh6duhYa4NUdGahzGCL7puW+EDeXpM3J7EUuFNxoExNlJIkzPBtEm+/oVJoY3L6k82FTg1DVQqER4uHGeow1H2MlOcQoidotaeQeDoqZM0e/bcEqMN4ClPxE4xPFm6ar+TIyp2RhnG5vG5gs3lZXqRH3n256imozQ2tDzZH0NMt+MUelPkgpsDElHRGYCik/wMSYfqLH6gXMhFK5+zzsVjd2xnHdy+eydQXpuuPqLdQlmmFu82y94iPWh57/OAI34Ox938o3Ca4BqeB8yJjJroFTxJn5KD0p42QK1eZuvi95E/Eeo3xg8ddjEzVo8QRK5OnU8bVAnDcpr2xOxxpsLu3GxRC8Q5WUtLykXNpS7FLpATzzWqoAwrjE+7s+RCcpAQJBB9eiQ1bFKi0W48eujdsKbNJIuA9ZptcEdhDpPRQrrU+EGmoentLu80NbGe8MuXpht09+OLEO0z2SGktOoADMJ6JXpNz84lQZpvzoAPVQSpZP9FnPTa7R8cYO8mW0l3xVyExLQztXPxgewUfduz/jxRabjqr/Esiy7ZeY+4K2ImRywQar/SkVwxEEqvYvuUORzLPYYom7aqAKYWllhlZ8PzWWzsrg8G6R1hHSI5zIrCKR7MlVHoRBOngtPs9tOR/PtxC4wQmga7hepSFUJgZIs9zrz/gnRP+1AstJrV2SoK9daFgFpDCGBLzxdMRttmO7O3Iykh3daal7595A==";
 
         let calendarInstance = null;
@@ -1240,10 +1263,38 @@
         }
 
         // ── 문자 발송 ──
+        
+        const WEEK_RANGES = [
+            null, // 0: 전체
+            ['2026-05-01', '2026-05-02', '2026-05-03'], // 1주차
+            ['2026-05-04', '2026-05-05', '2026-05-06', '2026-05-07', '2026-05-08', '2026-05-09', '2026-05-10'], // 2주차
+            ['2026-05-11', '2026-05-12', '2026-05-13', '2026-05-14', '2026-05-15', '2026-05-16', '2026-05-17'], // 3주차
+            ['2026-05-18', '2026-05-19', '2026-05-20', '2026-05-21', '2026-05-22', '2026-05-23', '2026-05-24', '2026-05-25']  // 4주차
+        ];
+
+        let currentSmsWeekFilter = 0;
+
+        function applySmsFilter(weekNum) {
+            currentSmsWeekFilter = weekNum;
+            const btns = document.querySelectorAll('.week-filter-wrap .filter-btn');
+            btns.forEach((btn, idx) => {
+                if (idx === weekNum) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            renderSmsGrid();
+        }
+
         function renderSmsGrid() {
             const grid = document.getElementById('smsGrid');
             grid.innerHTML = '';
+            
             members.forEach((member, index) => {
+                if (currentSmsWeekFilter > 0) {
+                    const weekDates = WEEK_RANGES[currentSmsWeekFilter];
+                    const hasDateInWeek = member.dates && member.dates.some(d => weekDates.includes(d));
+                    if (!hasDateInWeek) return;
+                }
+
                 const isSister = member.gender === '자매';
                 const btn = document.createElement('div');
                 btn.className = 'sms-item-btn';
@@ -1255,6 +1306,7 @@
                 grid.appendChild(btn);
             });
         }
+
         function openSmsModal(index) {
             currentSmsUserIndex = index;
             const member = members[index];
@@ -1270,6 +1322,7 @@
             updateSmsPreview();
             document.getElementById('smsSendModalOverlay').style.display = 'flex';
         }
+
         function updateSmsPreview() {
             const val = document.getElementById('sendModalTemplateSelect').value;
             let rawText = '';
@@ -1278,15 +1331,33 @@
                 if (temp) rawText = temp.content;
             }
             const member = members[currentSmsUserIndex];
-            const datesStr = (member.dates && member.dates.length > 0)
-                ? member.dates.map(d => { const p = d.split('-'); return p.length === 3 ? `${parseInt(p[1])}/${parseInt(p[2])}` : d; }).join(', ')
+            
+            let displayDates = member.dates || [];
+            if (currentSmsWeekFilter > 0) {
+                const weekDates = WEEK_RANGES[currentSmsWeekFilter];
+                displayDates = displayDates.filter(d => weekDates.includes(d));
+            }
+
+            const daysArr = ['일', '월', '화', '수', '목', '금', '토'];
+            const datesStr = displayDates.length > 0
+                ? displayDates.map(d => { 
+                    const p = d.split('-'); 
+                    if (p.length === 3) {
+                        const dateObj = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+                        const dayName = daysArr[dateObj.getDay()];
+                        return `${parseInt(p[1])}/${parseInt(p[2])}(${dayName})`; 
+                    }
+                    return d; 
+                }).join(', ')
                 : '배정 없음';
+
             document.getElementById('smsPreviewText').value = rawText
                 .replace(/{이름}/g, member.name)
                 .replace(/{호칭}/g, member.gender)
                 .replace(/{회중}/g, member.cong)
                 .replace(/{배정일자}/g, datesStr);
         }
+
         function executeSmsSend() {
             const finalMessage = document.getElementById('smsPreviewText').value;
             if (!finalMessage.trim()) { alert('미리보기 내용을 확인해주세요.'); return; }
