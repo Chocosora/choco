@@ -291,7 +291,7 @@
             <option value="자재비">자재비</option><option value="유류비">유류비</option>
             <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
             <option value="통신비">통신비</option><option value="보험료">보험료</option>
-            <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
+            <option value="차량유지비">차량유지비</option><option value="업무추진비">업무추진비</option><option value="기타경비">기타경비</option>
           </select>
         </div>
         <div class="form-group full" id="e-cat-other-wrap" style="display:none;">
@@ -503,7 +503,7 @@
           <option value="자재비">자재비</option><option value="유류비">유류비</option>
           <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
           <option value="통신비">통신비</option><option value="보험료">보험료</option>
-          <option value="차량유지비">차량유지비</option><option value="기타경비">기타경비</option>
+          <option value="차량유지비">차량유지비</option><option value="업무추진비">업무추진비</option><option value="기타경비">기타경비</option>
         </select>
       </div>
       <div class="form-group full" id="edit-e-cat-other-wrap" style="display:none;">
@@ -613,7 +613,14 @@
   window._revenues={}; window._expenses={}; window._drives={}; window._paymentMethods={}; window._commissions={}; window._odometers={};
   let selectedIcon='💳', selectedColor='#5b8af0';
 
-  const today = new Date().toISOString().split('T')[0];
+  function getLocalDateString(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const today = getLocalDateString();
   ['r-date','e-date','d-date', 'c-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
   
   let currentReportYear = parseInt(today.substring(0, 4));
