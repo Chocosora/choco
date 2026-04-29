@@ -156,6 +156,11 @@
   .paper-table td.right { text-align: right; }
   .paper-table td.center { text-align: center; }
 
+  /* PDF 페이지 넘김 안정화: 표 행과 제목만 자연스럽게 유지 */
+  .paper-section-title { page-break-after: avoid; break-after: avoid; }
+  .paper-table tr { page-break-inside: avoid; break-inside: avoid; }
+  .paper-table thead { display: table-header-group; }
+
   .paper-report::-webkit-scrollbar { height: 8px; }
   .paper-report::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
   .paper-report::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
@@ -542,6 +547,22 @@
     <div class="modal-footer" style="margin-top:14px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-drive')">취소</button>
       <button class="btn btn-primary" onclick="saveDrive()">💾 통합 저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-commission">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 본사 수수료 수정</div>
+    <input type="hidden" id="edit-c-key">
+    <div class="form-grid">
+      <div class="form-group"><label>날짜</label><input type="date" id="edit-c-date"></div>
+      <div class="form-group"><label>금액 (원)</label><input type="number" id="edit-c-amount"></div>
+      <div class="form-group full"><label>메모 (현장명 등)</label><input type="text" id="edit-c-memo"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-commission')">취소</button>
+      <button class="btn btn-primary" onclick="saveCommission()">💾 저장</button>
     </div>
   </div>
 </div>
@@ -1006,6 +1027,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <div class="ri-amount" style="color:var(--accent)">-${fmt(v.amount)}</div>
+          <button class="btn btn-edit btn-sm" onclick="openEditCommission('${k}')">수정</button>
           <button class="btn btn-danger btn-sm" onclick="deleteItem('commissions','${k}')">삭제</button>
         </div>
       </div>`).join('');
@@ -1086,6 +1108,28 @@
     document.getElementById('c-amount').value='';
     document.getElementById('c-memo').value='';
     showToast('수수료가 저장되었습니다','success');
+  };
+
+  window.openEditCommission=function(key){
+    const v=window._commissions[key]; if(!v)return;
+    document.getElementById('edit-c-key').value=key;
+    document.getElementById('edit-c-date').value=v.date||'';
+    document.getElementById('edit-c-amount').value=v.amount||'';
+    document.getElementById('edit-c-memo').value=v.memo||'';
+    openModal('modal-commission');
+  };
+
+  window.saveCommission=function(){
+    const key=document.getElementById('edit-c-key').value;
+    const data={
+      date:document.getElementById('edit-c-date').value,
+      amount:Number(document.getElementById('edit-c-amount').value),
+      memo:document.getElementById('edit-c-memo').value.trim(),
+    };
+    if(!data.date||!data.amount){showToast('날짜와 금액을 확인해주세요','error');return;}
+    window.fbUpdate(window.fbRef(window.fbDB,`commissions/${key}`),data);
+    closeModal('modal-commission');
+    showToast('수수료가 수정되었습니다','success');
   };
 
   window.addExpense=function(){
