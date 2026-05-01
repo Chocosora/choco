@@ -264,6 +264,14 @@
       </div>
       <button class="btn btn-primary btn-full" onclick="addRevenue()">➕ 매출 저장</button>
     </div>
+    <div class="section-header" style="margin-top:4px;">
+      <div class="section-title">매출·수수료 조회 월</div>
+      <div class="month-selector">
+        <button type="button" onclick="changeRevenueMonth(-1)">‹</button>
+        <span id="revenueMonthLabel"></span>
+        <button type="button" onclick="changeRevenueMonth(1)">›</button>
+      </div>
+    </div>
     <div class="recent-list">
       <div class="recent-header"><span>매출 내역</span></div>
       <div id="revenueList"><div class="empty-state">매출 내역이 없어요</div></div>
@@ -313,6 +321,14 @@
       </div>
       <button class="btn btn-primary btn-full" onclick="addExpense()">➕ 경비 저장</button>
     </div>
+    <div class="section-header" style="margin-top:4px;">
+      <div class="section-title">경비 조회 월</div>
+      <div class="month-selector">
+        <button type="button" onclick="changeExpenseMonth(-1)">‹</button>
+        <span id="expenseMonthLabel"></span>
+        <button type="button" onclick="changeExpenseMonth(1)">›</button>
+      </div>
+    </div>
     <div class="recent-list">
       <div class="recent-header"><span>경비 내역</span></div>
       <div id="expenseList"><div class="empty-state">경비 내역이 없어요</div></div>
@@ -320,10 +336,19 @@
   </div>
 
   <div class="section" id="s-drive">
-    <div class="drive-summary">
-      <div class="drive-stat"><div class="drive-stat-val" id="d-total">0</div><div class="drive-stat-label">총 km</div></div>
-      <div class="drive-stat"><div class="drive-stat-val" id="d-biz">0</div><div class="drive-stat-label">사업용 km</div></div>
+    <div class="section-header">
+      <div class="section-title">운행일지 조회 월</div>
+      <div class="month-selector">
+        <button type="button" onclick="changeDriveMonth(-1)">‹</button>
+        <span id="driveMonthLabel"></span>
+        <button type="button" onclick="changeDriveMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="drive-summary" style="grid-template-columns:repeat(2,1fr);">
+      <div class="drive-stat"><div class="drive-stat-val" id="d-total">0</div><div class="drive-stat-label">총 주행 km <span style="font-size:9px;color:var(--text3)">(계기판)</span></div></div>
       <div class="drive-stat"><div class="drive-stat-val" id="d-ratio">0%</div><div class="drive-stat-label">사업 비율</div></div>
+      <div class="drive-stat"><div class="drive-stat-val" id="d-biz" style="color:var(--blue)">0</div><div class="drive-stat-label">🔵 사업용 km</div></div>
+      <div class="drive-stat"><div class="drive-stat-val" id="d-personal" style="color:var(--text2)">0</div><div class="drive-stat-label">⚪ 개인용 km</div></div>
     </div>
     <div class="form-card" style="margin-bottom:8px;">
       <div class="ratio-label"><span>사업용 주행 비율</span><span id="d-ratio-pct">0%</span></div>
@@ -332,17 +357,23 @@
     </div>
 
     <div class="form-card" style="margin-bottom:8px;">
-      <div class="form-title">📊 월말 누적 주행거리 기록</div>
+      <div class="form-title">📊 월초·월말 누적 주행거리 기록</div>
       <div class="form-grid">
         <div class="form-group full">
-          <label><span id="odometer-month-label">이번 달</span> 누적 주행거리 (km)</label>
-          <div style="display:flex; gap:8px;">
-            <input type="number" id="d-odometer" placeholder="계기판 총 주행거리 입력">
-            <button class="btn btn-primary" onclick="saveOdometer()" style="white-space:nowrap;">저장</button>
-          </div>
+          <label>기록 월</label>
+          <input type="text" id="odometer-month-label" value="이번 달" readonly style="color:var(--text2);">
+        </div>
+        <div class="form-group">
+          <label>월초 누적 주행거리 (km)</label>
+          <input type="number" id="d-odometer-start" placeholder="월초 계기판 거리">
+        </div>
+        <div class="form-group">
+          <label>월말 누적 주행거리 (km)</label>
+          <input type="number" id="d-odometer-end" placeholder="월말 계기판 거리">
         </div>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:8px;">매월 말일 기준 계기판의 총 주행거리를 기록해두면 세무 신고 시 편리합니다.</div>
+      <button class="btn btn-primary btn-full" onclick="saveOdometer()">💾 누적거리 저장</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">위의 운행일지 조회 월을 바꾸면 해당 달의 월초·월말 계기판 누적거리가 함께 불러와지며, 저장 후 다시 수정할 수 있습니다.</div>
     </div>
 
     <div class="form-card">
@@ -631,6 +662,9 @@
 
 <script>
   let currentMonth = new Date();
+  let revenueMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  let expenseMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  let driveMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   window._revenues={}; window._expenses={}; window._drives={}; window._paymentMethods={}; window._commissions={}; window._odometers={};
   let selectedIcon='💳', selectedColor='#5b8af0';
 
@@ -668,13 +702,47 @@
 
   document.getElementById('headerDate').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
   updateMonthLabel();
+  updateSectionMonthLabels();
 
   setTimeout(() => window.addDriveSegment(), 100);
 
-  function getMonthKey(){return `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,'0')}`;}
-  function updateMonthLabel(){document.getElementById('currentMonthLabel').textContent=`${currentMonth.getFullYear()}년 ${currentMonth.getMonth()+1}월`;}
+  function monthKeyFromDate(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;}
+  function monthLabelFromDate(date){return `${date.getFullYear()}년 ${date.getMonth()+1}월`;}
+  function getMonthKey(){return monthKeyFromDate(currentMonth);}
+  function getOdometerMonthKey(){return monthKeyFromDate(driveMonth);}
+  function updateMonthLabel(){document.getElementById('currentMonthLabel').textContent=monthLabelFromDate(currentMonth);}
+  function updateSectionMonthLabels(){
+    const revLabel=document.getElementById('revenueMonthLabel');
+    const expLabel=document.getElementById('expenseMonthLabel');
+    const drvLabel=document.getElementById('driveMonthLabel');
+    if(revLabel) revLabel.textContent=monthLabelFromDate(revenueMonth);
+    if(expLabel) expLabel.textContent=monthLabelFromDate(expenseMonth);
+    if(drvLabel) drvLabel.textContent=monthLabelFromDate(driveMonth);
+  }
+  function updateOdometerForm(){
+    const mk = getOdometerMonthKey();
+    const data = window._odometers[mk] || {};
+    const startInput = document.getElementById('d-odometer-start');
+    const endInput = document.getElementById('d-odometer-end');
+    const label = document.getElementById('odometer-month-label');
+    if(label) label.value = monthLabelFromDate(driveMonth);
+    // 월초: 저장값 우선, 없으면 전달 월말값 자동 불러오기
+    let startVal = data.start ?? '';
+    if(startVal === '') {
+      const prevMonth = new Date(driveMonth.getFullYear(), driveMonth.getMonth()-1, 1);
+      const prevMk = monthKeyFromDate(prevMonth);
+      const prevData = window._odometers[prevMk] || {};
+      if(prevData.end != null) startVal = prevData.end;
+    }
+    if(startInput) startInput.value = startVal;
+    if(endInput) endInput.value = data.end ?? data.value ?? '';
+  }
   window.changeMonth=function(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderAll();};
-  function filterByMonth(obj){const mk=getMonthKey();return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
+  window.changeRevenueMonth=function(d){revenueMonth=new Date(revenueMonth.getFullYear(),revenueMonth.getMonth()+d,1);updateSectionMonthLabels();renderRevenueList();renderCommissionList();};
+  window.changeExpenseMonth=function(d){expenseMonth=new Date(expenseMonth.getFullYear(),expenseMonth.getMonth()+d,1);updateSectionMonthLabels();renderExpenseList();};
+  window.changeDriveMonth=function(d){driveMonth=new Date(driveMonth.getFullYear(),driveMonth.getMonth()+d,1);updateSectionMonthLabels();updateOdometerForm();renderDriveList();};
+  function filterByMonth(obj){return filterByMonthKey(obj, getMonthKey());}
+  function filterByMonthKey(obj, mk){return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
   function fmt(n){return '₩'+Number(n||0).toLocaleString('ko-KR');}
 
   window.handleBackup = async function() {
@@ -888,11 +956,26 @@
   };
 
   window.saveOdometer=function(){
-    const val = Number(document.getElementById('d-odometer').value);
-    if(!val) { showToast('누적 주행거리를 입력해주세요', 'error'); return; }
-    const mk = getMonthKey();
-    window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { value: val, updatedAt: Date.now() });
-    showToast('월말 누적 주행거리가 저장되었습니다', 'success');
+    const startRaw = document.getElementById('d-odometer-start').value;
+    const endRaw = document.getElementById('d-odometer-end').value;
+    const start = startRaw === '' ? null : Number(startRaw);
+    const end = endRaw === '' ? null : Number(endRaw);
+    if(start === null && end === null) { showToast('월초 또는 월말 누적 주행거리를 입력해주세요', 'error'); return; }
+    if(start !== null && start < 0 || end !== null && end < 0) { showToast('주행거리는 0 이상으로 입력해주세요', 'error'); return; }
+    if(start !== null && end !== null && end < start) { showToast('월말 거리는 월초 거리보다 작을 수 없습니다', 'error'); return; }
+    const mk = getOdometerMonthKey();
+    window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { start, end, value: end, updatedAt: Date.now() });
+    // 월말 입력 시 → 다음 달 월초에 자동 연동
+    if(end !== null) {
+      const nextMonth = new Date(driveMonth.getFullYear(), driveMonth.getMonth()+1, 1);
+      const nextMk = monthKeyFromDate(nextMonth);
+      const nextData = window._odometers[nextMk] || {};
+      // 다음 달 월초가 아직 없거나 이미 같은 값이면 덮어씀
+      if(nextData.start == null || nextData.start === end) {
+        window.fbUpdate(window.fbRef(window.fbDB, `odometers/${nextMk}`), { start: end });
+      }
+    }
+    showToast('월초·월말 누적 주행거리가 저장되었습니다 (다음 달 월초에도 자동 반영)', 'success');
   };
 
   window.selectIcon=function(el){document.querySelectorAll('.icon-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedIcon=el.dataset.icon;};
@@ -996,7 +1079,7 @@
   }
 
   function renderRevenueList(){
-    const entries=filterByMonth(window._revenues).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const entries=filterByMonthKey(window._revenues, monthKeyFromDate(revenueMonth)).sort((a,b)=>b[1].date.localeCompare(a[1].date));
     const el=document.getElementById('revenueList');
     if(!entries.length){el.innerHTML='<div class="empty-state">매출 내역이 없어요</div>';return;}
     el.innerHTML=entries.map(([k,v])=>`
@@ -1015,7 +1098,7 @@
   }
 
   function renderCommissionList(){
-    const entries=filterByMonth(window._commissions).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const entries=filterByMonthKey(window._commissions, monthKeyFromDate(revenueMonth)).sort((a,b)=>b[1].date.localeCompare(a[1].date));
     const el=document.getElementById('commissionList');
     if(!entries.length){el.innerHTML='<div class="empty-state">수수료 내역이 없어요</div>';return;}
     el.innerHTML=entries.map(([k,v])=>`
@@ -1034,7 +1117,7 @@
   }
 
   function renderExpenseList(){
-    const entries=filterByMonth(window._expenses).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const entries=filterByMonthKey(window._expenses, monthKeyFromDate(expenseMonth)).sort((a,b)=>b[1].date.localeCompare(a[1].date));
     const el=document.getElementById('expenseList');
     if(!entries.length){el.innerHTML='<div class="empty-state">경비 내역이 없어요</div>';return;}
     el.innerHTML=entries.map(([k,v])=>`
@@ -1053,22 +1136,33 @@
   }
 
   function renderDriveList(){
-    const entries=filterByMonth(window._drives).sort((a,b)=>b[1].date.localeCompare(a[1].date));
+    const entries=filterByMonthKey(window._drives, monthKeyFromDate(driveMonth)).sort((a,b)=>b[1].date.localeCompare(a[1].date));
     const el=document.getElementById('driveList');
-    const totalKm=entries.reduce((s,[,v])=>s+Number(v.km||0),0);
+
+    // 계기판 기반 총 주행거리
+    const mk = getOdometerMonthKey();
+    const odom = window._odometers[mk] || {};
+    const odomStart = odom.start ?? null;
+    const odomEnd = odom.end ?? null;
+    const odomTotal = (odomStart !== null && odomEnd !== null) ? (odomEnd - odomStart) : null;
+
+    // 일지 기반 사업용 km
     const bizKm=entries.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    // 총 주행 = 계기판 기준이 있으면 그것 사용, 없으면 일지 합산
+    const logTotal=entries.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const totalKm = odomTotal !== null ? odomTotal : logTotal;
+    const personalKm = totalKm - bizKm;
     const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
-    document.getElementById('d-total').textContent=totalKm;
+
+    document.getElementById('d-total').textContent=totalKm + (odomTotal !== null ? '' : '');
     document.getElementById('d-biz').textContent=bizKm;
     document.getElementById('d-ratio').textContent=ratio+'%';
     document.getElementById('d-ratio-pct').textContent=ratio+'%';
     document.getElementById('d-ratio-bar').style.width=ratio+'%';
+    const personalEl = document.getElementById('d-personal');
+    if(personalEl) personalEl.textContent = personalKm >= 0 ? personalKm : '-';
 
-    const mk = getMonthKey();
-    const odoInput = document.getElementById('d-odometer');
-    const odoLabel = document.getElementById('odometer-month-label');
-    if(odoInput) odoInput.value = window._odometers[mk]?.value || '';
-    if(odoLabel) odoLabel.textContent = (currentMonth.getMonth() + 1) + '월말';
+    updateOdometerForm();
 
     if(!entries.length){el.innerHTML='<div class="empty-state">운행 기록이 없어요</div>';return;}
     
@@ -1251,9 +1345,19 @@
     const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
     const netProfit=totalRev-totalExp-totalCom;
     
-    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
+    const totalKm_log=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
     const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    // 계기판 기반 총 주행거리
+    const odomData = window._odometers[month] || {};
+    const odomStart = odomData.start ?? null;
+    const odomEnd = odomData.end ?? null;
+    const odomTotal = (odomStart !== null && odomEnd !== null) ? (odomEnd - odomStart) : null;
+    const totalKm = odomTotal !== null ? odomTotal : totalKm_log;
+    const personalKm = Math.max(0, totalKm - bizKm);
     const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
+    const odomNote = odomTotal !== null
+      ? `계기판 ${Number(odomStart).toLocaleString()}km → ${Number(odomEnd).toLocaleString()}km`
+      : '(계기판 미입력, 운행일지 합산)';
 
     let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
     let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
@@ -1298,7 +1402,12 @@
             <thead><tr><th style="width:15%">날짜</th><th style="width:15%">유형</th><th style="width:50%">이동 구간 및 목적</th><th style="width:20%">거리</th></tr></thead>
             <tbody>${drvRows}</tbody>
           </table>
-          <div style="text-align:right; font-size:11px; font-weight:bold; margin-bottom: 20px;">사업용 주행 비율: ${ratio}% (총 ${totalKm}km 중 사업용 ${bizKm}km)</div>
+          <div style="border:1px solid #ddd; padding:10px 14px; font-size:12px; margin-bottom:20px; background:#f9f9f9;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>📟 계기판 기준</span><span style="color:#555;">${odomNote}</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>총 주행거리</span><span style="font-weight:700;">${totalKm.toLocaleString()} km</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span>🔵 사업용 주행</span><span style="color:#2980b9;font-weight:700;">${bizKm.toLocaleString()} km (${ratio}%)</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>⚪ 개인용 주행</span><span style="color:#666;font-weight:700;">${personalKm.toLocaleString()} km (${100-ratio}%)</span></div>
+          </div>
         </div>`;
     } 
     else if(rType === 'revenue') {
@@ -1362,8 +1471,10 @@
           <div style="text-align:right; font-size:12px; margin-bottom:10px;">조회 월: ${month}</div>
           
           <div class="paper-summary">
-            <div class="paper-summary-row"><span style="font-size:16px;">총 주행 거리</span><span style="font-size:16px;">${totalKm} km</span></div>
-            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>사업용 주행 거리</span><span style="color:#2980b9; font-weight:700;">${bizKm} km (${ratio}%)</span></div>
+            <div class="paper-summary-row"><span style="font-size:16px;">총 주행 거리</span><span style="font-size:16px;">${totalKm.toLocaleString()} km</span></div>
+            <div class="paper-summary-row" style="font-weight:400; font-size:12px; color:#555; margin-top:5px;"><span>📟 계기판 기준</span><span>${odomNote}</span></div>
+            <div class="paper-summary-row" style="margin-top:8px;"><span style="color:#2980b9; font-weight:700;">🔵 사업용</span><span style="color:#2980b9; font-weight:700;">${bizKm.toLocaleString()} km (${ratio}%)</span></div>
+            <div class="paper-summary-row"><span style="color:#666; font-weight:700;">⚪ 개인용</span><span style="color:#666; font-weight:700;">${personalKm.toLocaleString()} km (${100-ratio}%)</span></div>
           </div>
 
           <div class="paper-section-title">차량 운행 상세 내역</div>
