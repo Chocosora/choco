@@ -131,6 +131,8 @@
             const [visitTime, setVisitTime] = useState('09:00');
             
             const [isProcessing, setIsProcessing] = useState(false);
+            const [isSaving, setIsSaving] = useState(false);
+            const [toastMessage, setToastMessage] = useState('');
             const [jobs, setJobs] = useState({});
             
             const [templates, setTemplates] = useState(defaultTemplates);
@@ -147,6 +149,8 @@
             const [assignDateVal, setAssignDateVal] = useState(todayStr);
 
             const inputSectionRef = useRef(null);
+            const addressInputRef = useRef(null);
+            const detailsInputRef = useRef(null);
 
             useEffect(() => {
                 const jobsRef = ref(database, 'homecare_jobs');
@@ -358,9 +362,20 @@
                 update(ref(database, `homecare_jobs/${jobId}`), { cancelReason: reason });
             };
 
-            const handleSaveJob = () => {
-                if (!parsedAddress) return alert("주소를 입력해주세요.");
-                
+            const handleSaveJob = async () => {
+                if (isSaving) return;
+
+                const latestAddress = (addressInputRef.current?.value ?? parsedAddress).trim();
+                const latestDetails = (detailsInputRef.current?.value ?? parsedDetails).trim();
+
+                if (!latestAddress) {
+                    setToastMessage('주소를 입력해주세요.');
+                    return;
+                }
+
+                setIsSaving(true);
+                setToastMessage('');
+
                 const filteredTasks = tasks.filter(t => (t.description || '').trim() !== '' || t.amount !== '' || t.materialCost !== '');
                 
                 const targetDates = currentView === 'consultations' 
@@ -368,8 +383,8 @@
                     : [jobDate];
                 
                 const jobData = {
-                    address: parsedAddress,
-                    details: parsedDetails,
+                    address: latestAddress,
+                    details: latestDetails,
                     phoneNumber: phoneNumber,
                     notes: notes,
                     tasks: filteredTasks,
@@ -383,20 +398,20 @@
                     createdAt: editingId ? jobs[editingId].createdAt : Date.now()
                 };
 
-                if (editingId) {
-                    set(ref(database, `homecare_jobs/${editingId}`), jobData)
-                        .then(() => {
-                            alert("수정이 완료되었습니다!");
-                            resetForm();
-                        })
-                        .catch((error) => alert("수정 실패: " + error.message));
-                } else {
-                    push(ref(database, 'homecare_jobs'), jobData)
-                        .then(() => {
-                            alert("저장 완료!");
-                            resetForm();
-                        })
-                        .catch((error) => alert("저장 실패: " + error.message));
+                try {
+                    if (editingId) {
+                        await set(ref(database, `homecare_jobs/${editingId}`), jobData);
+                        setToastMessage('수정이 완료되었습니다.');
+                    } else {
+                        await push(ref(database, 'homecare_jobs'), jobData);
+                        setToastMessage(currentView === 'consultations' ? '상담 대기에 저장되었습니다.' : '선택한 일정에 저장되었습니다.');
+                    }
+                    resetForm();
+                    setTimeout(() => setToastMessage(''), 2500);
+                } catch (error) {
+                    setToastMessage((editingId ? '수정 실패: ' : '저장 실패: ') + error.message);
+                } finally {
+                    setIsSaving(false);
                 }
             };
 
@@ -933,6 +948,7 @@
                             <input 
                                 type="text" 
                                 className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                ref={addressInputRef}
                                 value={parsedAddress}
                                 onChange={(e) => setParsedAddress(e.target.value)}
                                 placeholder="주소 (도로명으로 자동 변환됩니다)"
@@ -943,6 +959,7 @@
                             <input 
                                 type="text" 
                                 className="w-full pl-9 pr-3 py-3 bg-white rounded-xl text-sm text-slate-600 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                ref={detailsInputRef}
                                 value={parsedDetails}
                                 onChange={(e) => setParsedDetails(e.target.value)}
                                 placeholder="상세 내용"
@@ -1068,13 +1085,19 @@
                             {editingId ? <><X className="w-4 h-4"/> 취소</> : '초기화'}
                         </button>
                         <button 
-                            onClick={handleSaveJob} 
-                            className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 flex items-center justify-center gap-2 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
+                            onClick={handleSaveJob}
+                            disabled={isSaving}
+                            className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
                         >
-                            <Save className="w-4 h-4" /> 
-                            {editingId ? '수정 완료' : (currentView === 'consultations' ? '상담 대기로 저장' : '선택한 일정으로 저장')}
+                            {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />} 
+                            {isSaving ? '저장 중...' : (editingId ? '수정 완료' : (currentView === 'consultations' ? '상담 대기로 저장' : '선택한 일정으로 저장'))}
                         </button>
                     </div>
+                    {toastMessage && (
+                        <div className={`mt-3 px-4 py-3 rounded-xl text-sm font-bold border ${toastMessage.includes('실패') || toastMessage.includes('입력') ? 'bg-red-50 text-red-700 border-red-100' : 'bg-teal-50 text-teal-700 border-teal-100'}`}>
+                            {toastMessage}
+                        </div>
+                    )}
                 </section>
             );
 
