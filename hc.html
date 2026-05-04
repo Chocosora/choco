@@ -134,6 +134,10 @@
             const [isSaving, setIsSaving] = useState(false);
             const [toastMessage, setToastMessage] = useState('');
             const [jobs, setJobs] = useState({});
+            const [offDays, setOffDays] = useState({});
+            const [editingOffId, setEditingOffId] = useState(null);
+            const [offDayForm, setOffDayForm] = useState({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
+            const [offDayMessage, setOffDayMessage] = useState('');
             
             const [templates, setTemplates] = useState(defaultTemplates);
             const [isEditingTemplates, setIsEditingTemplates] = useState(false);
@@ -144,17 +148,23 @@
             const [editingId, setEditingId] = useState(null);
             const [smsModal, setSmsModal] = useState(null); 
             const [timeModalOpen, setTimeModalOpen] = useState(false);
+            const [offTimeModalField, setOffTimeModalField] = useState(null);
 
             const [assignDateModal, setAssignDateModal] = useState(null);
             const [assignDateVal, setAssignDateVal] = useState(todayStr);
 
             const inputSectionRef = useRef(null);
+
+            const timeOptions = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
             const addressInputRef = useRef(null);
             const detailsInputRef = useRef(null);
 
             useEffect(() => {
                 const jobsRef = ref(database, 'homecare_jobs');
                 const unsubJobs = onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
+
+                const offDaysRef = ref(database, 'homecare_offdays');
+                const unsubOffDays = onValue(offDaysRef, (snapshot) => setOffDays(snapshot.val() || {}));
 
                 const templatesRef = ref(database, 'homecare_settings/sms_templates');
                 const unsubTemplates = onValue(templatesRef, (snapshot) => {
@@ -168,22 +178,43 @@
 
                 return () => {
                     unsubJobs();
+                    unsubOffDays();
                     unsubTemplates();
                 };
             }, []);
 
             const jobsByDate = useMemo(() => {
                 const map = {};
-                Object.values(jobs).forEach(job => {
+                Object.entries(jobs).forEach(([key, job]) => {
                     if(job.dates) {
                         job.dates.forEach(d => {
                             if(!map[d]) map[d] = [];
-                            map[d].push(job);
+                            map[d].push({ key, ...job });
                         });
                     }
                 });
                 return map;
             }, [jobs]);
+
+            const offDaysByDate = useMemo(() => {
+                const map = {};
+                Object.entries(offDays).forEach(([key, offDay]) => {
+                    if (!offDay.date) return;
+                    if (!map[offDay.date]) map[offDay.date] = [];
+                    map[offDay.date].push({ key, ...offDay });
+                });
+                Object.keys(map).forEach(date => {
+                    map[date].sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+                });
+                return map;
+            }, [offDays]);
+
+            const activeDateOffDays = useMemo(() => {
+                return Object.entries(offDays)
+                    .map(([key, offDay]) => ({ key, ...offDay }))
+                    .filter(offDay => offDay.date === activeDate)
+                    .sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
+            }, [offDays, activeDate]);
 
             const activeDateJobs = useMemo(() => {
                 const jobList = Object.entries(jobs)
@@ -196,6 +227,35 @@
                     return timeA.localeCompare(timeB);
                 });
             }, [jobs, activeDate]);
+
+            const activeFullOffDays = useMemo(() => {
+                return activeDateOffDays.filter(offDay => (offDay.type || 'full') === 'full');
+            }, [activeDateOffDays]);
+
+            const activeDateTimeline = useMemo(() => {
+                const jobItems = activeDateJobs.map(job => ({
+                    itemType: 'job',
+                    key: `job-${job.key}`,
+                    sortTime: job.visitTime || '23:59',
+                    job
+                }));
+
+                const timedOffItems = activeDateOffDays
+                    .filter(offDay => (offDay.type || 'full') === 'time')
+                    .map(offDay => ({
+                        itemType: 'off',
+                        key: `off-${offDay.key}`,
+                        sortTime: offDay.startTime || '00:00',
+                        offDay
+                    }));
+
+                return [...jobItems, ...timedOffItems].sort((a, b) => {
+                    const timeCompare = a.sortTime.localeCompare(b.sortTime);
+                    if (timeCompare !== 0) return timeCompare;
+                    if (a.itemType === b.itemType) return 0;
+                    return a.itemType === 'off' ? -1 : 1;
+                });
+            }, [activeDateJobs, activeDateOffDays]);
 
             const consultationJobs = useMemo(() => {
                 return Object.entries(jobs)
@@ -352,6 +412,7 @@
                 setActiveDate(dateStr);
                 setCurrentView('daily');
                 resetForm(dateStr);
+                resetOffDayForm();
             };
 
             const handleStatusChange = (jobId, newStatus) => {
@@ -360,6 +421,70 @@
 
             const handleCancelReasonChange = (jobId, reason) => {
                 update(ref(database, `homecare_jobs/${jobId}`), { cancelReason: reason });
+            };
+
+            const resetOffDayForm = () => {
+                setEditingOffId(null);
+                setOffDayForm({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
+                setOffDayMessage('');
+            };
+
+            const handleSaveOffDay = async () => {
+                const reason = offDayForm.reason.trim();
+                if (!reason) {
+                    setOffDayMessage('휴무 사유를 입력해주세요.');
+                    return;
+                }
+                if (offDayForm.type === 'time' && offDayForm.startTime >= offDayForm.endTime) {
+                    setOffDayMessage('종료 시간은 시작 시간보다 늦어야 합니다.');
+                    return;
+                }
+
+                const offDayData = {
+                    date: activeDate,
+                    type: offDayForm.type,
+                    startTime: offDayForm.type === 'time' ? offDayForm.startTime : '',
+                    endTime: offDayForm.type === 'time' ? offDayForm.endTime : '',
+                    reason,
+                    createdAt: editingOffId ? (offDays[editingOffId]?.createdAt || Date.now()) : Date.now(),
+                    updatedAt: Date.now()
+                };
+
+                try {
+                    if (editingOffId) {
+                        await set(ref(database, `homecare_offdays/${editingOffId}`), offDayData);
+                        setOffDayMessage('휴무 일정이 수정되었습니다.');
+                    } else {
+                        await push(ref(database, 'homecare_offdays'), offDayData);
+                        setOffDayMessage('휴무 일정이 저장되었습니다.');
+                    }
+                    setEditingOffId(null);
+                    setOffDayForm({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
+                    setTimeout(() => setOffDayMessage(''), 2500);
+                } catch (error) {
+                    setOffDayMessage('휴무 저장 실패: ' + error.message);
+                }
+            };
+
+            const handleEditOffDay = (offDay) => {
+                setEditingOffId(offDay.key);
+                setOffDayForm({
+                    type: offDay.type || 'full',
+                    startTime: offDay.startTime || '09:00',
+                    endTime: offDay.endTime || '18:00',
+                    reason: offDay.reason || ''
+                });
+                setOffDayMessage('');
+            };
+
+            const handleDeleteOffDay = async (id) => {
+                if (!confirm('휴무 일정을 삭제하시겠습니까?')) return;
+                try {
+                    await remove(ref(database, `homecare_offdays/${id}`));
+                    if (editingOffId === id) resetOffDayForm();
+                } catch (error) {
+                    setOffDayMessage('휴무 삭제 실패: ' + error.message);
+                }
             };
 
             const handleSaveJob = async () => {
@@ -1165,20 +1290,62 @@
                                         const dateStr = `${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                                         const isToday = dateStr === todayStr;
                                         const dayJobs = jobsByDate[dateStr] || [];
+                                        const dayOffs = offDaysByDate[dateStr] || [];
                                         const hasJobs = dayJobs.length > 0;
+                                        const hasOffDays = dayOffs.length > 0;
+                                        const hasFullDayOff = dayOffs.some(o => (o.type || 'full') === 'full');
+                                        const fullDayOffs = dayOffs.filter(o => (o.type || 'full') === 'full');
+                                        const calendarDayTimeline = [
+                                            ...dayJobs.map((job, idx) => ({
+                                                itemType: 'job',
+                                                sortTime: job.visitTime || '23:59',
+                                                key: `job-${job.key || idx}`,
+                                                job
+                                            })),
+                                            ...dayOffs
+                                                .filter(offDay => (offDay.type || 'full') !== 'full')
+                                                .map((offDay, idx) => ({
+                                                    itemType: 'off',
+                                                    sortTime: offDay.startTime || '00:00',
+                                                    key: `off-${offDay.key || idx}`,
+                                                    offDay
+                                                }))
+                                        ].sort((a, b) => a.sortTime.localeCompare(b.sortTime));
                                         
                                         return (
                                             <div
                                                 key={day}
                                                 role="button"
                                                 onClick={() => openDailyView(dateStr)}
-                                                className={`cursor-pointer relative flex flex-col items-center justify-start pt-1.5 pb-1 px-1 rounded-[10px] border min-h-[85px] max-h-[110px] overflow-y-auto ${isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
+                                                className={`cursor-pointer relative flex flex-col items-center justify-start pt-1.5 pb-1 px-1 rounded-[10px] border min-h-[85px] max-h-[120px] overflow-y-auto ${hasFullDayOff ? 'border-rose-300 bg-rose-50' : isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : hasOffDays ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
                                             >
-                                                <span className={`text-[12px] font-bold mb-1 ${isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
+                                                <span className={`text-[12px] font-bold mb-1 ${hasFullDayOff ? 'text-rose-700' : isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
                                                 
-                                                {hasJobs && (
+                                                {fullDayOffs.length > 0 && (
+                                                    <div className="flex flex-col gap-[3px] w-full mb-1">
+                                                        {fullDayOffs.map((offDay) => (
+                                                            <div key={offDay.key} className="bg-rose-500 text-white rounded py-[3px] px-1 w-full shadow-sm">
+                                                                <div className="text-[9px] font-extrabold truncate leading-none">종일 휴무</div>
+                                                                <div className="text-[8px] font-bold truncate leading-none mt-1 opacity-90">{offDay.reason}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                
+                                                {calendarDayTimeline.length > 0 && (
                                                     <div className="flex flex-col gap-[3px] w-full mt-0.5">
-                                                        {dayJobs.sort((a,b) => (a.visitTime||'23:59').localeCompare(b.visitTime||'23:59')).map((job, idx) => {
+                                                        {calendarDayTimeline.map((item) => {
+                                                            if (item.itemType === 'off') {
+                                                                const offDay = item.offDay;
+                                                                return (
+                                                                    <div key={item.key} className="bg-amber-400 text-amber-950 rounded py-[3px] px-1 w-full shadow-sm border border-amber-300">
+                                                                        <div className="text-[9px] font-extrabold truncate leading-none">{offDay.startTime}~{offDay.endTime}</div>
+                                                                        <div className="text-[8px] font-bold truncate leading-none mt-1 opacity-90">휴무 · {offDay.reason}</div>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            const job = item.job;
                                                             const currentStatus = job.status || 'pending';
                                                             let statusColor = 'bg-slate-300'; 
                                                             if (currentStatus === 'completed') statusColor = 'bg-teal-500'; 
@@ -1188,11 +1355,12 @@
                                                             const amt = formatAmountStr(displayAmt);
                                                             
                                                             return (
-                                                                <div key={job.key || idx} className="flex items-center justify-center gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                                                                <div key={item.key} className="flex items-center justify-center gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                                                                     <div className={`w-1.5 h-1.5 rounded-full ${statusColor} flex-shrink-0`}></div>
+                                                                    <span className="text-[8px] font-black text-slate-500 tracking-tighter leading-none">{job.visitTime || '--:--'}</span>
                                                                     <span className="text-[9px] font-extrabold text-slate-700 tracking-tighter truncate leading-none mt-[1px]">{amt}</span>
                                                                 </div>
-                                                            )
+                                                            );
                                                         })}
                                                     </div>
                                                 )}
@@ -1308,13 +1476,139 @@
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
 
+                                <section className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-amber-500" />
+                                            휴무 모드
+                                        </h3>
+                                        {editingOffId && (
+                                            <button onClick={resetOffDayForm} className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg">수정 취소</button>
+                                        )}
+                                    </div>
+
+                                    {activeFullOffDays.length > 0 && (
+                                        <div className="space-y-2">
+                                            {activeFullOffDays.map((offDay) => (
+                                                <div key={offDay.key} className="p-3 rounded-2xl border border-amber-100 bg-amber-50/70 flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="text-sm font-extrabold text-slate-800">
+                                                            {(offDay.type || 'full') === 'full' ? '종일 휴무' : `${offDay.startTime} ~ ${offDay.endTime} 휴무`}
+                                                        </div>
+                                                        <div className="text-xs text-slate-600 mt-1 break-words">사유: {offDay.reason}</div>
+                                                    </div>
+                                                    <div className="flex gap-1.5 flex-shrink-0">
+                                                        <button onClick={() => handleEditOffDay(offDay)} className="p-2 rounded-lg bg-white border border-amber-200 text-amber-700">
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteOffDay(offDay.key)} className="p-2 rounded-lg bg-white border border-red-100 text-red-500">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setOffDayForm(prev => ({ ...prev, type: 'full' }))}
+                                            className={`py-2.5 rounded-xl text-sm font-bold border ${offDayForm.type === 'full' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-200'}`}
+                                        >
+                                            하루 전체 휴무
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setOffDayForm(prev => ({ ...prev, type: 'time' }))}
+                                            className={`py-2.5 rounded-xl text-sm font-bold border ${offDayForm.type === 'time' ? 'bg-amber-400 text-amber-950 border-amber-400' : 'bg-white text-slate-600 border-slate-200'}`}
+                                        >
+                                            특정 시간 휴무
+                                        </button>
+                                    </div>
+
+                                    {offDayForm.type === 'time' && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[11px] font-bold text-slate-400 mb-1 ml-1">시작 시간</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOffTimeModalField('startTime')}
+                                                    className="w-full px-3 py-3 bg-white rounded-xl text-sm font-extrabold text-slate-800 border border-slate-200 active:scale-95 flex items-center justify-between"
+                                                >
+                                                    <span>{offDayForm.startTime}</span>
+                                                    <Clock className="w-4 h-4 text-amber-500" />
+                                                </button>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-bold text-slate-400 mb-1 ml-1">종료 시간</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOffTimeModalField('endTime')}
+                                                    className="w-full px-3 py-3 bg-white rounded-xl text-sm font-extrabold text-slate-800 border border-slate-200 active:scale-95 flex items-center justify-between"
+                                                >
+                                                    <span>{offDayForm.endTime}</span>
+                                                    <Clock className="w-4 h-4 text-amber-500" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <textarea
+                                        className="w-full p-3 bg-white rounded-xl text-slate-700 text-sm border border-slate-200 focus:ring-2 focus:ring-amber-400 resize-none h-20 leading-relaxed placeholder:text-slate-400 outline-none"
+                                        placeholder="휴무 사유를 입력하세요. 예: 개인 일정, 병원, 장비 점검"
+                                        value={offDayForm.reason}
+                                        onChange={(e) => setOffDayForm(prev => ({ ...prev, reason: e.target.value }))}
+                                    />
+
+                                    <button onClick={handleSaveOffDay} className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 shadow-sm">
+                                        <Save className="w-4 h-4" />
+                                        {editingOffId ? '휴무 수정 완료' : '휴무 저장'}
+                                    </button>
+                                    {offDayMessage && (
+                                        <div className={`px-3 py-2.5 rounded-xl text-xs font-bold border ${offDayMessage.includes('실패') || offDayMessage.includes('입력') || offDayMessage.includes('종료') ? 'bg-red-50 text-red-700 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                                            {offDayMessage}
+                                        </div>
+                                    )}
+                                </section>
+
                                 <section className="space-y-4">
-                                    {activeDateJobs.length === 0 ? (
+                                    {activeDateTimeline.length === 0 ? (
                                         <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200">
                                             <p className="text-slate-400 text-sm">이 날짜에 등록된 일정이 없습니다.</p>
                                         </div>
                                     ) : (
-                                        activeDateJobs.map((job) => {
+                                        activeDateTimeline.map((timelineItem) => {
+                                            if (timelineItem.itemType === 'off') {
+                                                const offDay = timelineItem.offDay;
+                                                return (
+                                                    <div key={timelineItem.key} className="rounded-2xl p-5 shadow border bg-amber-50 border-amber-200 border-l-[6px] border-l-amber-400">
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-extrabold bg-amber-400 text-amber-950 border border-amber-300">
+                                                                        <Clock className="w-3 h-3 mr-1" />
+                                                                        {offDay.startTime} ~ {offDay.endTime}
+                                                                    </span>
+                                                                    <span className="text-xs font-extrabold text-amber-700">휴무</span>
+                                                                </div>
+                                                                <h3 className="text-base font-extrabold text-slate-800">{offDay.reason}</h3>
+                                                                <p className="text-xs text-slate-500 mt-1">이 시간대는 예약 불가로 표시됩니다.</p>
+                                                            </div>
+                                                            <div className="flex gap-1.5 flex-shrink-0">
+                                                                <button onClick={() => handleEditOffDay(offDay)} className="p-2 rounded-lg bg-white border border-amber-200 text-amber-700">
+                                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button onClick={() => handleDeleteOffDay(offDay.key)} className="p-2 rounded-lg bg-white border border-red-100 text-red-500">
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            const job = timelineItem.job;
                                             const isEditing = editingId === job.key;
                                             const currentStatus = job.status || 'pending';
                                             const cardOpacity = currentStatus === 'completed' || currentStatus === 'cancelled' ? 'opacity-85' : 'opacity-100';
@@ -1636,7 +1930,7 @@
                                 
                                 <label className="block text-xs font-bold text-slate-400 mb-2">빠른 선택</label>
                                 <div className="grid grid-cols-4 gap-1.5 mb-4 max-h-56 overflow-y-auto pr-1">
-                                    {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00'].map(t => (
+                                    {timeOptions.map(t => (
                                         <button 
                                             key={t}
                                             onClick={() => { setVisitTime(t); setTimeModalOpen(false); }} 
@@ -1664,6 +1958,36 @@
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {offTimeModalField && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex flex-col justify-end backdrop-blur-sm">
+                            <div className="bg-white rounded-t-3xl p-5 pb-8 shadow-2xl">
+                                <div className="flex justify-between items-center mb-5">
+                                    <h3 className="text-lg font-extrabold text-slate-800">
+                                        {offTimeModalField === 'startTime' ? '휴무 시작 시간 선택' : '휴무 종료 시간 선택'}
+                                    </h3>
+                                    <button onClick={() => setOffTimeModalField(null)} className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-1.5 max-h-72 overflow-y-auto pr-1">
+                                    {timeOptions.map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => {
+                                                setOffDayForm(prev => ({ ...prev, [offTimeModalField]: t }));
+                                                setOffTimeModalField(null);
+                                            }}
+                                            className={`py-2.5 rounded-xl font-bold text-sm active:scale-95 ${offDayForm[offTimeModalField] === t ? 'bg-amber-400 text-amber-950 shadow-md shadow-amber-100' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-[11px] text-slate-400 mt-4 text-center">모바일에서도 버튼을 눌러 빠르게 시간을 선택할 수 있습니다.</p>
                             </div>
                         </div>
                     )}
