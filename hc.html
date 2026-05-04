@@ -137,6 +137,7 @@
             const [offDays, setOffDays] = useState({});
             const [editingOffId, setEditingOffId] = useState(null);
             const [offDayForm, setOffDayForm] = useState({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
+            const [showOffDayPanel, setShowOffDayPanel] = useState(false);
             const [offDayMessage, setOffDayMessage] = useState('');
             
             const [templates, setTemplates] = useState(defaultTemplates);
@@ -411,6 +412,7 @@
             const openDailyView = (dateStr) => {
                 setActiveDate(dateStr);
                 setCurrentView('daily');
+                setShowOffDayPanel(false);
                 resetForm(dateStr);
                 resetOffDayForm();
             };
@@ -460,7 +462,7 @@
                     }
                     setEditingOffId(null);
                     setOffDayForm({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
-                    setTimeout(() => setOffDayMessage(''), 2500);
+                    setTimeout(() => { setOffDayMessage(''); setShowOffDayPanel(false); }, 1200);
                 } catch (error) {
                     setOffDayMessage('휴무 저장 실패: ' + error.message);
                 }
@@ -475,6 +477,7 @@
                     reason: offDay.reason || ''
                 });
                 setOffDayMessage('');
+                setShowOffDayPanel(true);
             };
 
             const handleDeleteOffDay = async (id) => {
@@ -487,11 +490,11 @@
                 }
             };
 
-            const handleSaveJob = async () => {
+            const handleSaveJob = async (forcedValues = null) => {
                 if (isSaving) return;
 
-                const latestAddress = (addressInputRef.current?.value ?? parsedAddress).trim();
-                const latestDetails = (detailsInputRef.current?.value ?? parsedDetails).trim();
+                const latestAddress = (forcedValues?.address ?? addressInputRef.current?.value ?? parsedAddress).trim();
+                const latestDetails = (forcedValues?.details ?? detailsInputRef.current?.value ?? parsedDetails).trim();
 
                 if (!latestAddress) {
                     setToastMessage('주소를 입력해주세요.');
@@ -538,6 +541,34 @@
                 } finally {
                     setIsSaving(false);
                 }
+            };
+
+            const handleSaveButtonPress = (e) => {
+                const isTouchLike = e?.pointerType === 'touch' || /Android/i.test(navigator.userAgent);
+                if (!isTouchLike) return;
+
+                e.preventDefault();
+                suppressNextSaveClickRef.current = true;
+
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+
+                window.setTimeout(() => {
+                    const latestAddress = (addressInputRef.current?.value ?? parsedAddress).trim();
+                    const latestDetails = (detailsInputRef.current?.value ?? parsedDetails).trim();
+                    setParsedAddress(latestAddress);
+                    setParsedDetails(latestDetails);
+                    handleSaveJob({ address: latestAddress, details: latestDetails });
+                }, 80);
+            };
+
+            const handleSaveButtonClick = () => {
+                if (suppressNextSaveClickRef.current) {
+                    suppressNextSaveClickRef.current = false;
+                    return;
+                }
+                handleSaveJob();
             };
 
             const handleAssignDate = () => {
@@ -1076,6 +1107,8 @@
                                 ref={addressInputRef}
                                 value={parsedAddress}
                                 onChange={(e) => setParsedAddress(e.target.value)}
+                                onCompositionEnd={(e) => setParsedAddress(e.currentTarget.value)}
+                                onBlur={(e) => setParsedAddress(e.currentTarget.value)}
                                 placeholder="주소 (도로명으로 자동 변환됩니다)"
                             />
                         </div>
@@ -1087,6 +1120,8 @@
                                 ref={detailsInputRef}
                                 value={parsedDetails}
                                 onChange={(e) => setParsedDetails(e.target.value)}
+                                onCompositionEnd={(e) => setParsedDetails(e.currentTarget.value)}
+                                onBlur={(e) => setParsedDetails(e.currentTarget.value)}
                                 placeholder="상세 내용"
                             />
                         </div>
@@ -1210,7 +1245,9 @@
                             {editingId ? <><X className="w-4 h-4"/> 취소</> : '초기화'}
                         </button>
                         <button 
-                            onClick={handleSaveJob}
+                            type="button"
+                            onPointerDown={handleSaveButtonPress}
+                            onClick={handleSaveButtonClick}
                             disabled={isSaving}
                             className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
                         >
@@ -1227,7 +1264,7 @@
             );
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20 relative">
+                <div className="max-w-5xl mx-auto min-h-screen bg-gray-50 pb-20 relative">
                     <header className="bg-white px-5 py-4 sticky top-0 z-30 shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             {currentView !== 'calendar' ? (
@@ -1260,12 +1297,21 @@
                                 </button>
                             </div>
                         )}
+                        {currentView === 'daily' && (
+                            <button
+                                onClick={() => setShowOffDayPanel(prev => !prev)}
+                                className={`px-3 py-2.5 rounded-xl text-sm font-bold shadow-sm border flex items-center gap-1.5 active:scale-95 ${showOffDayPanel ? 'bg-slate-800 text-white border-slate-800' : 'bg-amber-50 text-amber-700 border-amber-100'}`}
+                            >
+                                <Clock className="w-4 h-4" />
+                                <span>휴무 모드</span>
+                            </button>
+                        )}
                     </header>
 
-                    <main className="p-5 space-y-6">
+                    <main className="p-2 sm:p-5 space-y-4 sm:space-y-6">
                         {currentView === 'calendar' && (
-                            <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-                                <div className="flex justify-between items-center mb-6 px-2">
+                            <section className="bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-5 shadow-sm border border-slate-100">
+                                <div className="flex justify-between items-center mb-3 sm:mb-6 px-1 sm:px-2">
                                     <button onClick={() => changeMonth(-1)} className="text-slate-400 hover:bg-slate-50 p-2 rounded-xl">
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
@@ -1278,13 +1324,13 @@
                                     </button>
                                 </div>
                                 
-                                <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                                <div className="grid grid-cols-7 gap-[1px] text-center mb-1">
                                     {['일','월','화','수','목','금','토'].map((d,i) => (
                                         <div key={d} className={`text-[11px] font-bold pb-1 ${i===0?'text-red-400':i===6?'text-blue-400':'text-slate-400'}`}>{d}</div>
                                     ))}
                                 </div>
                                 
-                                <div className="grid grid-cols-7 gap-1 text-center">
+                                <div className="grid grid-cols-7 gap-[1px] text-center bg-slate-200 border border-slate-200 rounded-xl overflow-hidden">
                                     {Array.from({ length: new Date(currentDateView.getFullYear(), currentDateView.getMonth(), 1).getDay() }).map((_, i) => <div key={`e-${i}`} />)}
                                     {getDaysInMonth(currentDateView).map(day => {
                                         const dateStr = `${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
@@ -1317,9 +1363,9 @@
                                                 key={day}
                                                 role="button"
                                                 onClick={() => openDailyView(dateStr)}
-                                                className={`cursor-pointer relative flex flex-col items-center justify-start pt-1.5 pb-1 px-1 rounded-[10px] border min-h-[85px] max-h-[120px] overflow-y-auto ${hasFullDayOff ? 'border-rose-300 bg-rose-50' : isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : hasOffDays ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
+                                                className={`cursor-pointer relative flex flex-col items-center justify-start pt-1 pb-1 px-0.5 sm:px-1 border min-h-[105px] sm:min-h-[120px] overflow-hidden ${hasFullDayOff ? 'border-rose-300 bg-rose-50' : isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : hasOffDays ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
                                             >
-                                                <span className={`text-[12px] font-bold mb-1 ${hasFullDayOff ? 'text-rose-700' : isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
+                                                <span className={`text-[11px] sm:text-[12px] font-bold mb-0.5 ${hasFullDayOff ? 'text-rose-700' : isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
                                                 
                                                 {fullDayOffs.length > 0 && (
                                                     <div className="flex flex-col gap-[3px] w-full mb-1">
@@ -1333,7 +1379,7 @@
                                                 )}
                                                 
                                                 {calendarDayTimeline.length > 0 && (
-                                                    <div className="flex flex-col gap-[3px] w-full mt-0.5">
+                                                    <div className="flex flex-col gap-[2px] w-full mt-0.5">
                                                         {calendarDayTimeline.map((item) => {
                                                             if (item.itemType === 'off') {
                                                                 const offDay = item.offDay;
@@ -1355,7 +1401,7 @@
                                                             const amt = formatAmountStr(displayAmt);
                                                             
                                                             return (
-                                                                <div key={item.key} className="flex items-center justify-center gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                                                                <div key={item.key} className="flex items-center justify-center gap-0.5 sm:gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                                                                     <div className={`w-1.5 h-1.5 rounded-full ${statusColor} flex-shrink-0`}></div>
                                                                     <span className="text-[8px] font-black text-slate-500 tracking-tighter leading-none">{job.visitTime || '--:--'}</span>
                                                                     <span className="text-[9px] font-extrabold text-slate-700 tracking-tighter truncate leading-none mt-[1px]">{amt}</span>
@@ -1476,6 +1522,7 @@
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
 
+                                {showOffDayPanel && (
                                 <section className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100 space-y-4">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
@@ -1571,9 +1618,31 @@
                                         </div>
                                     )}
                                 </section>
+                                )}
 
                                 <section className="space-y-4">
-                                    {activeDateTimeline.length === 0 ? (
+                                    {activeFullOffDays.length > 0 && !showOffDayPanel && (
+                                        <div className="space-y-3">
+                                            {activeFullOffDays.map((offDay) => (
+                                                <div key={offDay.key} className="rounded-2xl p-4 shadow border bg-rose-50 border-rose-200 border-l-[6px] border-l-rose-500 flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="text-sm font-extrabold text-rose-700">종일 휴무</div>
+                                                        <div className="text-sm font-bold text-slate-800 mt-1 break-words">{offDay.reason}</div>
+                                                    </div>
+                                                    <div className="flex gap-1.5 flex-shrink-0">
+                                                        <button onClick={() => handleEditOffDay(offDay)} className="p-2 rounded-lg bg-white border border-rose-100 text-rose-600">
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={() => handleDeleteOffDay(offDay.key)} className="p-2 rounded-lg bg-white border border-red-100 text-red-500">
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeDateTimeline.length === 0 && activeFullOffDays.length === 0 ? (
                                         <div className="text-center py-10 bg-white rounded-3xl border-2 border-dashed border-slate-200">
                                             <p className="text-slate-400 text-sm">이 날짜에 등록된 일정이 없습니다.</p>
                                         </div>
