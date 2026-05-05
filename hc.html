@@ -543,32 +543,28 @@
                 }
             };
 
-            const handleSaveButtonPress = (e) => {
-                const isTouchLike = e?.pointerType === 'touch' || /Android/i.test(navigator.userAgent);
-                if (!isTouchLike) return;
+            const handleSaveButtonClick = async (e) => {
+                if (e?.preventDefault) e.preventDefault();
+                if (isSaving) return;
 
-                e.preventDefault();
-                suppressNextSaveClickRef.current = true;
+                const activeEl = document.activeElement;
+                const isTextInputFocused = activeEl && ['INPUT', 'TEXTAREA'].includes(activeEl.tagName);
+                const isAndroid = /Android/i.test(navigator.userAgent);
 
-                if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                    document.activeElement.blur();
+                if (isTextInputFocused && typeof activeEl.blur === 'function') {
+                    activeEl.blur();
                 }
 
-                window.setTimeout(() => {
-                    const latestAddress = (addressInputRef.current?.value ?? parsedAddress).trim();
-                    const latestDetails = (detailsInputRef.current?.value ?? parsedDetails).trim();
-                    setParsedAddress(latestAddress);
-                    setParsedDetails(latestDetails);
-                    handleSaveJob({ address: latestAddress, details: latestDetails });
-                }, 80);
-            };
-
-            const handleSaveButtonClick = () => {
-                if (suppressNextSaveClickRef.current) {
-                    suppressNextSaveClickRef.current = false;
-                    return;
+                if (isAndroid || isTextInputFocused) {
+                    await new Promise(resolve => window.setTimeout(resolve, 120));
                 }
-                handleSaveJob();
+
+                const latestAddress = (addressInputRef.current?.value ?? parsedAddress).trim();
+                const latestDetails = (detailsInputRef.current?.value ?? parsedDetails).trim();
+
+                setParsedAddress(latestAddress);
+                setParsedDetails(latestDetails);
+                handleSaveJob({ address: latestAddress, details: latestDetails });
             };
 
             const handleAssignDate = () => {
@@ -1246,7 +1242,6 @@
                         </button>
                         <button 
                             type="button"
-                            onPointerDown={handleSaveButtonPress}
                             onClick={handleSaveButtonClick}
                             disabled={isSaving}
                             className={`flex-[2] py-3 rounded-xl font-bold text-sm shadow-lg active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 disabled:active:scale-100 ${editingId ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' : 'bg-slate-800 hover:bg-slate-900 text-white shadow-slate-200'}`}
