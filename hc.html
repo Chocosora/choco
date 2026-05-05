@@ -2118,6 +2118,42 @@
                                 <div className="overflow-y-auto space-y-4 pr-1 pb-4 flex-1">
                                     {editingTemplatesData.map((template, idx) => (
                                         <div key={idx} className="bg-slate-50 p-3 rounded-xl border border-slate-200 relative">
+                                            <div className="flex items-center justify-between gap-2 mb-2 pr-8">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white border border-slate-200 text-[11px] font-extrabold text-slate-500 shadow-sm">
+                                                        {idx + 1}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (idx === 0) return;
+                                                            const newData = [...editingTemplatesData];
+                                                            [newData[idx - 1], newData[idx]] = [newData[idx], newData[idx - 1]];
+                                                            setEditingTemplatesData(newData);
+                                                        }}
+                                                        disabled={idx === 0}
+                                                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border shadow-sm ${idx === 0 ? 'bg-slate-100 text-slate-300 border-slate-100' : 'bg-white text-slate-600 border-slate-200 active:bg-teal-50 active:text-teal-700'}`}
+                                                        title="위로 이동"
+                                                    >
+                                                        ↑ 위
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (idx === editingTemplatesData.length - 1) return;
+                                                            const newData = [...editingTemplatesData];
+                                                            [newData[idx], newData[idx + 1]] = [newData[idx + 1], newData[idx]];
+                                                            setEditingTemplatesData(newData);
+                                                        }}
+                                                        disabled={idx === editingTemplatesData.length - 1}
+                                                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border shadow-sm ${idx === editingTemplatesData.length - 1 ? 'bg-slate-100 text-slate-300 border-slate-100' : 'bg-white text-slate-600 border-slate-200 active:bg-teal-50 active:text-teal-700'}`}
+                                                        title="아래로 이동"
+                                                    >
+                                                        ↓ 아래
+                                                    </button>
+                                                </div>
+                                                <span className="text-[11px] text-slate-400 font-semibold">저장 후 이 순서로 표시</span>
+                                            </div>
                                             <button 
                                                 onClick={() => {
                                                     const newData = editingTemplatesData.filter((_, i) => i !== idx);
