@@ -1,609 +1,953 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>홈케어의 제왕 작업 내역서</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        :root {
-            --navy: #1a2744;
-            --gold: #c49a3c;
-            --gold-light: #e8c97a;
-            --cream: #faf8f3;
-            --border: #d4c9b0;
-            --text: #2c2c2c;
-            --text-light: #6b6055;
-            --accent: #8b1a1a;
-            --stamp-red: #c41e1e;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>홈케어의 제왕 작업내역서</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --soft: #f3f4f6;
+      --soft2: #f9fafb;
+      --navy: #17223b;
+      --bluegray: #334155;
+      --white: #ffffff;
+      --danger: #b91c1c;
+    }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: #e8e4dc;
-            min-height: 100vh;
-            padding: 20px 10px;
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    
+    body {
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
 
-        .page-wrapper { 
-            width: 100%; 
-            max-width: 860px;
-            margin: 0 auto; 
-        }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #eef0f3;
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 18px 10px 28px;
+      display: flex;
+      justify-content: center;
+    }
 
-        .doc-scroll-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 10px;
-        }
+    .page-wrapper {
+      width: 100%;
+      max-width: 900px;
+    }
 
-        .document {
-            width: 820px;
-            min-width: 820px;
-            margin: 0 auto;
-            background: var(--cream);
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 40px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08);
-        }
+    .doc-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 10px;
+    }
 
-        .top-bar { background: var(--navy); height: 6px; }
+    .document {
+      width: 820px;
+      min-width: 820px;
+      min-height: 1120px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid #cfd4dc;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+      padding: 42px 46px 36px;
+      position: relative;
+    }
 
-        /* 헤더 */
-        .header { padding: 30px 50px 24px; border-bottom: 1px solid var(--border); }
-        .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .document::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      height: 7px;
+      background: var(--navy);
+    }
 
-        .brand-block { display: flex; align-items: center; gap: 16px; }
-        .brand-logo { width: 64px; height: 64px; object-fit: contain; border-radius: 6px; }
-        .brand-name {
-            font-family: 'Noto Serif KR', serif;
-            font-size: 1.45em; font-weight: 700;
-            color: var(--navy); letter-spacing: 3px;
-        }
-        .brand-sub {
-            font-size: 0.72em; color: var(--gold);
-            letter-spacing: 2px; font-weight: 500; margin-top: 3px;
-        }
+    .doc-head {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 20px;
+      padding-bottom: 22px;
+      border-bottom: 2px solid var(--ink);
+    }
 
-        .doc-title-block { text-align: right; }
-        .doc-title {
-            font-family: 'Noto Serif KR', serif;
-            font-size: 1.9em; font-weight: 700;
-            color: var(--navy); letter-spacing: 6px;
-        }
-        .doc-title-underline {
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--gold), var(--gold));
-            margin-top: 6px;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-        .gold-divider {
-            height: 1px;
-            background: linear-gradient(90deg, var(--navy) 0%, var(--gold) 40%, var(--gold-light) 60%, transparent 100%);
-            margin: 0 50px;
-        }
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 3px;
+      background: #fff;
+    }
 
-        /* 공급자 / 고객 */
-        .parties-section {
-            display: grid;
-            grid-template-columns: 1fr 1px 1fr;
-            padding: 0 50px;
-            border-bottom: 1px solid var(--border);
-        }
-        .party-box { padding: 24px 0; }
-        .party-box:last-child { padding-left: 36px; }
-        .party-divider { background: var(--border); margin: 18px 0; }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--navy);
+      line-height: 1.45;
+      padding-bottom: 2px;
+    }
 
-        .party-label {
-            font-size: 0.68em; font-weight: 700;
-            letter-spacing: 3px; color: var(--gold);
-            text-transform: uppercase; margin-bottom: 12px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .party-label::after {
-            content: ''; flex: 1; height: 1px;
-            background: var(--gold); opacity: 0.35;
-        }
+    .brand-sub {
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      line-height: 1.5;
+      padding-bottom: 2px;
+    }
 
-        .party-info { font-size: 0.86em; line-height: 2.1; }
-        .info-row { display: flex; gap: 10px; align-items: center; }
-        .info-key { color: var(--text-light); min-width: 48px; font-size: 0.9em; flex-shrink: 0; }
-        .info-val { color: var(--text); font-weight: 500; display: flex; align-items: center; }
+    .title-area {
+      text-align: center;
+      padding-top: 4px;
+    }
 
-        /* 고객 입력 */
-        .customer-field { margin-bottom: 10px; }
-        .customer-field label {
-            display: block; font-size: 0.72em;
-            color: var(--text-light); letter-spacing: 1.5px;
-            margin-bottom: 4px; font-weight: 700;
-        }
-        .customer-field input {
-            width: 100%; border: none;
-            border-bottom: 1.5px solid var(--border);
-            background: transparent;
-            font-family: 'Noto Sans KR', sans-serif;
-            font-size: 0.93em; color: var(--text);
-            padding: 5px 2px; outline: none;
-            transition: border-color 0.2s;
-        }
-        .customer-field input:focus { border-bottom-color: var(--gold); }
+    .doc-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 10px;
+      padding-left: 10px;
+      color: var(--ink);
+      line-height: 1.35;
+      padding-bottom: 4px;
+    }
 
-        /* 연락처 / 계좌 바 */
-        .contact-bar {
-            background: var(--navy);
-            padding: 11px 50px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px 0;
-        }
-        .contact-item {
-            font-size: 0.77em;
-            color: rgba(255,255,255,0.85);
-            display: flex; align-items: center; gap: 7px;
-            padding: 0 16px;
-        }
-        .contact-item:first-child { padding-left: 0; }
-        .ci-label {
-            color: var(--gold-light);
-            font-weight: 700; font-size: 0.85em; letter-spacing: 1px;
-        }
-        .contact-sep {
-            width: 1px; height: 13px;
-            background: rgba(255,255,255,0.2);
-            flex-shrink: 0;
-        }
+    .doc-title-en {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      font-weight: 600;
+      line-height: 1.5;
+      padding-bottom: 2px;
+    }
 
-        /* 품목 테이블 */
-        .table-section { padding: 0 50px 24px; }
-        .section-label {
-            font-size: 0.68em; font-weight: 700;
-            letter-spacing: 3px; color: var(--gold);
-            text-transform: uppercase; padding: 20px 0 12px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .section-label::after {
-            content: ''; flex: 1; height: 1px;
-            background: var(--gold); opacity: 0.35;
-        }
+    .doc-meta {
+      text-align: right;
+      font-size: 12px;
+      line-height: 1.9;
+      color: var(--bluegray);
+      padding-top: 4px;
+    }
 
-        /* 부가세 토글 */
-        .vat-toggle-row { display: flex; align-items: center; margin-bottom: 14px; gap: 12px; }
-        .vat-toggle {
-            display: flex; align-items: center;
-            border: 1.5px solid var(--navy); border-radius: 4px;
-            overflow: hidden;
-        }
-        .vat-btn {
-            padding: 7px 18px; cursor: pointer;
-            background: transparent; border: none;
-            font-family: 'Noto Sans KR', sans-serif;
-            font-size: 0.82em; font-weight: 500;
-            color: var(--navy); transition: all 0.2s; letter-spacing: 0.5px;
-        }
-        .vat-btn + .vat-btn { border-left: 1.5px solid var(--navy); }
-        .vat-btn.active { background: var(--navy); color: #fff; }
-        .vat-note { font-size: 0.75em; color: var(--text-light); }
+    .doc-meta strong { color: var(--ink); font-weight: 700; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
-        thead tr { background: var(--navy); }
-        thead th {
-            color: #fff; font-weight: 500;
-            padding: 12px 14px; text-align: center;
-            letter-spacing: 1px; font-size: 0.85em;
-        }
-        thead th:first-child { text-align: left; padding-left: 16px; }
+    .notice-box { display: none; }
 
-        tbody tr { border-bottom: 1px solid #e8e2d6; }
-        tbody tr:last-child { border-bottom: none; }
-        tbody tr:nth-child(even) { background: rgba(196,154,60,0.04); }
-        tbody td { padding: 9px 14px; vertical-align: middle; }
-        tbody td:first-child { text-align: left; }
-        tbody td:not(:first-child) { text-align: center; }
-        tbody td.amount-cell { font-weight: 700; color: var(--navy); text-align: right; }
+    .summary-line {
+      display: grid;
+      grid-template-columns: 130px 1fr 130px 1fr;
+      border: 1px solid var(--line);
+      border-bottom: none;
+      font-size: 13px;
+    }
 
-        tbody input[type="text"],
-        tbody input[type="number"] {
-            width: 100%; border: none; background: transparent;
-            font-family: 'Noto Sans KR', sans-serif;
-            font-size: 0.95em; color: var(--text);
-            padding: 4px 2px; outline: none;
-            border-bottom: 1px dashed transparent;
-            transition: border-color 0.2s;
-        }
-        tbody input[type="number"] { text-align: center; }
-        tbody input:focus { border-bottom-color: var(--gold); }
+    .summary-line .label {
+      background: var(--soft);
+      color: var(--bluegray);
+      font-weight: 700;
+      text-align: center;
+      padding: 12px 8px 11px;
+      border-right: 1px solid var(--line);
+      line-height: 1.4;
+    }
 
-        /* 합계 */
-        .total-section {
-            margin: 0 50px;
-            border-top: 2px solid var(--navy);
-            padding: 16px 0 28px;
-            display: flex; justify-content: flex-end;
-        }
-        .total-rows { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
-        .total-row {
-            display: flex; align-items: center; gap: 16px;
-            font-size: 0.86em; color: var(--text-light);
-        }
-        .t-label { min-width: 90px; text-align: right; }
-        .t-val { min-width: 110px; text-align: right; color: var(--text); font-weight: 500; }
-        .t-unit { min-width: 16px; font-size: 0.85em; }
+    .summary-line .value {
+      padding: 8px 10px;
+      border-right: 1px solid var(--line);
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+    }
 
-        .total-row.grand { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
-        .total-box {
-            background: var(--navy); color: #fff;
-            padding: 13px 24px;
-            display: flex; align-items: center; gap: 14px;
-        }
-        .total-box .t-label { color: rgba(255,255,255,0.7); }
-        .total-box .t-val {
-            color: var(--gold-light);
-            font-family: 'Noto Serif KR', serif;
-            font-size: 1.5em; font-weight: 700;
-        }
-        .total-box .t-unit { color: rgba(255,255,255,0.6); }
+    .summary-line .value:last-child { border-right: none; }
 
-        /* 하단 */
-        .footer {
-            border-top: 1px solid var(--border);
-            padding: 20px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-        }
-        .footer-note { font-size: 0.77em; color: var(--text-light); line-height: 2; }
-        .footer-note strong { color: var(--text); }
+    .input-clean {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      padding: 2px 0;
+    }
 
-        .logo-seal { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-        .logo-seal-img {
-            width: 82px; height: 82px;
-            object-fit: contain;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 4px; background: white;
-        }
+    input[type="date"].input-clean { font-size: 13px; }
 
-        .bottom-bar {
-            background: linear-gradient(90deg, var(--navy) 70%, var(--gold) 100%);
-            height: 5px;
-        }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
 
-        /* 컨트롤 */
-        .controls { 
-            padding: 20px 0; 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-            flex-wrap: wrap;
-            width: 100%;
-        }
-        .btn {
-            font-family: 'Noto Sans KR', sans-serif;
-            font-size: 0.85em; padding: 10px 22px;
-            border: none; cursor: pointer; border-radius: 3px;
-            font-weight: 500; letter-spacing: 1px; transition: all 0.2s;
-        }
-        .btn-add { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
-        .btn-add:hover { background: var(--navy); color: #fff; }
-        
-        .btn-switch { background: var(--border); color: var(--navy); border: 1.5px solid var(--border); margin-left: 10px; }
-        .btn-switch:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .info-card {
+      border: 1px solid var(--line);
+    }
 
-        .btn-print { background: var(--navy); color: #fff; padding: 12px 24px; font-size: 0.92em; }
-        .btn-print:hover { background: var(--gold); color: var(--navy); }
-        .btn-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.1em; padding: 0 4px; transition: color 0.2s; line-height: 1; }
-        .btn-del:hover { color: var(--accent); }
+    .info-title {
+      background: var(--navy);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 11px 12px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      line-height: 1.4;
+    }
 
-        @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background: white; padding: 0; }
-            .page-wrapper { max-width: 100%; }
-            .doc-scroll-wrapper { overflow: visible; }
-            .controls, .vat-toggle-row { display: none !important; }
-            .document { 
-                box-shadow: none; 
-                border: none; 
-                width: 100% !important;
-                min-width: auto !important; 
-            }
-            thead tr { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .top-bar, .bottom-bar, .contact-bar, .total-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            input { border: none !important; outline: none; background: transparent; }
-            .btn-del { display: none; }
-        }
-    </style>
+    .info-title span {
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    .info-table th {
+      width: 82px;
+      background: var(--soft);
+      color: var(--bluegray);
+      font-weight: 700;
+      text-align: center;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 6px;
+    }
+
+    .info-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 7px 9px;
+      min-height: 34px;
+      vertical-align: middle;
+    }
+
+    .info-table tr:last-child th,
+    .info-table tr:last-child td { border-bottom: none; }
+
+    .section-title {
+      margin: 22px 0 9px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 5px;
+      height: 18px;
+      background: var(--navy);
+      display: inline-block;
+    }
+
+    .vat-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      background: var(--soft2);
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+    }
+
+    .vat-toggle {
+      display: inline-flex;
+      border: 1px solid var(--navy);
+      overflow: hidden;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .vat-btn {
+      border: none;
+      background: #fff;
+      color: var(--navy);
+      padding: 7px 14px;
+      font-size: 12px;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .vat-btn + .vat-btn { border-left: 1px solid var(--navy); }
+    .vat-btn.active { background: var(--navy); color: #fff; }
+    .vat-note { font-size: 12px; color: var(--muted); }
+
+    .item-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .item-table thead th {
+      background: var(--soft);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .item-table tbody td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      vertical-align: middle;
+      min-height: 38px;
+    }
+
+    .item-table tbody td:nth-child(2),
+    .item-table tbody td:nth-child(3),
+    .item-table tbody td:nth-child(4) { text-align: center; }
+
+    .item-table input[type="text"],
+    .item-table input[type="number"] {
+      width: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      padding: 3px 0;
+    }
+
+    .item-table input[type="number"] { text-align: center; }
+
+    .amount-cell {
+      text-align: right !important;
+      font-weight: 700;
+      color: var(--ink);
+      padding-right: 12px !important;
+    }
+
+    .btn-del {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 15px;
+      padding: 0 3px;
+    }
+
+    .btn-del:hover { color: var(--danger); }
+
+    .total-wrap {
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 18px;
+      margin-top: 16px;
+      align-items: stretch;
+    }
+
+    .memo-box {
+      border: 1px solid var(--line);
+      min-height: 132px;
+    }
+
+    .memo-head {
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 9px 10px;
+      color: var(--ink);
+    }
+
+    .memo-box textarea {
+      width: 100%;
+      height: 95px;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+
+    .total-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      font-size: 13px;
+      height: 132px;
+    }
+
+    .total-table th {
+      width: 120px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      color: var(--bluegray);
+      text-align: center;
+      font-weight: 800;
+      padding: 8px;
+    }
+
+    .total-table td {
+      border: 1px solid var(--line);
+      text-align: right;
+      padding: 8px 12px;
+      font-weight: 700;
+    }
+
+    .total-table .grand th {
+      background: var(--navy);
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .total-table .grand td {
+      background: #fff;
+      color: var(--navy);
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+    }
+
+    .terms {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--bluegray);
+    }
+
+    .terms-title {
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .terms ul {
+      list-style: none;
+      padding: 10px 12px;
+      line-height: 1.8;
+    }
+
+    .terms li::before {
+      content: '· ';
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .sign-area {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--line);
+      min-height: 112px;
+    }
+
+    .sign-box + .sign-box { border-left: 1px solid var(--line); }
+
+    .sign-head {
+      background: var(--soft);
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+      font-size: 12.5px;
+      font-weight: 800;
+      padding: 8px;
+    }
+
+    .sign-content {
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .seal-img {
+      width: 58px;
+      height: 58px;
+      object-fit: contain;
+      opacity: 0.9;
+    }
+
+    .footer {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .footer strong { color: var(--ink); }
+
+    .controls {
+      padding: 16px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid var(--navy);
+      background: #fff;
+      color: var(--navy);
+      border-radius: 7px;
+      padding: 10px 16px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(15,23,42,0.06);
+    }
+
+    .btn:hover { background: var(--soft); }
+    .btn-primary { background: var(--navy); color: #fff; }
+    .btn-primary:hover { background: #0f172a; }
+    .btn-muted { border-color: #cbd5e1; color: var(--bluegray); }
+
+    @media print {
+      @page { size: A4 portrait; margin: 8mm; }
+      body { background: white; padding: 0; }
+      .page-wrapper { max-width: 100%; }
+      .doc-scroll-wrapper { overflow: visible; padding: 0; }
+      .document {
+        width: 100% !important;
+        min-width: auto !important;
+        min-height: auto;
+        border: none;
+        box-shadow: none;
+        padding: 28px 26px 22px;
+      }
+      .controls, .vat-toggle-row { display: none !important; }
+      .document::before, .info-title, .total-table .grand th {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      input, textarea { border: none !important; outline: none !important; }
+      .btn-del { display: none !important; }
+    }
+  
+    /* 입력값/JPG 저장 시 글자 하단 잘림 및 줄바꿈 보정 */
+    .input-clean,
+    .item-table input[type="text"],
+    .item-table input[type="number"],
+    .memo-box textarea {
+      line-height: 1.65 !important;
+      min-height: 30px;
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      overflow: visible;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .summary-line .value {
+      align-items: stretch !important;
+      min-height: 44px !important;
+      line-height: 1.65 !important;
+      overflow: visible;
+    }
+
+    .summary-line .value .input-clean {
+      display: block;
+      height: auto;
+      min-height: 32px;
+    }
+
+    .memo-box {
+      min-height: 150px !important;
+    }
+
+    .memo-box textarea {
+      height: 112px !important;
+      white-space: pre-wrap !important;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .capture-text {
+      width: 100%;
+      min-height: 30px;
+      padding: 4px 0;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    .item-table .capture-text {
+      padding: 3px 0;
+    }
+
+    .memo-box .capture-text {
+      height: auto;
+      min-height: 112px;
+      padding: 10px;
+      font-size: 12.5px;
+      line-height: 1.8;
+    }
+
+    .amount-cell {
+      line-height: 1.6 !important;
+      padding-top: 10px !important;
+      padding-bottom: 10px !important;
+    }
+
+  </style>
 </head>
 <body>
 <div class="page-wrapper">
-    <div class="doc-scroll-wrapper">
-        <div class="document">
-            <div class="top-bar"></div>
-
-            <div class="header">
-                <div class="header-inner">
-                    <div class="brand-block">
-                        <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" class="brand-logo" crossorigin="anonymous">
-                        <div>
-                            <div class="brand-name">홈케어의 제왕</div>
-                            <div class="brand-sub">Home Care Professional Service</div>
-                        </div>
-                    </div>
-                    <div class="doc-title-block">
-                        <div class="doc-title" id="docTitleText">작업내역서</div>
-                        <div class="doc-title-underline"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="gold-divider"></div>
-
-            <div class="parties-section">
-                <div class="party-box">
-                    <div class="party-label">공급자</div>
-                    <div class="party-info">
-                        <div class="info-row"><span class="info-key">등록번호</span><span class="info-val">245-58-01020</span></div>
-                        <div class="info-row"><span class="info-key">상호</span><span class="info-val">홈케어의 제왕</span></div>
-                        <div class="info-row">
-                            <span class="info-key">대표자</span>
-                            <span class="info-val">박시언</span>
-                        </div>
-                        <div class="info-row"><span class="info-key">주소</span><span class="info-val" style="white-space: nowrap; letter-spacing: -0.5px;">경기도 남양주시 별내중앙로 34, 5층 502-A40</span></div>
-                        <div class="info-row"><span class="info-key">업태</span><span class="info-val">건설업</span></div>
-                        <div class="info-row"><span class="info-key">종목</span><span class="info-val">배관 및 냉·난방 공사업</span></div>
-                        <div class="info-row"><span class="info-key"></span><span class="info-val">미장, 타일 및 방수 공사업</span></div>
-                    </div>
-                </div>
-
-                <div class="party-divider"></div>
-
-                <div class="party-box">
-                    <div class="party-label">고객 (공급받는 자)</div>
-                    <div class="customer-field">
-                        <label>성&nbsp;&nbsp;&nbsp;&nbsp;함</label>
-                        <input type="text" id="customerName">
-                    </div>
-                    <div class="customer-field">
-                        <label>주소 / 현장명</label>
-                        <input type="text" id="customerAddress">
-                    </div>
-                    <div class="customer-field">
-                        <label>작업 일자</label>
-                        <input type="date" id="workDate">
-                    </div>
-                </div>
-            </div>
-
-            <div class="contact-bar">
-                <div class="contact-item">
-                    <span class="ci-label">TEL</span>010-3426-1914
-                </div>
-                <div class="contact-sep"></div>
-                <div class="contact-item">
-                    <span class="ci-label">계좌</span>카카오뱅크&nbsp;3333-37-0795904
-                </div>
-                <div class="contact-sep"></div>
-                <div class="contact-item">
-                    <span class="ci-label">예금주</span>홈케어의 제왕 (박시언)
-                </div>
-            </div>
-
-            <div class="table-section">
-                <div class="section-label">작업 내역</div>
-
-                <div class="vat-toggle-row">
-                    <div class="vat-toggle">
-                        <button class="vat-btn active" id="vatIncBtn" onclick="setVat('inc')">부가세 포함</button>
-                        <button class="vat-btn" id="vatExcBtn" onclick="setVat('exc')">부가세 별도</button>
-                    </div>
-                    <span class="vat-note" id="vatNote">입력 금액에 VAT 10% 포함된 가격</span>
-                </div>
-
-                <table id="itemTable">
-                    <thead>
-                        <tr>
-                            <th>품목 및 작업 내용</th>
-                            <th style="width:11%;">수량</th>
-                            <th style="width:18%;">단가 (원)</th>
-                            <th style="width:19%;">금액 (원)</th>
-                            <th style="width:36px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><input type="text"></td>
-                            <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
-                            <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
-                            <td class="amount-cell">0</td>
-                            <td><button class="btn-del" onclick="delRow(this)">✕</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="total-section">
-                <div class="total-rows">
-                    <div class="total-row" id="rowSupply" style="display:none;">
-                        <span class="t-label">공급가액</span>
-                        <span class="t-val" id="supplyAmt">0</span>
-                        <span class="t-unit">원</span>
-                    </div>
-                    <div class="total-row" id="rowVat" style="display:none;">
-                        <span class="t-label">부가세 (10%)</span>
-                        <span class="t-val" id="vatAmt">0</span>
-                        <span class="t-unit">원</span>
-                    </div>
-                    <div class="total-row grand">
-                        <div class="total-box">
-                            <span class="t-label">합&nbsp;&nbsp;계</span>
-                            <span class="t-val" id="totalAmount">0</span>
-                            <span class="t-unit">원</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="footer">
-                <div class="footer-note" style="white-space: nowrap; letter-spacing: -0.5px;">
-                    <span id="footerNoteText">위와 같이 작업 내역을 확인합니다.</span><br>
-                    <strong>홈케어의 제왕</strong>&nbsp;&nbsp;|&nbsp;&nbsp;경기도 남양주시 별내중앙로 34, 5층 502-A40
-                </div>
-                <div class="logo-seal">
-                    <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕" class="logo-seal-img" crossorigin="anonymous">
-                </div>
-            </div>
-
-            <div class="bottom-bar"></div>
+  <div class="doc-scroll-wrapper">
+    <main class="document">
+      <header class="doc-head">
+        <div class="brand">
+          <img src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" class="brand-logo" crossorigin="anonymous">
+          <div>
+            <div class="brand-name">홈케어의 제왕</div>
+            <div class="brand-sub">HOMECARE PROFESSIONAL SERVICE</div>
+          </div>
         </div>
-    </div>
 
-    <div class="controls">
-        <button class="btn btn-add" onclick="addRow()">+ 항목 추가</button>
-        <button class="btn btn-switch" id="toggleDocBtn" onclick="toggleDocType()">🔄 견적서로 전환</button>
-
-        <div style="margin-left: auto; display: flex; gap: 10px;">
-            <button class="btn btn-print" onclick="window.print()" style="margin: 0;">🖨 PDF / 인쇄</button>
-            <button class="btn btn-print" onclick="saveAsJpg()" style="margin: 0; background: var(--gold); color: var(--navy);">🖼 JPG 저장</button>
+        <div class="title-area">
+          <div class="doc-title" id="docTitleText">작업내역서</div>
+          <div class="doc-title-en" id="docTitleEn">WORK STATEMENT</div>
         </div>
-    </div>
-</div>
 
-<script>
-    document.getElementById('workDate').valueAsDate = new Date();
+        <div class="doc-meta">
+          <div><strong>문서번호</strong> HC-<span id="docNo"></span></div>
+          <div><strong>작성일자</strong> <span id="issueDateText"></span></div>
+        </div>
+      </header>
 
-    let vatMode = 'inc';
-    let docType = 'work';
+      <section class="notice-box" id="introText">
+        아래와 같이 현장 작업 내역 및 금액을 확인합니다. 금액 및 작업 내용은 고객 확인 후 보관용 문서로 사용할 수 있습니다.
+      </section>
 
-    function toggleDocType() {
-        const titleEl = document.getElementById('docTitleText');
-        const footerEl = document.getElementById('footerNoteText');
-        const btnEl = document.getElementById('toggleDocBtn');
+      <section class="summary-line">
+        <div class="label">고객명</div>
+        <div class="value"><input type="text" id="customerName" class="input-clean" placeholder="예: 홍길동"></div>
+        <div class="label">작업일자</div>
+        <div class="value"><input type="date" id="workDate" class="input-clean"></div>
+      </section>
+      <section class="summary-line" style="border-bottom:1px solid var(--line);">
+        <div class="label">현장주소</div>
+        <div class="value" style="grid-column: span 3;"><input type="text" id="customerAddress" class="input-clean" placeholder="주소 또는 현장명"></div>
+      </section>
 
-        if (docType === 'work') {
-            docType = 'estimate';
-            titleEl.textContent = '견적서';
-            footerEl.textContent = '위와 같이 견적합니다.';
-            btnEl.textContent = '🔄 작업내역서로 전환';
-            document.title = '홈케어의 제왕 견적서'; 
-        } else {
-            docType = 'work';
-            titleEl.textContent = '작업내역서';
-            footerEl.textContent = '위와 같이 작업 내역을 확인합니다.';
-            btnEl.textContent = '🔄 견적서로 전환';
-            document.title = '홈케어의 제왕 작업 내역서';
-        }
-    }
+      <section class="info-grid">
+        <div class="info-card">
+          <div class="info-title">공급자 <span>SUPPLIER</span></div>
+          <table class="info-table">
+            <tr><th>등록번호</th><td>245 - 58 - 01020</td></tr>
+            <tr><th>상호</th><td>홈케어의 제왕</td></tr>
+            <tr><th>대표자</th><td>박시언</td></tr>
+            <tr><th>주소</th><td>경기도 남양주시 별내중앙로 34, 5층 502-A40</td></tr>
+            <tr><th>업태</th><td>건설업</td></tr>
+            <tr><th>종목</th><td>배관 및 냉·난방 공사업 / 미장, 타일 및 방수 공사업</td></tr>
+          </table>
+        </div>
 
-    function setVat(mode) {
-        vatMode = mode;
-        document.getElementById('vatIncBtn').classList.toggle('active', mode === 'inc');
-        document.getElementById('vatExcBtn').classList.toggle('active', mode === 'exc');
-        document.getElementById('vatNote').textContent =
-            mode === 'inc' ? '입력 금액에 VAT 10% 포함된 가격' : '입력 금액에 VAT 10% 별도 추가';
-        
-        const displayStyle = mode === 'exc' ? 'flex' : 'none';
-        document.getElementById('rowSupply').style.display = displayStyle;
-        document.getElementById('rowVat').style.display = displayStyle;
-        
-        calculate();
-    }
+      </section>
 
-    function addRow() {
-        const tbody = document.querySelector('#itemTable tbody');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text"></td>
+      <div class="section-title">작업 및 견적 내역</div>
+
+      <div class="vat-toggle-row">
+        <div class="vat-toggle">
+          <button class="vat-btn active" id="vatIncBtn" onclick="setVat('inc')">부가세 포함</button>
+          <button class="vat-btn" id="vatExcBtn" onclick="setVat('exc')">부가세 별도</button>
+        </div>
+        <span class="vat-note" id="vatNote">입력 금액에 VAT 10%가 포함된 가격으로 계산됩니다.</span>
+      </div>
+
+      <table class="item-table" id="itemTable">
+        <thead>
+          <tr>
+            <th>품목 및 작업 내용</th>
+            <th style="width: 11%;">수량</th>
+            <th style="width: 18%;">단가</th>
+            <th style="width: 19%;">금액</th>
+            <th style="width: 34px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="text" placeholder="예: 싱크대 배관 막힘 청소"></td>
             <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
             <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
             <td class="amount-cell">0</td>
-            <td><button class="btn-del" onclick="delRow(this)">✕</button></td>
-        `;
-        tbody.appendChild(tr);
+            <td><button class="btn-del" onclick="delRow(this)">×</button></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="total-wrap">
+        <div class="memo-box">
+          <div class="memo-head">비고 / 특이사항</div>
+          <textarea id="memoText" placeholder="예: 현장 상황에 따라 추가 작업 발생 시 사전 안내 후 진행합니다."></textarea>
+        </div>
+
+        <table class="total-table">
+          <tr id="rowSupply" style="display:none;"><th>공급가액</th><td><span id="supplyAmt">0</span> 원</td></tr>
+          <tr id="rowVat" style="display:none;"><th>부가세 10%</th><td><span id="vatAmt">0</span> 원</td></tr>
+          <tr class="grand"><th>총 합계</th><td><span id="totalAmount">0</span> 원</td></tr>
+        </table>
+      </section>
+
+      <section class="terms">
+        <div class="terms-title">안내사항</div>
+        <ul id="termsList">
+          <li>현금영수증 또는 세금계산서 발급 시 부가세 처리 방식이 달라질 수 있습니다.</li>
+          <li>추가 작업은 안내 및 동의 후 진행합니다.</li>
+        </ul>
+      </section>
+
+      <footer class="footer">
+        <div>
+          <strong>홈케어의 제왕</strong> · 사업자등록번호 245 - 58 - 01020<br>
+          경기도 남양주시 별내중앙로 34, 5층 502-A40
+        </div>
+        <div style="text-align:right;">
+          문의 010-3426-1914<br>
+          입금계좌 카카오뱅크 3333-37-0795904 · 예금주 홈케어의 제왕 (박시언)
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <div class="controls">
+    <button class="btn" onclick="addRow()">+ 항목 추가</button>
+    <button class="btn btn-muted" id="toggleDocBtn" onclick="toggleDocType()">견적서로 전환</button>
+    <div style="margin-left:auto; display:flex; gap:9px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="window.print()">PDF / 인쇄</button>
+      <button class="btn btn-primary" onclick="saveAsJpg()">JPG 저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const today = new Date();
+  document.getElementById('workDate').valueAsDate = today;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  const y = today.getFullYear();
+  const m = pad(today.getMonth() + 1);
+  const d = pad(today.getDate());
+  document.getElementById('issueDateText').textContent = `${y}. ${m}. ${d}`;
+  document.getElementById('docNo').textContent = `${String(y).slice(2)}${m}${d}`;
+
+  let vatMode = 'inc';
+  let docType = 'work';
+
+  function toggleDocType() {
+    const titleEl = document.getElementById('docTitleText');
+    const titleEn = document.getElementById('docTitleEn');
+    const intro = document.getElementById('introText');
+    const btnEl = document.getElementById('toggleDocBtn');
+    const terms = document.getElementById('termsList');
+
+    if (docType === 'work') {
+      docType = 'estimate';
+      titleEl.textContent = '견적서';
+      titleEn.textContent = 'ESTIMATE';
+      intro.textContent = '아래와 같이 현장 작업 예정 내역 및 견적 금액을 안내드립니다. 견적 내용은 현장 상황에 따라 변동될 수 있습니다.';
+      btnEl.textContent = '작업내역서로 전환';
+      terms.innerHTML = `
+        <li>견적 금액은 현장 상황에 따라 변동될 수 있습니다.</li>
+        <li>현금영수증 또는 세금계산서 발급 시 부가세 처리 방식이 달라질 수 있습니다.</li>
+      `;
+      document.title = '홈케어의 제왕 견적서';
+    } else {
+      docType = 'work';
+      titleEl.textContent = '작업내역서';
+      titleEn.textContent = 'WORK STATEMENT';
+      intro.textContent = '아래와 같이 현장 작업 내역 및 금액을 확인합니다. 금액 및 작업 내용은 고객 확인 후 보관용 문서로 사용할 수 있습니다.';
+      btnEl.textContent = '견적서로 전환';
+      terms.innerHTML = `
+        <li>현금영수증 또는 세금계산서 발급 시 부가세 처리 방식이 달라질 수 있습니다.</li>
+        <li>추가 작업은 안내 및 동의 후 진행합니다.</li>
+      `;
+      document.title = '홈케어의 제왕 작업내역서';
+    }
+  }
+
+  function setVat(mode) {
+    vatMode = mode;
+    document.getElementById('vatIncBtn').classList.toggle('active', mode === 'inc');
+    document.getElementById('vatExcBtn').classList.toggle('active', mode === 'exc');
+    document.getElementById('vatNote').textContent =
+      mode === 'inc' ? '입력 금액에 VAT 10%가 포함된 가격으로 계산됩니다.' : '입력 금액에 VAT 10%를 별도로 추가해 계산됩니다.';
+
+    const displayStyle = mode === 'exc' ? 'table-row' : 'none';
+    document.getElementById('rowSupply').style.display = displayStyle;
+    document.getElementById('rowVat').style.display = displayStyle;
+
+    calculate();
+  }
+
+  function addRow() {
+    const tbody = document.querySelector('#itemTable tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text"></td>
+      <td><input type="number" class="qty" value="1" min="1" oninput="calculate()"></td>
+      <td><input type="number" class="price" value="0" min="0" step="1000" oninput="calculate()"></td>
+      <td class="amount-cell">0</td>
+      <td><button class="btn-del" onclick="delRow(this)">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function delRow(btn) {
+    const rows = document.querySelectorAll('#itemTable tbody tr');
+    if (rows.length <= 1) return;
+    btn.closest('tr').remove();
+    calculate();
+  }
+
+  function calculate() {
+    let subtotal = 0;
+    document.querySelectorAll('#itemTable tbody tr').forEach(row => {
+      const qty = parseInt(row.querySelector('.qty').value) || 0;
+      const price = parseInt(row.querySelector('.price').value) || 0;
+      const amount = qty * price;
+      row.querySelector('.amount-cell').textContent = amount.toLocaleString();
+      subtotal += amount;
+    });
+
+    let supply, vat, total;
+    if (vatMode === 'inc') {
+      supply = Math.round(subtotal / 1.1);
+      vat = subtotal - supply;
+      total = subtotal;
+    } else {
+      supply = subtotal;
+      vat = Math.round(subtotal * 0.1);
+      total = subtotal + vat;
     }
 
-    function delRow(btn) {
-        const rows = document.querySelectorAll('#itemTable tbody tr');
-        if (rows.length <= 1) return;
-        btn.closest('tr').remove();
-        calculate();
+    document.getElementById('supplyAmt').textContent = supply.toLocaleString();
+    document.getElementById('vatAmt').textContent = vat.toLocaleString();
+    document.getElementById('totalAmount').textContent = total.toLocaleString();
+  }
+
+
+  function saveAsJpg() {
+    const doc = document.querySelector('.document');
+    const scrollWrapper = document.querySelector('.doc-scroll-wrapper');
+    const vatToggle = document.querySelector('.vat-toggle-row');
+    const delBtns = document.querySelectorAll('.btn-del');
+
+    const restoreList = [];
+
+    function formatDateValue(value) {
+      if (!value || !value.includes('-')) return value || '';
+      const [yy, mm, dd] = value.split('-');
+      return `${yy}. ${mm}. ${dd}`;
     }
 
-    function calculate() {
-        let subtotal = 0;
-        document.querySelectorAll('#itemTable tbody tr').forEach(row => {
-            const qty = parseInt(row.querySelector('.qty').value) || 0;
-            const price = parseInt(row.querySelector('.price').value) || 0;
-            const amount = qty * price;
-            row.querySelector('.amount-cell').textContent = amount.toLocaleString();
-            subtotal += amount;
-        });
-
-        let supply, vat, total;
-        if (vatMode === 'inc') {
-            supply = Math.round(subtotal / 1.1);
-            vat = subtotal - supply;
-            total = subtotal;
-        } else {
-            supply = subtotal;
-            vat = Math.round(subtotal * 0.1);
-            total = subtotal + vat;
-        }
-
-        document.getElementById('supplyAmt').textContent = supply.toLocaleString();
-        document.getElementById('vatAmt').textContent = vat.toLocaleString();
-        document.getElementById('totalAmount').textContent = total.toLocaleString();
+    function makeCaptureDiv(el, text) {
+      const div = document.createElement('div');
+      div.className = 'capture-text';
+      div.textContent = text || el.getAttribute('placeholder') || '';
+      div.style.fontSize = window.getComputedStyle(el).fontSize;
+      div.style.fontWeight = window.getComputedStyle(el).fontWeight;
+      div.style.textAlign = window.getComputedStyle(el).textAlign;
+      div.style.color = text ? 'var(--ink)' : '#9ca3af';
+      return div;
     }
 
-    function saveAsJpg() {
-        const doc = document.querySelector('.document');
-        const scrollWrapper = document.querySelector('.doc-scroll-wrapper');
-        const vatToggle = document.querySelector('.vat-toggle-row');
-        const delBtns = document.querySelectorAll('.btn-del');
-        const dateInput = document.getElementById('workDate');
+    // input 값을 실제 텍스트 div로 바꿔서 html2canvas에서 글자 잘림/줄바꿈 문제를 줄임
+    doc.querySelectorAll('input').forEach(input => {
+      const value = input.type === 'date' ? formatDateValue(input.value) : input.value;
+      const div = makeCaptureDiv(input, value);
+      input.style.display = 'none';
+      input.parentNode.insertBefore(div, input.nextSibling);
+      restoreList.push(() => {
+        div.remove();
+        input.style.display = '';
+      });
+    });
 
-        vatToggle.style.display = 'none';
-        delBtns.forEach(btn => btn.style.display = 'none');
+    // textarea는 줄바꿈을 보존하는 div로 캡처
+    doc.querySelectorAll('textarea').forEach(textarea => {
+      const div = makeCaptureDiv(textarea, textarea.value);
+      div.style.whiteSpace = 'pre-wrap';
+      div.style.lineHeight = '1.8';
+      textarea.style.display = 'none';
+      textarea.parentNode.insertBefore(div, textarea.nextSibling);
+      restoreList.push(() => {
+        div.remove();
+        textarea.style.display = '';
+      });
+    });
 
-        const originalOverflow = scrollWrapper.style.overflowX;
-        scrollWrapper.style.overflowX = 'visible';
+    if (vatToggle) vatToggle.style.display = 'none';
+    delBtns.forEach(btn => btn.style.display = 'none');
 
-        const originalDateValue = dateInput.value;
-        if (originalDateValue) {
-            const [y, m, d] = originalDateValue.split('-');
-            dateInput.type = 'text';
-            dateInput.value = `${y}. ${m}. ${d}`;
-        }
+    const originalOverflow = scrollWrapper.style.overflowX;
+    scrollWrapper.style.overflowX = 'visible';
 
-        html2canvas(doc, { 
-            scale: 2, 
-            useCORS: true,
-            backgroundColor: '#faf8f3', 
-            windowWidth: doc.scrollWidth, 
-            width: doc.offsetWidth
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = docType === 'work' ? '작업내역서.jpg' : '견적서.jpg'; 
-            link.href = canvas.toDataURL('image/jpeg', 1.0);
-            link.click();
+    html2canvas(doc, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      windowWidth: doc.scrollWidth,
+      width: doc.offsetWidth,
+      height: doc.scrollHeight
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = docType === 'work' ? '작업내역서.jpg' : '견적서.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 1.0);
+      link.click();
+    }).finally(() => {
+      restoreList.forEach(fn => fn());
+      if (vatToggle) vatToggle.style.display = 'flex';
+      delBtns.forEach(btn => btn.style.display = 'inline-block');
+      scrollWrapper.style.overflowX = originalOverflow;
+    });
+  }
 
-            vatToggle.style.display = 'flex';
-            delBtns.forEach(btn => btn.style.display = 'inline-block');
-            scrollWrapper.style.overflowX = originalOverflow; 
 
-            if (originalDateValue) {
-                dateInput.type = 'date';
-                dateInput.value = originalDateValue;
-            }
-        });
-    }
+  calculate();
 </script>
 </body>
 </html>
