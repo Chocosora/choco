@@ -141,6 +141,10 @@
         <input type="text" id="samsung-card" placeholder="숫자만 입력">
       </div>
       <div class="field">
+        <label for="woori-card">우리카드 사용 금액:</label>
+        <input type="text" id="woori-card" placeholder="숫자만 입력">
+      </div>
+      <div class="field">
         <label>적금 &amp; 보험 (고정):</label>
         <span id="woori-fixed">200,950</span> 원
       </div>
@@ -190,6 +194,7 @@
     const interest1Input = document.getElementById("interest1");
     const interest2Input = document.getElementById("interest2");
     const samsungCardInput = document.getElementById("samsung-card");
+    const wooriCardInput = document.getElementById("woori-card");
     const monthlySalaryInput = document.getElementById("monthly-salary");
 
     const shinhanTotalDisplay = document.getElementById("shinhan-total");
@@ -228,19 +233,20 @@
         }
       });
     }
-    [shinhanCardInput, transportationInput, interest1Input, interest2Input, samsungCardInput, monthlySalaryInput].forEach(addFormattingEvents);
+    [shinhanCardInput, transportationInput, interest1Input, interest2Input, samsungCardInput, wooriCardInput, monthlySalaryInput].forEach(addFormattingEvents);
 
-    // 총계 계산 (신한은행: 신한카드 + 교통비 + 적금 + 이자1 + 이자2, 우리은행: 삼성카드 + 고정)
+    // 총계 계산 (신한은행: 신한카드 + 교통비 + 적금 + 이자1 + 이자2, 우리은행: 삼성카드 + 우리카드 + 고정)
     function calculateTotals() {
       const shinhanCard = parseInput(shinhanCardInput.value);
       const transportation = parseInput(transportationInput.value);
       const interest1 = parseInput(interest1Input.value);
       const interest2 = parseInput(interest2Input.value);
       const samsungCard = parseInput(samsungCardInput.value);
+      const wooriCard = parseInput(wooriCardInput.value);
       const monthlySalary = parseInput(monthlySalaryInput.value);
 
       const shinhanTotal = shinhanCard + transportation + SAVINGS_FIXED + interest1 + interest2;
-      const wooriTotal = samsungCard + WOORI_FIXED;
+      const wooriTotal = samsungCard + wooriCard + WOORI_FIXED;
       const grandTotal = shinhanTotal + wooriTotal;
       const balance = monthlySalary - grandTotal;
 
@@ -261,6 +267,7 @@
         interest1: parseInput(interest1Input.value),
         interest2: parseInput(interest2Input.value),
         samsungCard: parseInput(samsungCardInput.value),
+        wooriCard: parseInput(wooriCardInput.value),
         monthlySalary: parseInput(monthlySalaryInput.value),
         timestamp: Date.now() // 정렬 및 최신 데이터 확인용 타임스탬프
       };
@@ -275,6 +282,7 @@
             interest1Input.value = "";
             interest2Input.value = "";
             samsungCardInput.value = "";
+            wooriCardInput.value = "";
             monthlySalaryInput.value = "";
             calculateTotals(); // 총계도 0으로 업데이트
             return;
@@ -288,6 +296,7 @@
           interest1Input.value = data.interest1 ? formatNumber(data.interest1) : "";
           interest2Input.value = data.interest2 ? formatNumber(data.interest2) : "";
           samsungCardInput.value = data.samsungCard ? formatNumber(data.samsungCard) : "";
+          wooriCardInput.value = data.wooriCard ? formatNumber(data.wooriCard) : "";
           monthlySalaryInput.value = data.monthlySalary ? formatNumber(data.monthlySalary) : "";
         } else {
           // 해당 월 데이터가 없으면 입력 필드 초기화
@@ -386,9 +395,10 @@
           const interest1 = data.interest1 || 0;
           const interest2 = data.interest2 || 0;
           const samsungCard = data.samsungCard || 0;
+          const wooriCard = data.wooriCard || 0;
 
           const shinhanTotal = shinhanCard + transportation + SAVINGS_FIXED + interest1 + interest2;
-          const wooriTotal = samsungCard + WOORI_FIXED;
+          const wooriTotal = samsungCard + wooriCard + WOORI_FIXED;
 
           // 각 히스토리 항목 컨테이너 생성
           const itemDiv = document.createElement("div");
