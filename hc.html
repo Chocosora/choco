@@ -1059,6 +1059,46 @@
                 });
             };
 
+            const handleCopyText = (text, successMessage) => {
+                const copyText = (text || '').trim();
+                if (!copyText) {
+                    alert('복사할 내용이 없습니다.');
+                    return;
+                }
+
+                const fallbackCopy = () => {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = copyText;
+                    textarea.style.position = 'fixed';
+                    textarea.style.left = '-9999px';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        alert(successMessage);
+                    } catch (err) {
+                        alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+                    }
+                    document.body.removeChild(textarea);
+                };
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(copyText).then(() => {
+                        alert(successMessage);
+                    }).catch(() => fallbackCopy());
+                } else {
+                    fallbackCopy();
+                }
+            };
+
+            const handleCopyJobInfo = (job) => {
+                const copyLines = [job.address || '', job.details || '', job.phoneNumber || '']
+                    .map(line => String(line).trim())
+                    .filter(line => line !== '');
+                handleCopyText(copyLines.join('\n'), '주소와 핸드폰번호가 복사되었습니다.');
+            };
+
             const renderInputForm = () => (
                 <section ref={inputSectionRef} className={`rounded-3xl p-6 shadow-xl border-2 relative overflow-hidden bg-slate-50 border-slate-300 mt-8`}>
                     <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-100'}`}></div>
@@ -1692,6 +1732,9 @@
                                                     )}
 
                                                     <div className="ml-auto flex gap-1">
+                                                        <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
+                                                            <Copy className="w-3.5 h-3.5" />
+                                                        </button>
                                                         <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
@@ -1891,6 +1934,9 @@
                                                         )}
 
                                                         <div className="ml-auto flex gap-1">
+                                                            <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
+                                                                <Copy className="w-3.5 h-3.5" />
+                                                            </button>
                                                             <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
                                                                 <Edit2 className="w-3.5 h-3.5" />
                                                             </button>
