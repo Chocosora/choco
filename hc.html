@@ -148,6 +148,9 @@
             
             const [editingId, setEditingId] = useState(null);
             const [smsModal, setSmsModal] = useState(null); 
+            const [extraContactModal, setExtraContactModal] = useState(null);
+            const [extraContactForm, setExtraContactForm] = useState({ relation: '', phone: '' });
+            const [editingExtraContactId, setEditingExtraContactId] = useState(null);
             const [timeModalOpen, setTimeModalOpen] = useState(false);
             const [offTimeModalField, setOffTimeModalField] = useState(null);
 
@@ -157,6 +160,17 @@
             const inputSectionRef = useRef(null);
 
             const timeOptions = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
+            const frequentTaskPresets = [
+                { description: '배관 스케일링', amount: '10' },
+                { description: '타공 및 배관 연장', amount: '5' },
+                { description: '씽크가드설치', amount: '3' },
+                { description: '씽크대 주름관 교체', amount: '3' },
+                { description: '화장실 기본', amount: '20' },
+                { description: '석회제거', amount: '10' },
+                { description: '양변기 이물질 제거', amount: '15' },
+                { description: '백시멘트 시공', amount: '5' },
+                { description: '세탁실 유가 점검', amount: '10' }
+            ];
             const addressInputRef = useRef(null);
             const detailsInputRef = useRef(null);
 
@@ -312,6 +326,19 @@
                 const newTasks = [...tasks];
                 newTasks[index][field] = value;
                 setTasks(newTasks);
+            };
+
+            const addPresetTask = (preset) => {
+                const emptyIndex = tasks.findIndex(t => !(t.description || '').trim() && !t.amount && !t.materialCost);
+                const presetTask = { description: preset.description, amount: preset.amount, materialCost: '' };
+
+                if (emptyIndex >= 0) {
+                    const newTasks = [...tasks];
+                    newTasks[emptyIndex] = presetTask;
+                    setTasks(newTasks);
+                } else {
+                    setTasks([...tasks, presetTask]);
+                }
             };
 
             const addTask = () => setTasks([...tasks, { description: '', amount: '', materialCost: '' }]);
@@ -523,6 +550,7 @@
                     dates: targetDates,
                     status: editingId ? (jobs[editingId].status || 'pending') : 'pending',
                     cancelReason: editingId ? (jobs[editingId].cancelReason || '') : '',
+                    additionalContacts: editingId ? (jobs[editingId].additionalContacts || []) : [],
                     createdAt: editingId ? jobs[editingId].createdAt : Date.now()
                 };
 
@@ -651,11 +679,62 @@
                 }
             };
 
+            const openSmsModal = (job, recipientPhone = null) => {
+                const defaultPhone = recipientPhone || job.phoneNumber || (job.additionalContacts && job.additionalContacts[0]?.phone) || '';
+                setSmsModal({ ...job, selectedSmsPhone: defaultPhone });
+            };
+
             const sendSMS = (phone, text) => {
+                if (!phone) {
+                    alert('문자를 보낼 연락처를 선택해주세요.');
+                    return;
+                }
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 const separator = isIOS ? '&' : '?';
                 window.location.href = `sms:${phone}${separator}body=${encodeURIComponent(text)}`;
                 setSmsModal(null);
+            };
+
+            const openExtraContactModal = (job, contact = null) => {
+                setExtraContactModal(job);
+                if (contact) {
+                    setEditingExtraContactId(contact.id);
+                    setExtraContactForm({ relation: contact.relation || '', phone: contact.phone || '' });
+                } else {
+                    setEditingExtraContactId(null);
+                    setExtraContactForm({ relation: '', phone: '' });
+                }
+            };
+
+            const closeExtraContactModal = () => {
+                setExtraContactModal(null);
+                setEditingExtraContactId(null);
+                setExtraContactForm({ relation: '', phone: '' });
+            };
+
+            const handleSaveExtraContact = async () => {
+                if (!extraContactModal) return;
+                const relation = extraContactForm.relation.trim();
+                const phone = extraContactForm.phone.trim();
+                if (!relation || !phone) {
+                    alert('누구 연락처인지와 전화번호를 모두 입력해주세요.');
+                    return;
+                }
+                const currentContacts = extraContactModal.additionalContacts || [];
+                const updatedContacts = editingExtraContactId
+                    ? currentContacts.map(contact => contact.id === editingExtraContactId ? { ...contact, relation, phone } : contact)
+                    : [...currentContacts, { id: Date.now(), relation, phone }];
+
+                await update(ref(database, `homecare_jobs/${extraContactModal.key}`), {
+                    additionalContacts: updatedContacts
+                });
+                closeExtraContactModal();
+            };
+
+            const handleDeleteExtraContact = async (job, contactId) => {
+                if (!confirm('추가 연락처를 삭제하시겠습니까?')) return;
+                const filtered = (job.additionalContacts || []).filter(c => c.id !== contactId);
+                await update(ref(database, `homecare_jobs/${job.key}`), { additionalContacts: filtered });
             };
 
             const handleSaveContact = (job) => {
@@ -1203,6 +1282,25 @@
                             </div>
                         </div>
                         
+                        <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-extrabold text-slate-500">자주 쓰는 작업</span>
+                                <span className="text-[10px] font-bold text-slate-400">누르면 자동 추가</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {frequentTaskPresets.map((preset, presetIndex) => (
+                                    <button
+                                        key={presetIndex}
+                                        type="button"
+                                        onClick={() => addPresetTask(preset)}
+                                        className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 active:bg-teal-50 active:border-teal-300 active:text-teal-700 hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700"
+                                    >
+                                        {preset.description} · {preset.amount}만
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="space-y-3">
                             {tasks.map((task, index) => (
                                 <div key={index} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-xl relative shadow-sm">
@@ -1760,9 +1858,12 @@
                                                     )}
                                                     
                                                     {job.phoneNumber && (
-                                                        <div className="flex items-center gap-2 mt-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                        <div className="flex items-center gap-2 mt-2 mb-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                                                             <Phone className="w-4 h-4 text-slate-400" />
-                                                            <span className="text-sm font-bold text-slate-700 flex-1">{job.phoneNumber}</span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-[10px] font-extrabold text-slate-400">기본 연락처</div>
+                                                                <div className="text-sm font-bold text-slate-700 truncate">{job.phoneNumber}</div>
+                                                            </div>
                                                             
                                                             <button onClick={() => handleSaveContact(job)} className="flex items-center justify-center p-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 shadow-sm active:scale-95" title="연락처 저장">
                                                                 <UserPlus className="w-4 h-4" />
@@ -1770,11 +1871,38 @@
                                                             <a href={`tel:${job.phoneNumber}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 shadow-sm active:scale-95">
                                                                 <Phone className="w-4 h-4" />
                                                             </a>
-                                                            <button onClick={() => setSmsModal(job)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
+                                                            <button onClick={() => openSmsModal(job, job.phoneNumber)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
                                                                 <MessageSquare className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                     )}
+
+                                                    {(job.additionalContacts || []).map(contact => (
+                                                        <div key={contact.id} className="flex items-center gap-2 mt-2 bg-blue-50/70 p-2.5 rounded-lg border border-blue-100">
+                                                            <UserPlus className="w-4 h-4 text-blue-500" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="text-[10px] font-extrabold text-blue-500">{contact.relation}</div>
+                                                                <div className="text-sm font-bold text-slate-700 truncate">{contact.phone}</div>
+                                                            </div>
+                                                            <button onClick={() => openExtraContactModal(job, contact)} className="flex items-center justify-center p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 shadow-sm active:scale-95" title="추가 연락처 수정">
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </button>
+                                                            <a href={`tel:${contact.phone}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 shadow-sm active:scale-95">
+                                                                <Phone className="w-4 h-4" />
+                                                            </a>
+                                                            <button onClick={() => openSmsModal(job, contact.phone)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
+                                                                <MessageSquare className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => handleDeleteExtraContact(job, contact.id)} className="flex items-center justify-center p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 shadow-sm active:scale-95">
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+
+                                                    <button onClick={() => openExtraContactModal(job)} className="mt-2 mb-3 w-full flex items-center justify-center gap-1.5 py-2 bg-white border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 active:scale-95">
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                        추가 연락처 저장
+                                                    </button>
 
                                                     <div className="flex bg-slate-100/80 p-1 rounded-xl mb-3 mt-1">
                                                         <button 
@@ -1962,9 +2090,12 @@
                                                         )}
 
                                                         {job.phoneNumber && (
-                                                            <div className="flex items-center gap-2 mt-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                                            <div className="flex items-center gap-2 mt-2 mb-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                                                                 <Phone className="w-4 h-4 text-slate-400" />
-                                                                <span className="text-sm font-bold text-slate-700 flex-1">{job.phoneNumber}</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-[10px] font-extrabold text-slate-400">기본 연락처</div>
+                                                                    <div className="text-sm font-bold text-slate-700 truncate">{job.phoneNumber}</div>
+                                                                </div>
                                                                 
                                                                 <button onClick={() => handleSaveContact(job)} className="flex items-center justify-center p-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 shadow-sm active:scale-95" title="연락처 저장">
                                                                     <UserPlus className="w-4 h-4" />
@@ -1972,11 +2103,35 @@
                                                                 <a href={`tel:${job.phoneNumber}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 shadow-sm active:scale-95">
                                                                     <Phone className="w-4 h-4" />
                                                                 </a>
-                                                                <button onClick={() => setSmsModal(job)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
+                                                                <button onClick={() => openSmsModal(job, job.phoneNumber)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
                                                                     <MessageSquare className="w-4 h-4" />
                                                                 </button>
                                                             </div>
                                                         )}
+
+                                                        {(job.additionalContacts || []).map(contact => (
+                                                            <div key={contact.id} className="flex items-center gap-2 mt-2 bg-blue-50/70 p-2.5 rounded-lg border border-blue-100">
+                                                                <UserPlus className="w-4 h-4 text-blue-500" />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="text-[10px] font-extrabold text-blue-500">{contact.relation}</div>
+                                                                    <div className="text-sm font-bold text-slate-700 truncate">{contact.phone}</div>
+                                                                </div>
+                                                                <a href={`tel:${contact.phone}`} className="flex items-center justify-center p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 shadow-sm active:scale-95">
+                                                                    <Phone className="w-4 h-4" />
+                                                                </a>
+                                                                <button onClick={() => openSmsModal(job, contact.phone)} className="flex items-center justify-center p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 shadow-sm active:scale-95">
+                                                                    <MessageSquare className="w-4 h-4" />
+                                                                </button>
+                                                                <button onClick={() => handleDeleteExtraContact(job, contact.id)} className="flex items-center justify-center p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 shadow-sm active:scale-95">
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+
+                                                        <button onClick={() => openExtraContactModal(job)} className="mt-2 mb-3 w-full flex items-center justify-center gap-1.5 py-2 bg-white border border-dashed border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 active:scale-95">
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            추가 연락처 저장
+                                                        </button>
 
                                                         {job.tasks && job.tasks.length > 0 && (
                                                             <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
@@ -2102,6 +2257,39 @@
                         </div>
                     )}
 
+                    {extraContactModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm">
+                            <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-extrabold text-slate-800">{editingExtraContactId ? '추가 연락처 수정' : '추가 연락처 저장'}</h3>
+                                    <button onClick={closeExtraContactModal} className="p-1 text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-500 mb-4 leading-relaxed">집주인, 세입자, 관리사무소처럼 자주 보내야 하는 번호를 작업카드에만 저장합니다.</p>
+                                <div className="space-y-3">
+                                    <input
+                                        type="text"
+                                        value={extraContactForm.relation}
+                                        onChange={(e) => setExtraContactForm(prev => ({ ...prev, relation: e.target.value }))}
+                                        placeholder="누구 번호인가요? 예: 집주인, 세입자, 관리사무소"
+                                        className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    />
+                                    <input
+                                        type="tel"
+                                        value={extraContactForm.phone}
+                                        onChange={(e) => setExtraContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                                        placeholder="전화번호 예: 010-1234-5678"
+                                        className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-800 border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    />
+                                    <button onClick={handleSaveExtraContact} className="w-full py-3 bg-blue-600 text-white rounded-xl font-extrabold text-sm shadow-md active:scale-95">
+                                        {editingExtraContactId ? '수정하기' : '저장하기'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {smsModal && !isEditingTemplates && (
                         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm">
                             <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl">
@@ -2116,13 +2304,37 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div className="space-y-3 h-[28rem] overflow-y-auto pr-1 pb-1">
+                                <div className="mb-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                    <div className="text-[11px] font-extrabold text-slate-500 mb-2">문자 받을 사람</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {smsModal.phoneNumber && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSmsModal(prev => ({ ...prev, selectedSmsPhone: smsModal.phoneNumber }))}
+                                                className={`px-3 py-2 rounded-lg text-xs font-bold border ${smsModal.selectedSmsPhone === smsModal.phoneNumber ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}`}
+                                            >
+                                                기본 · {smsModal.phoneNumber}
+                                            </button>
+                                        )}
+                                        {(smsModal.additionalContacts || []).map(contact => (
+                                            <button
+                                                key={contact.id}
+                                                type="button"
+                                                onClick={() => setSmsModal(prev => ({ ...prev, selectedSmsPhone: contact.phone }))}
+                                                className={`px-3 py-2 rounded-lg text-xs font-bold border ${smsModal.selectedSmsPhone === contact.phone ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}`}
+                                            >
+                                                {contact.relation} · {contact.phone}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="space-y-3 h-[23rem] overflow-y-auto pr-1 pb-1">
                                     {templates.map((template, idx) => {
                                         const parsedBody = parseSmsTemplate(template.body, smsModal);
                                         return (
                                             <button 
                                                 key={idx}
-                                                onClick={() => sendSMS(smsModal.phoneNumber, parsedBody)}
+                                                onClick={() => sendSMS(smsModal.selectedSmsPhone || smsModal.phoneNumber, parsedBody)}
                                                 className="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 group relative"
                                             >
                                                 <div className="font-bold text-slate-700 mb-2 group-hover:text-blue-700">{template.title}</div>
