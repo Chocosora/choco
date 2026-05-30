@@ -12,6 +12,10 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=faf0b7f3e2f5b11fa2f1bf1d492e3b2b&libraries=services"></script>
+
     <script type="importmap">
     {
         "imports": {
@@ -33,6 +37,19 @@
             -webkit-tap-highlight-color: transparent;
         }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .daily-route-map { height: 360px; width: 100%; border-radius: 1.25rem; overflow: hidden; }
+        .route-number-marker {
+            width: 30px; height: 30px; border-radius: 9999px;
+            background: #0f172a; color: white; border: 3px solid white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 13px; box-shadow: 0 8px 18px rgba(15,23,42,.28);
+        }
+        .route-home-marker {
+            min-width: 42px; height: 28px; border-radius: 9999px; padding: 0 9px;
+            background: #0d9488; color: white; border: 3px solid white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 12px; box-shadow: 0 8px 18px rgba(13,148,136,.28);
+        }
     </style>
 </head>
 <body>
@@ -96,6 +113,111 @@
         );
 
         const getDayOfWeekFromStr = (dateStr) => ['일', '월', '화', '수', '목', '금', '토'][new Date(dateStr).getDay()];
+
+
+        const DailyRouteMap = ({ points, loading, debugItems = [], failedItems = [] }) => {
+            const mapRef = useRef(null);
+            const mapInstanceRef = useRef(null);
+            const layerRef = useRef(null);
+
+            useEffect(() => {
+                if (!mapRef.current || !window.L) return;
+
+                if (!mapInstanceRef.current) {
+                    mapInstanceRef.current = window.L.map(mapRef.current, { zoomControl: true });
+                    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap'
+                    }).addTo(mapInstanceRef.current);
+                }
+
+                const map = mapInstanceRef.current;
+                if (layerRef.current) {
+                    layerRef.current.clearLayers();
+                    map.removeLayer(layerRef.current);
+                }
+
+                const group = window.L.layerGroup().addTo(map);
+                layerRef.current = group;
+
+                const validPoints = (points || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+                if (validPoints.length === 0) {
+                    map.setView([37.625, 127.153], 12);
+                    setTimeout(() => map.invalidateSize(), 100);
+                    return;
+                }
+
+                const latLngs = validPoints.map(p => [p.lat, p.lng]);
+
+                validPoints.forEach((point) => {
+                    const isHome = point.type === 'home';
+                    const icon = window.L.divIcon({
+                        html: `<div class="${isHome ? 'route-home-marker' : 'route-number-marker'}">${isHome ? '집' : point.order}</div>`,
+                        className: '',
+                        iconSize: isHome ? [42, 28] : [30, 30],
+                        iconAnchor: isHome ? [21, 28] : [15, 30],
+                        popupAnchor: [0, -28]
+                    });
+
+                    window.L.marker([point.lat, point.lng], { icon })
+                        .bindPopup(`<b>${isHome ? '우리집' : `${point.order}. ${point.visitTime || ''}`}</b><br/>${point.address || ''}${point.details ? '<br/>' + point.details : ''}`)
+                        .addTo(group);
+                });
+
+                if (latLngs.length >= 2) {
+                    window.L.polyline(latLngs, {
+                        color: '#0f172a',
+                        weight: 4,
+                        opacity: 0.75,
+                        dashArray: '8, 8'
+                    }).addTo(group);
+                }
+
+                map.fitBounds(window.L.latLngBounds(latLngs), { padding: [28, 28] });
+                setTimeout(() => map.invalidateSize(), 100);
+            }, [points]);
+
+            return (
+                <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                        <div>
+                            <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-teal-500" />
+                                오늘 현장 지도 / 이동 순서
+                            </h3>
+                            <p className="text-[11px] text-slate-500 mt-1">집은 고정 좌표로 즉시 표시되고, 현장은 저장된 좌표를 우선 사용합니다. 선은 대략 직선 경로입니다.</p>
+                        </div>
+                        {loading && <Loader2 className="w-4 h-4 animate-spin text-teal-500" />}
+                    </div>
+                    {window.L ? (
+                        <div ref={mapRef} className="daily-route-map bg-slate-100" />
+                    ) : (
+                        <div className="daily-route-map bg-slate-100 flex items-center justify-center text-xs text-slate-400">지도를 불러오는 중입니다.</div>
+                    )}
+                    {!loading && (!points || points.filter(p => p.type === 'job').length === 0) && (
+                        <div className="text-xs text-rose-500 text-center bg-rose-50 rounded-2xl p-3">저장된 현장은 있지만 좌표가 아직 없거나 변환에 실패했습니다. 아래 주소 확인 목록에서 실패 주소를 확인해주세요.</div>
+                    )}
+                    {debugItems.length > 0 && (
+                        <div className="bg-slate-50 rounded-2xl p-3 space-y-2">
+                            <div className="text-[11px] font-bold text-slate-500">지도 표시 확인용 주소 목록</div>
+                            {debugItems.map((item, idx) => (
+                                <div key={item.key || idx} className="text-[11px] leading-relaxed text-slate-600 border-b border-slate-200 last:border-b-0 pb-1 last:pb-0">
+                                    <span className="font-extrabold text-slate-800">{idx + 1}. {item.visitTime || '시간없음'}</span> · {item.address || '주소 없음'} {item.details || ''}
+                                    {item.ok ? <span className="ml-2 text-teal-600 font-bold">표시됨</span> : <span className="ml-2 text-rose-500 font-bold">좌표 실패</span>}
+                                    {item.ok && item.matchedQuery && <div className="text-[10px] text-slate-400 mt-0.5">검색어: {item.matchedQuery} · 방식: {item.source}</div>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {failedItems.length > 0 && (
+                        <div className="text-[11px] text-rose-500 bg-rose-50 rounded-2xl p-3 leading-relaxed">
+                            좌표 변환 실패: {failedItems.map(item => `${item.visitTime || ''} ${item.address || ''} ${item.details || ''}`.trim()).join(' / ')}
+                            <br />주소가 계속 실패하면 카카오맵/네이버지도에서 해당 주소를 검색한 뒤, 정확한 도로명 주소만 주소칸에 저장해주세요. 동·호수는 상세정보칸에 두는 것이 좋습니다.
+                        </div>
+                    )}
+                </section>
+            );
+        };
 
         const formatAmountStr = (amt) => {
             const num = Number(amt) || 0;
@@ -271,6 +393,300 @@
                     return a.itemType === 'off' ? -1 : 1;
                 });
             }, [activeDateJobs, activeDateOffDays]);
+
+
+            const HOME_ADDRESS = '경기도 남양주시 다산중앙로82번길 105';
+            const HOME_COORD = { lat: 37.619936, lng: 127.1664 };
+            const [dailyRoutePoints, setDailyRoutePoints] = useState([]);
+            const [isRouteLoading, setIsRouteLoading] = useState(false);
+            const [routeDebugItems, setRouteDebugItems] = useState([]);
+            const [routeFailedItems, setRouteFailedItems] = useState([]);
+            const routeGeoCacheRef = useRef({});
+
+            const normalizeRouteAddress = (text) => {
+                return String(text || '')
+                    .replace(/\n/g, ' ')
+                    .replace(/주소\s*[:：]/g, ' ')
+                    .replace(/연락처\s*[:：].*$/g, ' ')
+                    .replace(/전화\s*[:：].*$/g, ' ')
+                    .replace(/\([^)]*\)/g, ' ')
+                    .replace(/[,.]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const removeRouteUnitInfo = (text) => {
+                return normalizeRouteAddress(text)
+                    .replace(/\b\d{1,4}\s*동\s*\d{1,4}\s*호\b/g, ' ')
+                    .replace(/\b\d{1,4}\s*호\b/g, ' ')
+                    .replace(/\b\d{1,4}\s*동\b/g, ' ')
+                    .replace(/\b\d{1,2}\s*층\b/g, ' ')
+                    .replace(/지하\s*\d{1,2}\s*층/g, ' ')
+                    .replace(/B\d{1,2}/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            };
+
+            const makeRouteSearchCandidates = (jobOrText) => {
+                const rawAddress = typeof jobOrText === 'string' ? jobOrText : (jobOrText?.address || '');
+                const rawDetails = typeof jobOrText === 'string' ? '' : (jobOrText?.details || '');
+                const address = normalizeRouteAddress(rawAddress);
+                const details = normalizeRouteAddress(rawDetails);
+                const full = normalizeRouteAddress(`${address} ${details}`);
+
+                const candidates = [
+                    full,
+                    address,
+                    removeRouteUnitInfo(full),
+                    removeRouteUnitInfo(address),
+                    details && `${removeRouteUnitInfo(address)} ${removeRouteUnitInfo(details)}`,
+                    details && removeRouteUnitInfo(details),
+                ].filter(Boolean);
+
+                // 너무 긴 상세주소는 카카오가 실패할 수 있어서 앞쪽 핵심 주소도 후보로 추가
+                const more = [];
+                candidates.forEach((candidate) => {
+                    const parts = candidate.split(' ').filter(Boolean);
+                    if (parts.length >= 4) more.push(parts.slice(0, 4).join(' '));
+                    if (parts.length >= 5) more.push(parts.slice(0, 5).join(' '));
+                });
+
+                return [...new Set([...candidates, ...more].filter(v => v && v.length >= 2))];
+            };
+
+            const kakaoJsSearch = (addressText) => {
+                return new Promise((resolve) => {
+                    try {
+                        if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+                            resolve(null);
+                            return;
+                        }
+
+                        const geocoder = new window.kakao.maps.services.Geocoder();
+                        geocoder.addressSearch(addressText, (result, status) => {
+                            if (status === window.kakao.maps.services.Status.OK && result && result[0]?.x && result[0]?.y) {
+                                resolve({ lat: Number(result[0].y), lng: Number(result[0].x), matchedQuery: addressText, source: 'kakao-js-address' });
+                                return;
+                            }
+
+                            const places = new window.kakao.maps.services.Places();
+                            places.keywordSearch(addressText, (placeResult, placeStatus) => {
+                                if (placeStatus === window.kakao.maps.services.Status.OK && placeResult && placeResult[0]?.x && placeResult[0]?.y) {
+                                    resolve({ lat: Number(placeResult[0].y), lng: Number(placeResult[0].x), matchedQuery: addressText, source: 'kakao-js-keyword' });
+                                } else {
+                                    resolve(null);
+                                }
+                            }, { size: 5 });
+                        });
+                    } catch (error) {
+                        console.warn('카카오 JS 좌표 변환 오류:', addressText, error);
+                        resolve(null);
+                    }
+                });
+            };
+
+            const osmSearch = async (addressText) => {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(addressText)}`);
+                    const data = await res.json();
+                    if (Array.isArray(data) && data[0]?.lat && data[0]?.lon) {
+                        return { lat: Number(data[0].lat), lng: Number(data[0].lon), matchedQuery: addressText, source: 'osm' };
+                    }
+                } catch (error) {
+                    console.warn('OSM 좌표 변환 오류:', addressText, error);
+                }
+                return null;
+            };
+
+            const kakaoFetchJson = async (url) => {
+                const res = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
+                });
+                const data = await res.json();
+                if (!res.ok || data.errorType || data.error) {
+                    console.warn('카카오 지도 API 응답 오류:', data);
+                    return null;
+                }
+                return data;
+            };
+
+            const geocodeForRoute = async (queryOrJob) => {
+                // 이미 좌표가 저장된 작업이면 API 검색 없이 바로 사용
+                if (typeof queryOrJob === 'object' && queryOrJob) {
+                    const savedLat = Number(queryOrJob.routeLat ?? queryOrJob.lat ?? queryOrJob.latitude ?? queryOrJob.coord?.lat);
+                    const savedLng = Number(queryOrJob.routeLng ?? queryOrJob.lng ?? queryOrJob.longitude ?? queryOrJob.coord?.lng);
+                    if (Number.isFinite(savedLat) && Number.isFinite(savedLng)) {
+                        return {
+                            lat: savedLat,
+                            lng: savedLng,
+                            matchedQuery: queryOrJob.routeMatchedQuery || 'saved-coordinate',
+                            source: queryOrJob.routeSource || 'saved'
+                        };
+                    }
+                }
+
+                const candidates = makeRouteSearchCandidates(queryOrJob);
+                if (candidates.length === 0) return null;
+
+                const cacheKey = candidates.join('|');
+                if (Object.prototype.hasOwnProperty.call(routeGeoCacheRef.current, cacheKey)) return routeGeoCacheRef.current[cacheKey];
+
+                // 1순위: 카카오 지도 JavaScript SDK. 브라우저 페이지에서는 이 방식이 가장 안정적임.
+                for (const addressText of candidates) {
+                    const kakaoJsResult = await kakaoJsSearch(addressText);
+                    if (kakaoJsResult && Number.isFinite(kakaoJsResult.lat) && Number.isFinite(kakaoJsResult.lng)) {
+                        routeGeoCacheRef.current[cacheKey] = kakaoJsResult;
+                        return kakaoJsResult;
+                    }
+                }
+
+                // 2순위: 기존 카카오 REST Local API. REST 키가 맞을 때만 동작.
+                for (const addressText of candidates) {
+                    try {
+                        const addressData = await kakaoFetchJson(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(addressText)}&size=5`);
+                        const addressDoc = addressData?.documents?.find(doc => doc.x && doc.y);
+                        if (addressDoc) {
+                            const result = { lat: Number(addressDoc.y), lng: Number(addressDoc.x), matchedQuery: addressText, source: 'kakao-rest-address' };
+                            routeGeoCacheRef.current[cacheKey] = result;
+                            return result;
+                        }
+
+                        const keywordData = await kakaoFetchJson(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(addressText)}&size=5`);
+                        const keywordDoc = keywordData?.documents?.find(doc => doc.x && doc.y);
+                        if (keywordDoc) {
+                            const result = { lat: Number(keywordDoc.y), lng: Number(keywordDoc.x), matchedQuery: addressText, source: 'kakao-rest-keyword' };
+                            routeGeoCacheRef.current[cacheKey] = result;
+                            return result;
+                        }
+                    } catch (error) {
+                        console.error('카카오 REST 좌표 변환 오류:', addressText, error);
+                    }
+                }
+
+                // 3순위: OpenStreetMap. 한국 상세주소는 실패할 수 있지만 마지막 보조 수단으로 사용.
+                for (const addressText of candidates) {
+                    const osmResult = await osmSearch(addressText);
+                    if (osmResult && Number.isFinite(osmResult.lat) && Number.isFinite(osmResult.lng)) {
+                        routeGeoCacheRef.current[cacheKey] = osmResult;
+                        return osmResult;
+                    }
+                }
+
+                routeGeoCacheRef.current[cacheKey] = null;
+                return null;
+            };
+
+            const saveRouteCoordToJob = async (job, coord) => {
+                if (!job?.key || !coord || !Number.isFinite(coord.lat) || !Number.isFinite(coord.lng)) return;
+
+                const currentLat = Number(job.routeLat ?? job.lat ?? job.latitude);
+                const currentLng = Number(job.routeLng ?? job.lng ?? job.longitude);
+                const alreadySame = Number.isFinite(currentLat) && Number.isFinite(currentLng)
+                    && Math.abs(currentLat - coord.lat) < 0.000001
+                    && Math.abs(currentLng - coord.lng) < 0.000001;
+
+                if (alreadySame) return;
+
+                try {
+                    await update(ref(database, `homecare_jobs/${job.key}`), {
+                        routeLat: coord.lat,
+                        routeLng: coord.lng,
+                        routeMatchedQuery: coord.matchedQuery || '',
+                        routeSource: coord.source || 'auto-geocode',
+                        routeUpdatedAt: Date.now()
+                    });
+                } catch (error) {
+                    console.warn('좌표 저장 실패:', job.address, error);
+                }
+            };
+
+            useEffect(() => {
+                let cancelled = false;
+
+                const buildDailyRoute = async () => {
+                    if (currentView !== 'daily') {
+                        setDailyRoutePoints([]);
+                        setRouteDebugItems([]);
+                        setRouteFailedItems([]);
+                        return;
+                    }
+
+                    const routeJobs = activeDateJobs
+                        .filter(job => (job.status || 'pending') !== 'cancelled')
+                        .sort((a, b) => (a.visitTime || '23:59').localeCompare(b.visitTime || '23:59'));
+
+                    if (routeJobs.length === 0) {
+                        setDailyRoutePoints([{ type: 'home', order: '집', address: HOME_ADDRESS, ...HOME_COORD }]);
+                        setRouteDebugItems([]);
+                        setRouteFailedItems([]);
+                        return;
+                    }
+
+                    setIsRouteLoading(true);
+
+                    try {
+                        const homeCoord = HOME_COORD; // 집은 매번 검색하지 않고 고정 좌표를 사용해서 즉시 표시
+                        const homePoint = { type: 'home', order: '집', address: HOME_ADDRESS, ...homeCoord };
+                        const jobPoints = [];
+                        const debugItems = [];
+                        const failedItems = [];
+
+                        if (!cancelled) {
+                            setDailyRoutePoints([homePoint]);
+                            setRouteDebugItems([]);
+                            setRouteFailedItems([]);
+                        }
+
+                        for (let i = 0; i < routeJobs.length; i++) {
+                            const job = routeJobs[i];
+                            const coord = await geocodeForRoute(job);
+                            if (cancelled) return;
+
+                            if (coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lng)) {
+                                await saveRouteCoordToJob(job, coord);
+
+                                const { matchedQuery, source, ...latLng } = coord;
+                                jobPoints.push({
+                                    type: 'job',
+                                    order: jobPoints.length + 1,
+                                    address: job.address || '',
+                                    details: job.details || '',
+                                    visitTime: job.visitTime || '',
+                                    key: job.key,
+                                    matchedQuery,
+                                    source,
+                                    ...latLng
+                                });
+                                debugItems.push({ key: job.key, visitTime: job.visitTime || '', address: job.address || '', details: job.details || '', ok: true, matchedQuery, source });
+                            } else {
+                                const failed = { key: job.key, visitTime: job.visitTime || '', address: job.address || '', details: job.details || '', ok: false };
+                                debugItems.push(failed);
+                                failedItems.push(failed);
+                                console.warn('지도 표시 실패 - 좌표 변환 불가:', job.address, job.details, makeRouteSearchCandidates(job));
+                            }
+
+                            const currentPoints = [homePoint, ...jobPoints];
+                            if (jobPoints.length > 0) currentPoints.push({ ...homePoint, type: 'home' });
+                            setDailyRoutePoints(currentPoints);
+                            setRouteDebugItems([...debugItems]);
+                            setRouteFailedItems([...failedItems]);
+                        }
+                    } catch (error) {
+                        console.error('지도 경로 생성 실패:', error);
+                        if (!cancelled) {
+                            setDailyRoutePoints([]);
+                            setRouteDebugItems(routeJobs.map(job => ({ key: job.key, visitTime: job.visitTime || '', address: job.address || '', details: job.details || '', ok: false })));
+                            setRouteFailedItems(routeJobs.map(job => ({ key: job.key, visitTime: job.visitTime || '', address: job.address || '', details: job.details || '', ok: false })));
+                        }
+                    } finally {
+                        if (!cancelled) setIsRouteLoading(false);
+                    }
+                };
+
+                buildDailyRoute();
+                return () => { cancelled = true; };
+            }, [currentView, activeDate, activeDateJobs]);
 
             const consultationJobs = useMemo(() => {
                 return Object.entries(jobs)
@@ -536,6 +952,13 @@
                 const targetDates = currentView === 'consultations' 
                     ? (editingId ? (jobs[editingId].dates || ['waiting']) : ['waiting'])
                     : [jobDate];
+
+                let routeCoord = null;
+                try {
+                    routeCoord = await geocodeForRoute({ address: latestAddress, details: latestDetails });
+                } catch (error) {
+                    console.warn('저장 전 좌표 변환 실패:', latestAddress, latestDetails, error);
+                }
                 
                 const jobData = {
                     address: latestAddress,
@@ -551,7 +974,12 @@
                     status: editingId ? (jobs[editingId].status || 'pending') : 'pending',
                     cancelReason: editingId ? (jobs[editingId].cancelReason || '') : '',
                     additionalContacts: editingId ? (jobs[editingId].additionalContacts || []) : [],
-                    createdAt: editingId ? jobs[editingId].createdAt : Date.now()
+                    createdAt: editingId ? jobs[editingId].createdAt : Date.now(),
+                    routeLat: routeCoord?.lat ?? (editingId ? (jobs[editingId].routeLat ?? null) : null),
+                    routeLng: routeCoord?.lng ?? (editingId ? (jobs[editingId].routeLng ?? null) : null),
+                    routeMatchedQuery: routeCoord?.matchedQuery ?? (editingId ? (jobs[editingId].routeMatchedQuery || '') : ''),
+                    routeSource: routeCoord?.source ?? (editingId ? (jobs[editingId].routeSource || '') : ''),
+                    routeUpdatedAt: routeCoord ? Date.now() : (editingId ? (jobs[editingId].routeUpdatedAt || null) : null)
                 };
 
                 try {
@@ -1654,6 +2082,8 @@
                                     </div>
                                     <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                 </div>
+
+                                <DailyRouteMap points={dailyRoutePoints} loading={isRouteLoading} debugItems={routeDebugItems} failedItems={routeFailedItems} />
 
                                 {showOffDayPanel && (
                                 <section className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100 space-y-4">
