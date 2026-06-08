@@ -1167,23 +1167,30 @@
 
             const handleSaveContact = (job) => {
                 if (!job.phoneNumber) return alert("전화번호가 없습니다.");
-                
-                let contactName = "홈케어 고객";
-                if (job.address) {
-                    const parts = job.address.split(' ');
-                    contactName = `${parts[0] || ''} ${parts[1] || ''} 고객`.trim();
-                }
 
-                const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${contactName}\nTEL;TYPE=CELL:${job.phoneNumber.replace(/-/g, '')}\nNOTE:${job.address} ${job.details || ''}\nEND:VCARD`;
+                // 주소칸에 입력된 내용을 그대로 연락처 이름으로 사용합니다.
+                // 예: 상담대기 주소칸에 "덕양구 상담" 저장 → 연락처 이름도 "덕양구 상담"
+                const contactName = (job.address || '').trim() || '홈케어 고객';
+                const contactNote = `${job.address || ''} ${job.details || ''}`.trim();
+                const cleanPhone = String(job.phoneNumber || '').replace(/[^0-9+]/g, '');
+                const safeFileName = contactName.replace(/[\/:*?"<>|]/g, '_');
+                const escapeVCardText = (text) => String(text || '')
+                    .replace(/\\/g, '\\\\')
+                    .replace(/\n/g, '\\n')
+                    .replace(/,/g, '\\,')
+                    .replace(/;/g, '\\;');
+
+                const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${escapeVCardText(contactName)}\nTEL;TYPE=CELL:${cleanPhone}\nNOTE:${escapeVCardText(contactNote)}\nEND:VCARD`;
                 const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 
                 link.href = url;
-                link.setAttribute('download', `${contactName}.vcf`);
+                link.setAttribute('download', `${safeFileName}.vcf`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                URL.revokeObjectURL(url);
             };
 
             const parseSmsTemplate = (templateBody, job) => {
