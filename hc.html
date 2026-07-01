@@ -50,6 +50,25 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 900; font-size: 12px; box-shadow: 0 8px 18px rgba(13,148,136,.28);
         }
+
+        .hc-mobile-address {
+            white-space: normal;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+            line-height: 1.45;
+        }
+        .hc-mobile-details {
+            white-space: pre-wrap;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+            line-height: 1.55;
+        }
+        .hc-mobile-note {
+            white-space: pre-wrap;
+            word-break: keep-all;
+            overflow-wrap: anywhere;
+            line-height: 1.55;
+        }
     </style>
 </head>
 <body>
@@ -2070,24 +2089,27 @@
                                             const memo = (job.notes || '').trim();
 
                                             return (
-                                                <div key={job.key} className="rounded-xl border border-slate-100 bg-slate-50/70 p-2.5 shadow-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="shrink-0 bg-slate-900 text-white text-[11px] font-black rounded-full w-6 h-6 flex items-center justify-center">{idx + 1}</span>
+                                                <div key={job.key} className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 shadow-sm">
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="shrink-0 bg-slate-900 text-white text-[11px] font-black rounded-full w-6 h-6 flex items-center justify-center mt-0.5">{idx + 1}</span>
                                                         <button
                                                             onClick={() => openDailyView(todayStr)}
                                                             className="min-w-0 flex-1 text-left active:scale-[0.99]"
                                                         >
-                                                            <div className="flex items-center gap-1.5 min-w-0">
-                                                                <span className="text-sm font-black text-slate-800 shrink-0">{job.visitTime || '--:--'}</span>
+                                                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                                                                <span className="text-base font-black text-slate-900 shrink-0">{job.visitTime || '--:--'}</span>
                                                                 <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border shrink-0 ${statusClass}`}>{statusText}</span>
-                                                                {taskSummary && <span className="text-[11px] font-bold text-slate-400 truncate">{taskSummary}</span>}
+                                                                {taskSummary && <span className="text-[11px] font-bold text-slate-400 break-words">{taskSummary}</span>}
                                                             </div>
-                                                            <div className="mt-0.5 flex items-center gap-1 text-xs font-bold text-slate-700 min-w-0">
-                                                                <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                                                                <span className="truncate">{fullAddress || '주소 없음'}</span>
+                                                            <div className="mt-1.5 flex items-start gap-1.5 text-xs font-bold text-slate-700 min-w-0">
+                                                                <MapPin className="w-3.5 h-3.5 text-teal-500 shrink-0 mt-0.5" />
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="hc-mobile-address text-sm font-black text-slate-800">{job.address || '주소 없음'}</div>
+                                                                    {job.details && <div className="hc-mobile-details mt-0.5 text-sm font-extrabold text-blue-700 bg-white/80 border border-blue-100 rounded-lg px-2 py-1">{job.details}</div>}
+                                                                </div>
                                                             </div>
                                                         </button>
-                                                        <div className="shrink-0 flex items-center gap-1">
+                                                        <div className="shrink-0 flex flex-col items-center gap-1">
                                                             <button
                                                                 onClick={() => callPhone(phone)}
                                                                 disabled={!phone}
@@ -2108,14 +2130,15 @@
                                                     </div>
 
                                                     {(phone || memo) && (
-                                                        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500 min-w-0">
-                                                            {phone && <span className="font-bold shrink-0">{phone}</span>}
-                                                            {memo && phone && <span className="text-slate-300 shrink-0">·</span>}
+                                                        <div className="mt-2 space-y-2 text-[11px] text-slate-500 min-w-0">
+                                                            {phone && <div className="font-bold">{phone}</div>}
                                                             {memo && (
-                                                                <div className="min-w-0 flex items-center gap-1 flex-1 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1">
-                                                                    <FileText className="w-3 h-3 text-amber-600 shrink-0" />
-                                                                    <span className="font-bold text-amber-800 shrink-0">참고</span>
-                                                                    <span className="truncate font-semibold text-slate-600">{memo}</span>
+                                                                <div className="min-w-0 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                                                                    <div className="flex items-center gap-1 mb-1">
+                                                                        <FileText className="w-3 h-3 text-amber-600 shrink-0" />
+                                                                        <span className="font-black text-amber-800">참조내용</span>
+                                                                    </div>
+                                                                    <div className="hc-mobile-note text-sm font-semibold text-slate-700">{memo}</div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -2406,17 +2429,17 @@
                                                 </div>
                                                 
                                                 <div className="mb-4 pl-1">
-                                                    <h3 className="text-base font-bold leading-tight mb-1.5 text-slate-800">{job.address}</h3>
+                                                    <h3 className="hc-mobile-address text-lg font-extrabold leading-snug mb-2 text-slate-900">{job.address}</h3>
                                                     {job.details && (
-                                                        <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
+                                                        <p className="hc-mobile-details text-base text-blue-700 font-bold bg-blue-50/60 p-3 rounded-xl border border-blue-100 leading-relaxed shadow-sm mb-2">
                                                             {job.details}
                                                         </p>
                                                     )}
 
                                                     {job.notes && (
-                                                        <div className="mt-2 mb-3 bg-blue-50/70 p-3 rounded-lg border border-blue-100 flex gap-2 shadow-sm">
-                                                            <span className="text-xs font-bold text-blue-700 mt-0.5 whitespace-nowrap flex-shrink-0">참고</span>
-                                                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{job.notes}</p>
+                                                        <div className="mt-2 mb-3 bg-amber-50/90 p-3 rounded-xl border border-amber-100 flex flex-col gap-1 shadow-sm">
+                                                            <span className="text-xs font-black text-amber-800 mt-0.5 whitespace-nowrap flex-shrink-0">참조내용</span>
+                                                            <p className="hc-mobile-note text-base text-slate-800 font-medium whitespace-pre-wrap">{job.notes}</p>
                                                         </div>
                                                     )}
                                                     
@@ -2638,17 +2661,17 @@
                                                     </div>
 
                                                     <div className="mb-4 pl-1">
-                                                        <h3 className="text-base font-bold leading-tight mb-1.5 text-slate-800">{job.address}</h3>
+                                                        <h3 className="hc-mobile-address text-lg font-extrabold leading-snug mb-2 text-slate-900">{job.address}</h3>
                                                         {job.details && (
-                                                            <p className="text-sm text-slate-500 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed shadow-sm mb-2">
+                                                            <p className="hc-mobile-details text-base text-blue-700 font-bold bg-blue-50/60 p-3 rounded-xl border border-blue-100 leading-relaxed shadow-sm mb-2">
                                                                 {job.details}
                                                             </p>
                                                         )}
 
                                                         {job.notes && (
-                                                            <div className="mt-2 mb-3 bg-blue-50/70 p-3 rounded-lg border border-blue-100 flex gap-2 shadow-sm">
-                                                                <span className="text-xs font-bold text-blue-700 mt-0.5 whitespace-nowrap flex-shrink-0">참고</span>
-                                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{job.notes}</p>
+                                                            <div className="mt-2 mb-3 bg-amber-50/90 p-3 rounded-xl border border-amber-100 flex flex-col gap-1 shadow-sm">
+                                                                <span className="text-xs font-black text-amber-800 mt-0.5 whitespace-nowrap flex-shrink-0">참조내용</span>
+                                                                <p className="hc-mobile-note text-base text-slate-800 font-medium whitespace-pre-wrap">{job.notes}</p>
                                                             </div>
                                                         )}
 
