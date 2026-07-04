@@ -97,6 +97,57 @@
       font-size: 16px;
       cursor: pointer;
     }
+
+    .bank-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 30px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 5px;
+      color: #333;
+    }
+    .bank-title h2 {
+      margin: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+      text-align: left;
+    }
+    .account-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: normal;
+      color: #555;
+      text-align: right;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .account-number {
+      font-weight: bold;
+      color: #007BFF;
+    }
+    .copy-btn {
+      border: 1px solid #007BFF;
+      background: #fff;
+      color: #007BFF;
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .copy-btn:hover {
+      background: #007BFF;
+      color: #fff;
+    }
+    .copy-msg {
+      font-size: 12px;
+      color: #28a745;
+      min-width: 52px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -109,7 +160,15 @@
     </div>
 
     <form id="expense-form">
-      <h2>신한은행</h2>
+      <div class="bank-title">
+        <h2>신한은행</h2>
+        <div class="account-box">
+          <span class="account-number">110-239-429057</span>
+          <span>"급여 이체"로 통장에 찍히도록</span>
+          <button type="button" class="copy-btn" onclick="copyText('110-239-429057', 'shinhan-copy-msg')">계좌번호 복사</button>
+          <span id="shinhan-copy-msg" class="copy-msg"></span>
+        </div>
+      </div>
       <div class="field">
         <label for="shinhan-card">신한카드 사용 금액:</label>
         <input type="text" id="shinhan-card" placeholder="숫자만 입력">
@@ -135,7 +194,14 @@
         <span id="shinhan-total" class="result">0</span> 원
       </div>
 
-      <h2>우리은행</h2>
+      <div class="bank-title">
+        <h2>우리은행</h2>
+        <div class="account-box">
+          <span class="account-number">578-009304-02-101</span>
+          <button type="button" class="copy-btn" onclick="copyText('578-009304-02-101', 'woori-copy-msg')">계좌번호 복사</button>
+          <span id="woori-copy-msg" class="copy-msg"></span>
+        </div>
+      </div>
       <div class="field">
         <label for="samsung-card">삼성카드 사용 금액:</label>
         <input type="text" id="samsung-card" placeholder="숫자만 입력">
@@ -182,6 +248,30 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
+    // 계좌번호 복사 함수
+    function copyText(text, messageId) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showCopyMessage(messageId));
+      } else {
+        const tempInput = document.createElement("input");
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        showCopyMessage(messageId);
+      }
+    }
+
+    function showCopyMessage(messageId) {
+      const msg = document.getElementById(messageId);
+      if (!msg) return;
+      msg.textContent = "복사됨";
+      setTimeout(() => {
+        msg.textContent = "";
+      }, 1500);
+    }
 
     // 고정 상수
     const SAVINGS_FIXED = 100000;
