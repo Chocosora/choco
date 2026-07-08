@@ -125,9 +125,9 @@
             </div>
         );
 
-        const KiaIcon = () => (
-            <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center overflow-hidden border border-slate-900 shadow-sm">
-                <span className="text-white font-black text-[10px] tracking-tight leading-none">KIA</span>
+        const KakaoIcon = () => (
+            <div className="w-6 h-6 rounded-full bg-[#FEE500] flex items-center justify-center overflow-hidden border border-[#FEE500] shadow-sm">
+                <MapPin className="w-3.5 h-3.5 text-[#191919] fill-[#191919]" />
             </div>
         );
 
@@ -1128,72 +1128,6 @@
                 }
             };
 
-            const copyTextToClipboard = async (text) => {
-                try {
-                    if (navigator.clipboard && window.isSecureContext) {
-                        await navigator.clipboard.writeText(text);
-                        return true;
-                    }
-                } catch (error) {
-                    console.warn('클립보드 복사 실패:', error);
-                }
-
-                try {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    textarea.setAttribute('readonly', '');
-                    textarea.style.position = 'fixed';
-                    textarea.style.top = '-9999px';
-                    textarea.style.left = '-9999px';
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    textarea.setSelectionRange(0, textarea.value.length);
-                    const ok = document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    return ok;
-                } catch (error) {
-                    console.warn('클립보드 예비 복사 실패:', error);
-                    return false;
-                }
-            };
-
-            const makeKiaShareText = (job) => {
-                const fullAddress = `${job?.address || ''} ${job?.details || ''}`.replace(/\s+/g, ' ').trim();
-                const title = (job?.details || '').trim() || (job?.address || '').trim() || '목적지';
-
-                // 기아 앱 공유 목록에서 주소를 잘 인식하도록 네이버지도 공유 텍스트와 비슷한 형식으로 구성합니다.
-                return `[네이버지도]\n${title}\n${fullAddress}`.trim();
-            };
-
-            const openKiaShare = async (job) => {
-                const fullAddress = `${job?.address || ''} ${job?.details || ''}`.replace(/\s+/g, ' ').trim();
-                if (!fullAddress) {
-                    alert('공유할 주소가 없습니다.');
-                    return;
-                }
-
-                const shareText = makeKiaShareText(job);
-                await copyTextToClipboard(shareText);
-
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            title: job?.details || job?.address || '목적지',
-                            text: shareText
-                        });
-                        setToastMessage('기아 앱을 선택해 목적지를 보내주세요.');
-                        setTimeout(() => setToastMessage(''), 2500);
-                        return;
-                    } catch (error) {
-                        // 사용자가 공유창을 닫은 경우도 여기로 들어올 수 있으므로 복사 안내만 표시합니다.
-                        console.warn('기아 공유창 실행 취소/실패:', error);
-                    }
-                }
-
-                setToastMessage('주소가 복사되었습니다. 공유 버튼에서 기아 앱을 선택해주세요.');
-                setTimeout(() => setToastMessage(''), 3000);
-            };
-
             const openMap = (type, address) => {
                 const encodedAddr = encodeURIComponent(address);
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1211,6 +1145,10 @@
                     } else {
                         alert("티맵은 모바일에서만 가능합니다.");
                     }
+                } 
+                else if (type === 'kakao') {
+                    const url = `https://map.kakao.com/link/search/${encodedAddr}`;
+                    window.open(url, '_blank') || (window.location.href = url);
                 }
             };
 
@@ -2634,9 +2572,9 @@
                                                         <TMapIcon />
                                                         <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#E80048]">티맵</span>
                                                     </button>
-                                                    <button onClick={() => openKiaShare(job)} className="bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 shadow-sm group">
-                                                        <KiaIcon />
-                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-slate-900">기아</span>
+                                                    <button onClick={() => openMap('kakao', job.address)} className="bg-white border border-slate-200 hover:bg-yellow-50 hover:border-yellow-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 shadow-sm group">
+                                                        <KakaoIcon />
+                                                        <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#F9C000]">카카오</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -2804,9 +2742,9 @@
                                                             <TMapIcon />
                                                             <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#E80048]">티맵</span>
                                                         </button>
-                                                        <button onClick={() => openKiaShare(job)} className="bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 shadow-sm group">
-                                                            <KiaIcon />
-                                                            <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-slate-900">기아</span>
+                                                        <button onClick={() => openMap('kakao', job.address)} className="bg-white border border-slate-200 hover:bg-yellow-50 hover:border-yellow-200 py-2.5 rounded-xl flex flex-col items-center justify-center gap-1 shadow-sm group">
+                                                            <KakaoIcon />
+                                                            <span className="text-[11px] font-bold text-slate-600 mt-1 group-hover:text-[#F9C000]">카카오</span>
                                                         </button>
                                                     </div>
 
