@@ -71,6 +71,8 @@
   .form-group.full{grid-column:1/-1;}
   label{font-size:11px;color:var(--text2);font-weight:500;}
   input,select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color 0.2s;width:100%;}
+  .form-group{min-width:0;}
+  input[type="date"]{min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;}
   input:focus,select:focus,textarea:focus{border-color:var(--accent);}
   select option{background:var(--surface2);}
   textarea{resize:none;height:70px;}
@@ -301,7 +303,7 @@
         <div class="form-group"><label>날짜</label><input type="date" id="e-date"></div>
         <div class="form-group"><label>카테고리</label>
           <select id="e-cat" onchange="togglePurposeOther('e-cat', 'e-cat-other-wrap', '기타경비')">
-            <option value="자재비">자재비</option><option value="유류비">유류비</option>
+            <option value="자재비">자재비</option><option value="유류비">유류비</option><option value="전기차충전">전기차충전</option>
             <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
             <option value="통신비">통신비</option><option value="보험료">보험료</option>
             <option value="차량유지비">차량유지비</option><option value="업무추진비">업무추진비</option><option value="기타경비">기타경비</option>
@@ -536,7 +538,7 @@
       <div class="form-group"><label>날짜</label><input type="date" id="edit-e-date"></div>
       <div class="form-group"><label>카테고리</label>
         <select id="edit-e-cat" onchange="togglePurposeOther('edit-e-cat', 'edit-e-cat-other-wrap', '기타경비')">
-          <option value="자재비">자재비</option><option value="유류비">유류비</option>
+          <option value="자재비">자재비</option><option value="유류비">유류비</option><option value="전기차충전">전기차충전</option>
           <option value="공구/장비">공구/장비</option><option value="식대">식대</option>
           <option value="통신비">통신비</option><option value="보험료">보험료</option>
           <option value="차량유지비">차량유지비</option><option value="업무추진비">업무추진비</option><option value="기타경비">기타경비</option>
