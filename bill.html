@@ -627,7 +627,7 @@
       <section class="summary-line">
         <div class="label">고객명</div>
         <div class="value"><input type="text" id="customerName" class="input-clean" placeholder="예: 홍길동"></div>
-        <div class="label">작업일자</div>
+        <div class="label" id="dateLabelText">작업일자</div>
         <div class="value"><input type="date" id="workDate" class="input-clean"></div>
       </section>
       <section class="summary-line" style="border-bottom:1px solid var(--line);">
@@ -764,6 +764,7 @@
     const intro = document.getElementById('introText');
     const btnEl = document.getElementById('toggleDocBtn');
     const terms = document.getElementById('termsList');
+    const dateLabel = document.getElementById('dateLabelText');
 
     if (docType === 'work') {
       docType = 'estimate';
@@ -776,6 +777,7 @@
         <li>현금영수증 또는 세금계산서 발급 시 부가세 처리 방식이 달라질 수 있습니다.</li>
       `;
       document.title = '홈케어의 제왕 견적서';
+      dateLabel.textContent = '일자';
     } else {
       docType = 'work';
       titleEl.textContent = '작업내역서';
@@ -787,6 +789,7 @@
         <li>추가 작업은 안내 및 동의 후 진행합니다.</li>
       `;
       document.title = '홈케어의 제왕 작업내역서';
+      dateLabel.textContent = '작업일자';
     }
   }
 
