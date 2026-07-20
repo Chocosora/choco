@@ -270,7 +270,7 @@
             const [phoneNumber, setPhoneNumber] = useState(''); 
             const [notes, setNotes] = useState('');
             
-            const [tasks, setTasks] = useState([{ description: '', amount: '', materialCost: '' }]);
+            const [tasks, setTasks] = useState([{ description: '', amount: '', materialCost: '', materialOwner: '' }]);
             const [jobDate, setJobDate] = useState(todayStr); 
             const [visitTime, setVisitTime] = useState('09:00');
             
@@ -743,6 +743,25 @@
                     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             }, [jobs]);
 
+            const getMaterialBreakdown = (job) => {
+                let kim = 0;
+                let park = 0;
+
+                (job.tasks || []).forEach(task => {
+                    const cost = (Number(task.materialCost) || 0) * 10000;
+                    if (cost <= 0) return;
+                    if (task.materialOwner === 'kim') kim += cost;
+                    else if (task.materialOwner === 'park') park += cost;
+                });
+
+                const total = Number(job.totalMaterialCost || 0);
+                return {
+                    kim,
+                    park,
+                    unassigned: Math.max(0, total - kim - park)
+                };
+            };
+
             const monthlyStats = useMemo(() => {
                 const year = currentDateView.getFullYear();
                 const month = String(currentDateView.getMonth() + 1).padStart(2, '0');
@@ -750,6 +769,9 @@
 
                 let totalRev = 0;
                 let totalMat = 0;
+                let kimMat = 0;
+                let parkMat = 0;
+                let unassignedMat = 0;
                 let totalNet = 0;
                 let completedCount = 0;
                 const monthJobs = [];
@@ -760,6 +782,10 @@
                         if (hasCurrentMonthDate) {
                             totalRev += (job.totalAmount || 0);
                             totalMat += (job.totalMaterialCost || 0);
+                            const materialBreakdown = getMaterialBreakdown(job);
+                            kimMat += materialBreakdown.kim;
+                            parkMat += materialBreakdown.park;
+                            unassignedMat += materialBreakdown.unassigned;
                             const net = job.netIncome !== undefined ? job.netIncome : ((job.totalAmount || 0) - (job.totalMaterialCost || 0));
                             totalNet += net;
                             completedCount++;
@@ -770,13 +796,22 @@
 
                 const fee = totalNet * 0.3; 
                 const finalProfit = totalNet - fee;
+                const baseSettlement = finalProfit / 2;
+                const kimSettlement = baseSettlement + kimMat;
+                const parkSettlement = baseSettlement + parkMat;
 
                 return {
                     totalRev,
                     totalMat,
+                    kimMat,
+                    parkMat,
+                    unassignedMat,
                     totalNet,
                     fee,
                     finalProfit,
+                    baseSettlement,
+                    kimSettlement,
+                    parkSettlement,
                     completedCount,
                     monthJobs: monthJobs.sort((a,b) => {
                         const dateA = a.dates.find(d => d.startsWith(prefix)) || a.dates[0];
@@ -794,7 +829,7 @@
 
             const addPresetTask = (preset) => {
                 const emptyIndex = tasks.findIndex(t => !(t.description || '').trim() && !t.amount && !t.materialCost);
-                const presetTask = { description: preset.description, amount: preset.amount, materialCost: '' };
+                const presetTask = { description: preset.description, amount: preset.amount, materialCost: '', materialOwner: '' };
 
                 if (emptyIndex >= 0) {
                     const newTasks = [...tasks];
@@ -805,11 +840,13 @@
                 }
             };
 
-            const addTask = () => setTasks([...tasks, { description: '', amount: '', materialCost: '' }]);
+            const addTask = () => setTasks([...tasks, { description: '', amount: '', materialCost: '', materialOwner: '' }]);
             const removeTask = (index) => setTasks(tasks.filter((_, i) => i !== index));
 
             const displayWorkCost = tasks.reduce((sum, task) => sum + (Number(task.amount) || 0), 0) * 10000;
             const displayMaterialCost = tasks.reduce((sum, task) => sum + (Number(task.materialCost) || 0), 0) * 10000;
+            const displayKimMaterialCost = tasks.reduce((sum, task) => sum + (task.materialOwner === 'kim' ? (Number(task.materialCost) || 0) : 0), 0) * 10000;
+            const displayParkMaterialCost = tasks.reduce((sum, task) => sum + (task.materialOwner === 'park' ? (Number(task.materialCost) || 0) : 0), 0) * 10000;
             const netIncome = displayWorkCost - displayMaterialCost;
 
             const handleHybridSearch = async () => {
@@ -1004,6 +1041,12 @@
                 setIsSaving(true);
                 setToastMessage('');
 
+                if (tasks.some(t => Number(t.materialCost) > 0 && !t.materialOwner)) {
+                    setIsSaving(false);
+                    setToastMessage('자재비를 입력한 내역의 담당자를 선택해주세요.');
+                    return;
+                }
+
                 const filteredTasks = tasks.filter(t => (t.description || '').trim() !== '' || t.amount !== '' || t.materialCost !== '');
                 
                 const targetDates = currentView === 'consultations' 
@@ -1104,11 +1147,12 @@
                     const convertedTasks = job.tasks.map(t => ({
                         description: t.description || '',
                         amount: t.amount || '',
-                        materialCost: t.materialCost || ''
+                        materialCost: t.materialCost || '',
+                        materialOwner: t.materialOwner || ''
                     }));
                     setTasks(convertedTasks);
                 } else {
-                    setTasks([{ description: job.workDescription || '', amount: '', materialCost: '' }]);
+                    setTasks([{ description: job.workDescription || '', amount: '', materialCost: '', materialOwner: '' }]);
                 }
                 
                 setVisitTime(job.visitTime || '09:00');
@@ -1127,7 +1171,7 @@
                 setParsedDetails('');
                 setPhoneNumber(''); 
                 setNotes(''); 
-                setTasks([{ description: '', amount: '', materialCost: '' }]);
+                setTasks([{ description: '', amount: '', materialCost: '', materialOwner: '' }]);
                 setVisitTime('09:00');
                 setEditingId(null);
                 setJobDate(typeof dateOverride === 'string' ? dateOverride : activeDate);
@@ -1350,7 +1394,7 @@
                 }
                 
                 const wsData = [
-                    ["날짜", "주소", "작업내용", "총 매출(원)", "총 자재비(원)", "순수입(원)", "수수료(원)", "최종정산액(원)"]
+                    ["날짜", "주소", "작업내용", "총 매출(원)", "김팀장 자재비(원)", "박팀장 자재비(원)", "미지정 자재비(원)", "순수입(원)", "수수료(원)", "김팀장 정산금(원)", "박팀장 정산금(원)"]
                 ];
                 
                 monthlyStats.monthJobs.forEach(job => {
@@ -1358,22 +1402,26 @@
                     const tasksStr = job.tasks?.map(t => t.description || '내용없음').join(', ') || '내용없음';
                     const net = job.netIncome !== undefined ? job.netIncome : ((job.totalAmount || 0) - (job.totalMaterialCost || 0));
                     const fee = net * 0.3;
-                    const finalProfit = net - fee;
+                    const baseSettlement = (net - fee) / 2;
+                    const materialBreakdown = getMaterialBreakdown(job);
                     
                     wsData.push([
                         dateStr,
                         job.address,
                         tasksStr,
                         job.totalAmount || 0,
-                        job.totalMaterialCost || 0,
+                        materialBreakdown.kim,
+                        materialBreakdown.park,
+                        materialBreakdown.unassigned,
                         net,
                         fee,
-                        finalProfit
+                        baseSettlement + materialBreakdown.kim,
+                        baseSettlement + materialBreakdown.park
                     ]);
                 });
                 
                 wsData.push([""]); 
-                wsData.push(["월 총합", "", "", monthlyStats.totalRev, monthlyStats.totalMat, monthlyStats.totalNet, monthlyStats.fee, monthlyStats.finalProfit]);
+                wsData.push(["월 총합", "", "", monthlyStats.totalRev, monthlyStats.kimMat, monthlyStats.parkMat, monthlyStats.unassignedMat, monthlyStats.totalNet, monthlyStats.fee, monthlyStats.kimSettlement, monthlyStats.parkSettlement]);
 
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1432,10 +1480,11 @@
                     // 요약 박스
                     const summaryItems = [
                         ['총 매출',    `${monthlyStats.totalRev.toLocaleString()} 원`],
-                        ['총 자재비',  `-${monthlyStats.totalMat.toLocaleString()} 원`],
-                        ['순수입',     `${monthlyStats.totalNet.toLocaleString()} 원`],
+                        ['김팀장 자재비',`${monthlyStats.kimMat.toLocaleString()} 원`],
+                        ['박팀장 자재비',`${monthlyStats.parkMat.toLocaleString()} 원`],
                         ['수수료(30%)',`-${monthlyStats.fee.toLocaleString()} 원`],
-                        ['최종 정산액',`${monthlyStats.finalProfit.toLocaleString()} 원`],
+                        ['김팀장 정산금',`${monthlyStats.kimSettlement.toLocaleString()} 원`],
+                        ['박팀장 정산금',`${monthlyStats.parkSettlement.toLocaleString()} 원`],
                     ];
 
                     const boxTop = 38;
@@ -1444,9 +1493,9 @@
 
                     summaryItems.forEach(([label, value], i) => {
                         const x = marginL + i * colW;
-                        const isLast = i === summaryItems.length - 1;
+                        const isSettlement = label.includes('정산금');
                         // 배경
-                        pdf.setFillColor(isLast ? 238 : 248, isLast ? 242 : 250, isLast ? 255 : 252);
+                        pdf.setFillColor(isSettlement ? 238 : 248, isSettlement ? 242 : 250, isSettlement ? 255 : 252);
                         pdf.rect(x, boxTop, colW, boxH * 2 + 4, 'F');
                         pdf.setDrawColor(180, 180, 200);
                         pdf.rect(x, boxTop, colW, boxH * 2 + 4, 'S');
@@ -1456,11 +1505,11 @@
                         pdf.setTextColor(100, 100, 120);
                         pdf.text(label, x + colW / 2, boxTop + 6, { align: 'center' });
                         // 값
-                        pdf.setFontSize(isLast ? 10 : 9);
+                        pdf.setFontSize(isSettlement ? 9 : 8);
                         pdf.setFont('NanumGothic', 'bold');
-                        pdf.setTextColor(isLast ? 67 : (label.includes('-') || label === '총 자재비' || label === '수수료(30%)') ? 200 : 30,
-                                         isLast ? 56 : 30,
-                                         isLast ? 202 : 30);
+                        pdf.setTextColor(isSettlement ? 67 : label === '수수료(30%)' ? 200 : 30,
+                                         isSettlement ? 56 : 30,
+                                         isSettlement ? 202 : 30);
                         pdf.text(value, x + colW / 2, boxTop + 14, { align: 'center' });
                     });
 
@@ -1592,10 +1641,17 @@
 
                 let totalRev = 0;
                 let totalMat = 0;
+                let kimMat = 0;
+                let parkMat = 0;
+                let unassignedMat = 0;
 
                 completedJobs.forEach((job, idx) => {
                     totalRev += (job.totalAmount || 0);
                     totalMat += (job.totalMaterialCost || 0);
+                    const materialBreakdown = getMaterialBreakdown(job);
+                    kimMat += materialBreakdown.kim;
+                    parkMat += materialBreakdown.park;
+                    unassignedMat += materialBreakdown.unassigned;
                     
                     const taskNames = job.tasks && job.tasks.length > 0 
                                       ? job.tasks.map(t => t.description || '내용 없음').join(', ') 
@@ -1612,11 +1668,20 @@
 
                 const net = totalRev - totalMat;
                 const fee = net * 0.3;
+                const baseSettlement = (net - fee) / 2;
+                const kimSettlement = baseSettlement + kimMat;
+                const parkSettlement = baseSettlement + parkMat;
 
                 report += `------------------------\n`;
                 report += `■ 일일 매출: ${totalRev.toLocaleString()}원\n`;
                 report += `■ 총 자재비: ${totalMat.toLocaleString()}원\n`;
-                report += `■ 수수료(30%): ${fee.toLocaleString()}원`;
+                report += `  · 김팀장 자재비: ${kimMat.toLocaleString()}원\n`;
+                report += `  · 박팀장 자재비: ${parkMat.toLocaleString()}원\n`;
+                if (unassignedMat > 0) report += `  · 미지정 자재비: ${unassignedMat.toLocaleString()}원\n`;
+                report += `■ 수수료(30%): ${fee.toLocaleString()}원\n`;
+                report += `■ 김팀장 정산금: ${kimSettlement.toLocaleString()}원\n`;
+                report += `■ 박팀장 정산금: ${parkSettlement.toLocaleString()}원`;
+                if (unassignedMat > 0) report += `\n※ 미지정 자재비는 담당자 지정 후 정산금에 반영됩니다.`;
 
                 return report;
             };
@@ -1825,6 +1890,19 @@
                                             <span className="absolute right-3 top-2.5 text-sm text-slate-400">만</span>
                                         </div>
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-bold text-slate-500 shrink-0">자재비 담당</span>
+                                        <select
+                                            className="flex-1 px-3 py-2.5 bg-slate-50 rounded-lg text-sm font-bold text-slate-700 border border-slate-200 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:text-slate-400"
+                                            value={task.materialOwner || ''}
+                                            onChange={(e) => handleTaskChange(index, 'materialOwner', e.target.value)}
+                                            disabled={!(Number(task.materialCost) > 0)}
+                                        >
+                                            <option value="">담당자 선택</option>
+                                            <option value="kim">김팀장</option>
+                                            <option value="park">박팀장</option>
+                                        </select>
+                                    </div>
                                     {tasks.length > 1 && (
                                         <button onClick={() => removeTask(index)} className="absolute -top-2 -right-2 p-1 bg-white shadow-sm text-slate-400 hover:text-red-500 border border-slate-200 rounded-full">
                                             <X className="w-3.5 h-3.5" />
@@ -1847,6 +1925,12 @@
                                 <span className="text-sm font-bold text-slate-600">총 자재비</span>
                                 <span className="text-sm font-extrabold text-red-500">- {displayMaterialCost.toLocaleString()} 원</span>
                             </div>
+                            {displayMaterialCost > 0 && (
+                                <div className="pl-3 space-y-1 text-xs font-bold text-slate-500">
+                                    <div className="flex justify-between"><span>김팀장 자재비</span><span>{displayKimMaterialCost.toLocaleString()} 원</span></div>
+                                    <div className="flex justify-between"><span>박팀장 자재비</span><span>{displayParkMaterialCost.toLocaleString()} 원</span></div>
+                                </div>
+                            )}
                             <div className="pt-2 border-t border-teal-200 flex justify-between items-center">
                                 <span className="text-base font-bold text-teal-800">예상 순수입</span>
                                 <span className="text-lg font-extrabold text-teal-700">{netIncome.toLocaleString()} 원</span>
@@ -2186,8 +2270,13 @@
                                         <div className="text-lg font-extrabold text-slate-800">{monthlyStats.totalRev.toLocaleString()}원</div>
                                     </div>
                                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                                        <div className="text-xs font-bold text-slate-500 mb-1">총 자재비</div>
-                                        <div className="text-lg font-extrabold text-red-500">-{monthlyStats.totalMat.toLocaleString()}원</div>
+                                        <div className="text-xs font-bold text-slate-500 mb-2">총 자재비</div>
+                                        <div className="text-lg font-extrabold text-red-500 mb-2">-{monthlyStats.totalMat.toLocaleString()}원</div>
+                                        <div className="space-y-1 text-[11px] font-bold text-slate-500 border-t border-slate-100 pt-2">
+                                            <div className="flex justify-between"><span>김팀장</span><span>{monthlyStats.kimMat.toLocaleString()}원</span></div>
+                                            <div className="flex justify-between"><span>박팀장</span><span>{monthlyStats.parkMat.toLocaleString()}원</span></div>
+                                            {monthlyStats.unassignedMat > 0 && <div className="flex justify-between text-amber-600"><span>미지정</span><span>{monthlyStats.unassignedMat.toLocaleString()}원</span></div>}
+                                        </div>
                                     </div>
                                     <div className="bg-indigo-50 p-4 rounded-2xl shadow-sm border border-indigo-100 col-span-2">
                                         <div className="flex justify-between items-center mb-2">
@@ -2198,10 +2287,21 @@
                                             <span>수수료 (30%)</span>
                                             <span className="text-red-500">-{monthlyStats.fee.toLocaleString()}원</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-base font-extrabold text-slate-800 mt-1.5">
-                                            <span>최종 정산액</span>
+                                        <div className="flex justify-between items-center text-xs font-bold text-slate-600 mt-1.5">
+                                            <span>공동 순수익</span>
                                             <span>{monthlyStats.finalProfit.toLocaleString()}원</span>
                                         </div>
+                                        <div className="mt-3 pt-3 border-t border-indigo-200 space-y-2">
+                                            <div className="flex justify-between items-center gap-2 text-base font-extrabold text-slate-800">
+                                                <span>김팀장 정산금</span>
+                                                <span className="text-indigo-700">{monthlyStats.kimSettlement.toLocaleString()}원</span>
+                                            </div>
+                                            <div className="flex justify-between items-center gap-2 text-base font-extrabold text-slate-800">
+                                                <span>박팀장 정산금</span>
+                                                <span className="text-indigo-700">{monthlyStats.parkSettlement.toLocaleString()}원</span>
+                                            </div>
+                                        </div>
+                                        {monthlyStats.unassignedMat > 0 && <p className="mt-3 text-[10px] font-bold text-amber-600">※ 기존 미지정 자재비는 담당 작업을 수정해 담당자를 선택하면 정산금에 반영됩니다.</p>}
                                     </div>
 
                                     <div className="col-span-2 flex gap-3 mt-2">
@@ -2547,7 +2647,7 @@
                                                                     </div>
                                                                     <div className="flex justify-end gap-3 text-xs text-slate-500 mt-1">
                                                                         {Number(task.amount) > 0 && <span>작업비: {(Number(task.amount)*10000).toLocaleString()}원</span>}
-                                                                        {Number(task.materialCost) > 0 && <span className="text-red-500">자재비: {(Number(task.materialCost)*10000).toLocaleString()}원</span>}
+                                                                        {Number(task.materialCost) > 0 && <span className="text-red-500">자재비{task.materialOwner === 'kim' ? '(김팀장)' : task.materialOwner === 'park' ? '(박팀장)' : '(미지정)'}: {(Number(task.materialCost)*10000).toLocaleString()}원</span>}
                                                                     </div>
                                                                 </div>
                                                             ))}
