@@ -1735,6 +1735,42 @@
                 handleCopyText(copyLines.join('\n'), '주소와 핸드폰번호가 복사되었습니다.');
             };
 
+            const handleCopyDailyReservations = () => {
+                if (activeDateJobs.length === 0) {
+                    alert('복사할 예약이 없습니다.');
+                    return;
+                }
+
+                const [year, month, day] = activeDate.split('-');
+                const dateTitle = `${year}년 ${Number(month)}월 ${Number(day)}일(${getDayOfWeekFromStr(activeDate)}) 예약`;
+                const reservationText = activeDateJobs.map((job, idx) => {
+                    const fullAddress = [job.address, job.details]
+                        .map(value => String(value || '').trim())
+                        .filter(Boolean)
+                        .join(' ');
+                    const taskDescriptions = (job.tasks || [])
+                        .map(task => String(task.description || '').trim())
+                        .filter(Boolean)
+                        .join(', ');
+                    const noteText = String(job.notes || '').trim();
+                    const phoneText = String(job.phoneNumber || '').trim();
+                    const copyLines = [`[${idx + 1}]`];
+
+                    if (fullAddress) copyLines.push(`주소: ${fullAddress}`);
+                    if (job.visitTime) copyLines.push(`방문시간: ${job.visitTime}`);
+                    if (taskDescriptions) copyLines.push(`작업내용: ${taskDescriptions}`);
+                    if (noteText) copyLines.push(`참고사항: ${noteText}`);
+                    if (phoneText) copyLines.push(`고객연락처: ${phoneText}`);
+
+                    return copyLines.join('\n');
+                }).join('\n\n');
+
+                handleCopyText(
+                    `${dateTitle}\n총 ${activeDateJobs.length}건\n\n${reservationText}`,
+                    `${activeDateJobs.length}건의 예약 정보가 복사되었습니다.`
+                );
+            };
+
             const renderInputForm = () => (
                 <section ref={inputSectionRef} className={`rounded-3xl p-6 shadow-xl border-2 relative overflow-hidden bg-slate-50 border-slate-300 mt-8`}>
                     <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-full -mr-8 -mt-8 opacity-50 ${editingId ? 'bg-teal-200' : 'bg-teal-100'}`}></div>
@@ -2346,11 +2382,22 @@
 
                         {currentView === 'daily' && (
                             <div className="space-y-6">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm">
-                                        {activeDate.slice(5).replace('-', '월 ')}일
+                                <div className="flex items-center justify-between gap-3 mb-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm shrink-0">
+                                            {activeDate.slice(5).replace('-', '월 ')}일
+                                        </div>
+                                        <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
                                     </div>
-                                    <span className="text-slate-500 text-sm font-medium">({getDayOfWeekFromStr(activeDate)}) 작업 일정</span>
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyDailyReservations}
+                                        className="shrink-0 bg-teal-600 text-white px-3 py-2 rounded-xl text-xs font-extrabold shadow-sm flex items-center gap-1.5 active:scale-95 hover:bg-teal-700"
+                                        title="하루치 작업 내역을 한 번에 복사"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        <span>작업 내역 복사</span>
+                                    </button>
                                 </div>
 
                                 <DailyRouteMap points={dailyRoutePoints} loading={isRouteLoading} debugItems={routeDebugItems} failedItems={routeFailedItems} />
