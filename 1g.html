@@ -1025,13 +1025,41 @@
                 });
             };
 
+            // 기존 입력은 보존하고, 새 분석에서 확인된 정보만 추가한다.
+            const mergeAnalysisNotes = (existing, incoming) => {
+                const original = String(existing || '');
+                const key = value => value.replace(/\s+/g, '').replace(/[.!。]+$/g, '');
+                const split = value => String(value || '').split(/[,;\n]+/).map(v => v.trim()).filter(Boolean);
+                const seen = new Set(split(original).map(key));
+                const additions = split(incoming).filter(value => {
+                    const identity = key(value);
+                    if (!identity || seen.has(identity)) return false;
+                    seen.add(identity);
+                    return true;
+                });
+                if (!additions.length) return original;
+                return original.trim() ? original + (original.endsWith('\n') ? '' : '\n') + additions.join(', ') : additions.join(', ');
+            };
+
+            const getAnalysisPhoneChoices = (existing, incoming) => {
+                const values = [String(existing || '').trim(), ...incoming].filter(Boolean);
+                const seen = new Set();
+                const unique = values.filter(value => {
+                    const identity = value.replace(/\D/g, '');
+                    if (seen.has(identity)) return false;
+                    seen.add(identity);
+                    return true;
+                });
+                return unique.length > 1 ? unique : [];
+            };
+
             const handleHybridSearch = async () => {
                 if (!rawInput.trim() || isProcessing) return;
                 const sourceText = rawInput;
                 const sequence = ++searchSequence.current;
                 const phones = extractInputPhones(sourceText);
-                setPhoneNumber(phones.length === 1 ? phones[0] : '');
-                setPhoneChoices(phones.length > 1 ? phones : []);
+                setPhoneChoices(getAnalysisPhoneChoices(phoneNumber, phones));
+                setPhoneNumber(previous => String(previous || '').trim() ? previous : (phones.length === 1 ? phones[0] : ''));
                 setAddressChoices([]);
                 setAddressCheckMessage('문자 분석 중…');
                 setIsProcessing(true);
@@ -1068,7 +1096,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     setParsedAddress(query);
                     const visitInfo = recoverVisitNotes(sourceText, recovered.details, parsed.notes.trim());
                     setParsedDetails(visitInfo.details);
-                    setNotes(visitInfo.notes);
+                    setNotes(previous => mergeAnalysisNotes(previous, visitInfo.notes));
                     if (!query) { setAddressCheckMessage('주소를 찾지 못했습니다. 주소를 직접 입력해주세요.'); return; }
                     setAddressCheckMessage('주소 확인 중…');
                     const results = new Map();
@@ -1992,7 +2020,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     {addressChoices.length > 0 && <div className="mb-4 max-h-48 overflow-auto space-y-2">
                         {addressChoices.map(address => <button key={address} type="button" className="block w-full text-left p-3 border border-teal-200 rounded-xl bg-white text-sm" onClick={() => { setParsedAddress(address); setAddressChoices([]); setAddressCheckMessage(`선택한 공식 도로명주소: ${address}`); }}>{address}</button>)}
                     </div>}
-                    {phoneChoices.length > 1 && <div className="mb-3 text-sm text-slate-600">전화번호가 여러 개입니다. 고객 연락처를 선택해주세요.
+                    {phoneChoices.length > 1 && <div className="mb-3 text-sm text-slate-600">입력된 번호는 자동으로 바꾸지 않습니다. 사용할 연락처를 선택해주세요.
                         {phoneChoices.map(phone => <button type="button" key={phone} className="m-1 p-2 border rounded-lg bg-white" onClick={() => { setPhoneNumber(phone); setPhoneChoices([]); }}>{phone}</button>)}
                     </div>}
                     <div className="mb-5 space-y-2">
