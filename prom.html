@@ -193,85 +193,74 @@
         const status = document.getElementById('load-status');
         const retryButton = document.getElementById('btn-retry');
         const moreButton = document.getElementById('btn-more');
-        let visibleLimit = 20;
-        let unsubscribe = null;
-        let loadTimer = null;
         let generation = 0;
         const scriptData = new Map();
 
-        function safeData(snapshot) {
-            const value = snapshot.data();
-            return { ...value,
-                title: typeof value.title === 'string' ? value.title : '제목 없음',
-                content: typeof value.content === 'string' ? value.content : '' };
+        let nextPageToken = '';
+        const REST_BASE = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/scripts`;
+        function decodeDocument(item) {
+            const fields = item.fields || {};
+            return { id: item.name.split('/').pop(), data: {
+                title: fields.title?.stringValue || '제목 없음',
+                content: fields.content?.stringValue || ''
+            }};
         }
-
-        function listenToScripts() {
+        function drawList() {
+            const fragment = document.createDocumentFragment();
+            for (const [id, data] of scriptData) fragment.appendChild(renderScriptItem(id, data));
+            if (!scriptData.size) {
+                const empty = document.createElement('li');
+                empty.textContent = '저장된 원고가 없습니다. 새 원고를 만들어보세요.';
+                fragment.appendChild(empty);
+            }
+            listContainer.replaceChildren(fragment);
+        }
+        async function listenToScripts(append = false) {
             const activeGeneration = ++generation;
-            if (unsubscribe) unsubscribe();
-            clearTimeout(loadTimer);
-            retryButton.hidden = true;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 12000);
+            const started = performance.now();
             moreButton.disabled = true;
-            status.textContent = '목록을 확인하는 중...';
-            loadTimer = setTimeout(() => {
+            retryButton.hidden = false;
+            retryButton.textContent = '새로 불러오기';
+            status.textContent = scriptData.size ? '기존 목록을 표시하며 서버 확인 중...' : '서버에서 목록을 불러오는 중...';
+            try {
+                const url = new URL(REST_BASE);
+                url.searchParams.set('pageSize', '20');
+                url.searchParams.set('orderBy', 'createdAt desc');
+                if (append && nextPageToken) url.searchParams.set('pageToken', nextPageToken);
+                const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error?.message || `HTTP ${response.status}`);
                 if (activeGeneration !== generation) return;
-                status.textContent = '연결이 지연되고 있습니다. 저장된 목록을 확인하거나 다시 시도해주세요.';
-                retryButton.hidden = false;
-            }, 12000);
-            const q = query(collection(db, 'scripts'), orderBy('createdAt', 'desc'), limit(visibleLimit));
-            unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, snapshot => {
-                if (activeGeneration !== generation) return;
-                const cached = snapshot.metadata.fromCache;
-                // An empty cache is not proof that the server has no manuscripts.
-                if (!cached || !snapshot.empty) {
-                    const fragment = document.createDocumentFragment();
-                    scriptData.clear();
-                    snapshot.forEach(item => {
-                        const data = safeData(item);
-                        scriptData.set(item.id, data);
-                        fragment.appendChild(renderScriptItem(item.id, data));
-                    });
-                    if (snapshot.empty) {
-                        const empty = document.createElement('li');
-                        empty.textContent = '저장된 원고가 없습니다. 새 원고를 만들어보세요.';
-                        fragment.appendChild(empty);
-                    }
-                    listContainer.replaceChildren(fragment);
-                    if (currentDocId && scriptData.has(currentDocId)) {
-                        currentScriptData = scriptData.get(currentDocId);
-                    }
+                if (!append) scriptData.clear();
+                for (const item of result.documents || []) {
+                    const record = decodeDocument(item);
+                    scriptData.set(record.id, record.data);
                 }
-                if (!cached) {
-                    clearTimeout(loadTimer);
-                    retryButton.hidden = true;
-                }
-                status.textContent = cached
-                    ? '저장된 목록을 표시 중입니다. 서버 연결을 확인하고 있습니다.'
-                    : `${snapshot.size}개 원고 표시 중${snapshot.metadata.hasPendingWrites ? ' · 변경사항 동기화 중' : ''}`;
-                moreButton.hidden = snapshot.size < visibleLimit;
-                moreButton.disabled = cached;
-            }, error => {
+                nextPageToken = result.nextPageToken || '';
+                drawList();
+                moreButton.hidden = !nextPageToken;
+                status.textContent = `${scriptData.size}개 원고 · ${((performance.now() - started) / 1000).toFixed(2)}초에 불러옴`;
+                if (currentDocId && scriptData.has(currentDocId)) currentScriptData = scriptData.get(currentDocId);
+            } catch (error) {
                 if (activeGeneration !== generation) return;
-                clearTimeout(loadTimer);
-                console.error('목록 불러오기 오류:', error);
-                const reason = {
-                    'permission-denied': '조회 권한이 없습니다. Firebase 보안 규칙과 인증 설정을 확인해주세요.',
-                    'failed-precondition': '조회 설정을 확인해야 합니다. 콘솔 오류의 인덱스 안내를 확인해주세요.',
-                    'unavailable': '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.',
-                    'resource-exhausted': '서비스 사용 한도에 도달했습니다. Firebase 할당량을 확인해주세요.'
-                }[error.code] || '목록을 불러오지 못했습니다.';
-                status.textContent = `${reason} (${error.code || 'unknown'})`;
-                retryButton.hidden = false;
-                moreButton.disabled = true;
+                console.error('목록 조회 오류', error);
                 if (!scriptData.size) listContainer.replaceChildren();
-            });
+                status.textContent = error.name === 'AbortError'
+                    ? '서버 응답이 12초 이상 지연됐습니다. 다시 불러오기를 눌러주세요.'
+                    : `목록 조회 실패: ${error.message}`;
+            } finally {
+                clearTimeout(timer);
+                if (activeGeneration === generation) moreButton.disabled = false;
+            }
         }
 
-        retryButton.onclick = listenToScripts;
-        moreButton.onclick = () => { visibleLimit += 20; listenToScripts(); };
-        window.addEventListener('online', listenToScripts);
+        retryButton.onclick = () => listenToScripts();
+        moreButton.onclick = () => listenToScripts(true);
+        window.addEventListener('online', () => listenToScripts());
         window.addEventListener('offline', () => {
-            status.textContent = '인터넷 연결이 끊겼습니다. 저장된 목록을 표시합니다.';
+            status.textContent = scriptData.size ? '인터넷 연결이 끊겼습니다. 현재 목록은 계속 열 수 있습니다.' : '인터넷 연결이 끊겼습니다. 연결 후 다시 불러오기를 눌러주세요.';
         });
         listenToScripts();
 
@@ -296,7 +285,7 @@
                 const latest = scriptData.get(id) || data;
                 if (!confirm(`'${latest.title}' 원고를 삭제하시겠습니까?`)) return;
                 remove.disabled = true;
-                try { await deleteDoc(doc(db, 'scripts', id)); }
+                try { await deleteDoc(doc(db, 'scripts', id)); await listenToScripts(); }
                 catch (error) {
                     console.error('삭제 오류:', error);
                     alert(`삭제하지 못했습니다. (${error.code || 'unknown'})`);
@@ -369,6 +358,7 @@
                     });
                 }
                 editorModal.style.display = 'none';
+                await listenToScripts();
             } catch (e) {
                 console.error("Error:", e);
                 alert(`저장 중 오류가 발생했습니다. (${e.code || 'unknown'})`);
