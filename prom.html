@@ -99,6 +99,9 @@
         <ul class="script-list" id="script-list-container">
             <li style="text-align:center; color:#888; padding:20px;">불러오는 중...</li>
         </ul>
+        <p id="load-status" role="status" aria-live="polite"></p>
+        <button id="btn-retry" hidden>다시 불러오기</button>
+        <button id="btn-more" hidden>더 보기</button>
     </div>
 
     <div id="prompter-view">
@@ -128,10 +131,33 @@
         </div>
     </div>
 
+    <script>
+        window.addEventListener('error', (event) => {
+            if (event.target && event.target.tagName === 'SCRIPT') {
+                document.getElementById('load-status').textContent = '프로그램을 불러오지 못했습니다. 연결을 확인한 뒤 새로고침해주세요.';
+            }
+        }, true);
+    </script>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } 
-            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        let initializeApp, initializeFirestore, persistentLocalCache, persistentMultipleTabManager;
+        let collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, limit;
+        try {
+            const modules = await Promise.all([
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
+                import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
+            ]);
+            ({ initializeApp } = modules[0]);
+            ({ initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+                collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, limit } = modules[1]);
+        } catch (error) {
+            document.getElementById('script-list-container').textContent = '';
+            document.getElementById('load-status').textContent = '프로그램 로딩 실패: 연결을 확인하고 다시 시도해주세요.';
+            const retry = document.getElementById('btn-retry');
+            retry.hidden = false;
+            retry.onclick = () => location.reload();
+            console.error('Firebase 모듈 로딩 실패', error);
+            throw error;
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyBoEKTcBVRqsrWeSNEOd_2nDQGiZxYqo3U",
@@ -145,7 +171,9 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = initializeFirestore(app, {
+            localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
 
         // --- DOM 요소 ---
         const listView = document.getElementById('list-view');
@@ -162,90 +190,120 @@
         let currentScriptData = {};
 
         // --- 1. 원고 목록 불러오기 ---
-        const q = query(collection(db, "scripts"), orderBy("createdAt", "desc"));
-        
-        let isFirstLoad = true;
-        
-        onSnapshot(q, (snapshot) => {
-            if (!isFirstLoad && snapshot.docChanges().length === 0) return;
-            
-            if (isFirstLoad) {
-                listContainer.innerHTML = "";
-                if (snapshot.empty) {
-                    listContainer.innerHTML = "<li style='text-align:center; padding:20px; color:#999;'>저장된 원고가 없습니다.<br>새 원고를 만들어보세요.</li>";
-                    isFirstLoad = false;
-                    return;
-                }
+        const status = document.getElementById('load-status');
+        const retryButton = document.getElementById('btn-retry');
+        const moreButton = document.getElementById('btn-more');
+        let visibleLimit = 20;
+        let unsubscribe = null;
+        let loadTimer = null;
+        let generation = 0;
+        const scriptData = new Map();
 
-                snapshot.forEach((docSnap) => {
-                    renderScriptItem(docSnap);
-                });
-                isFirstLoad = false;
-            } else {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        renderScriptItem(change.doc, true);
-                    } else if (change.type === "modified") {
-                        updateScriptItem(change.doc);
-                    } else if (change.type === "removed") {
-                        removeScriptItem(change.doc.id);
+        function safeData(snapshot) {
+            const value = snapshot.data();
+            return { ...value,
+                title: typeof value.title === 'string' ? value.title : '제목 없음',
+                content: typeof value.content === 'string' ? value.content : '' };
+        }
+
+        function listenToScripts() {
+            const activeGeneration = ++generation;
+            if (unsubscribe) unsubscribe();
+            clearTimeout(loadTimer);
+            retryButton.hidden = true;
+            moreButton.disabled = true;
+            status.textContent = '목록을 확인하는 중...';
+            loadTimer = setTimeout(() => {
+                if (activeGeneration !== generation) return;
+                status.textContent = '연결이 지연되고 있습니다. 저장된 목록을 확인하거나 다시 시도해주세요.';
+                retryButton.hidden = false;
+            }, 12000);
+            const q = query(collection(db, 'scripts'), orderBy('createdAt', 'desc'), limit(visibleLimit));
+            unsubscribe = onSnapshot(q, { includeMetadataChanges: true }, snapshot => {
+                if (activeGeneration !== generation) return;
+                const cached = snapshot.metadata.fromCache;
+                // An empty cache is not proof that the server has no manuscripts.
+                if (!cached || !snapshot.empty) {
+                    const fragment = document.createDocumentFragment();
+                    scriptData.clear();
+                    snapshot.forEach(item => {
+                        const data = safeData(item);
+                        scriptData.set(item.id, data);
+                        fragment.appendChild(renderScriptItem(item.id, data));
+                    });
+                    if (snapshot.empty) {
+                        const empty = document.createElement('li');
+                        empty.textContent = '저장된 원고가 없습니다. 새 원고를 만들어보세요.';
+                        fragment.appendChild(empty);
                     }
-                });
-            }
-        }, (error) => {
-            console.error("목록 불러오기 오류:", error);
-            listContainer.innerHTML = "<li style='text-align:center; padding:20px; color:#dc2626;'>오류가 발생했습니다.<br>새로고침해주세요.</li>";
-        });
+                    listContainer.replaceChildren(fragment);
+                    if (currentDocId && scriptData.has(currentDocId)) {
+                        currentScriptData = scriptData.get(currentDocId);
+                    }
+                }
+                if (!cached) {
+                    clearTimeout(loadTimer);
+                    retryButton.hidden = true;
+                }
+                status.textContent = cached
+                    ? '저장된 목록을 표시 중입니다. 서버 연결을 확인하고 있습니다.'
+                    : `${snapshot.size}개 원고 표시 중${snapshot.metadata.hasPendingWrites ? ' · 변경사항 동기화 중' : ''}`;
+                moreButton.hidden = snapshot.size < visibleLimit;
+                moreButton.disabled = cached;
+            }, error => {
+                if (activeGeneration !== generation) return;
+                clearTimeout(loadTimer);
+                console.error('목록 불러오기 오류:', error);
+                const reason = {
+                    'permission-denied': '조회 권한이 없습니다. Firebase 보안 규칙과 인증 설정을 확인해주세요.',
+                    'failed-precondition': '조회 설정을 확인해야 합니다. 콘솔 오류의 인덱스 안내를 확인해주세요.',
+                    'unavailable': '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.',
+                    'resource-exhausted': '서비스 사용 한도에 도달했습니다. Firebase 할당량을 확인해주세요.'
+                }[error.code] || '목록을 불러오지 못했습니다.';
+                status.textContent = `${reason} (${error.code || 'unknown'})`;
+                retryButton.hidden = false;
+                moreButton.disabled = true;
+                if (!scriptData.size) listContainer.replaceChildren();
+            });
+        }
 
-        function renderScriptItem(docSnap, prepend = false) {
-            const data = docSnap.data();
+        retryButton.onclick = listenToScripts;
+        moreButton.onclick = () => { visibleLimit += 20; listenToScripts(); };
+        window.addEventListener('online', listenToScripts);
+        window.addEventListener('offline', () => {
+            status.textContent = '인터넷 연결이 끊겼습니다. 저장된 목록을 표시합니다.';
+        });
+        listenToScripts();
+
+        function renderScriptItem(id, data) {
             const li = document.createElement('li');
             li.className = 'script-item';
-            li.dataset.id = docSnap.id;
-            
-            const preview = data.content ? data.content.substring(0, 30) + "..." : "내용 없음";
-
-            li.innerHTML = `
-                <div class="script-info" style="flex-grow:1;">
-                    <h3>${data.title || "제목 없음"}</h3>
-                    <p>${preview}</p>
-                </div>
-                <button class="btn-delete" data-id="${docSnap.id}">삭제</button>
-            `;
-
-            li.querySelector('.script-info').onclick = () => openPrompter(docSnap.id, data);
-            
-            li.querySelector('.btn-delete').onclick = (e) => {
-                e.stopPropagation();
-                if(confirm(`'${data.title}' 원고를 삭제하시겠습니까?`)) {
-                    deleteDoc(doc(db, "scripts", docSnap.id));
-                }
+            li.dataset.id = id;
+            const info = document.createElement('div');
+            info.className = 'script-info';
+            info.style.flexGrow = '1';
+            const title = document.createElement('h3');
+            title.textContent = data.title || '제목 없음';
+            const preview = document.createElement('p');
+            preview.textContent = data.content ? data.content.slice(0, 30) + (data.content.length > 30 ? '...' : '') : '내용 없음';
+            info.append(title, preview);
+            info.onclick = () => openPrompter(id, scriptData.get(id) || data);
+            const remove = document.createElement('button');
+            remove.className = 'btn-delete';
+            remove.textContent = '삭제';
+            remove.onclick = async event => {
+                event.stopPropagation();
+                const latest = scriptData.get(id) || data;
+                if (!confirm(`'${latest.title}' 원고를 삭제하시겠습니까?`)) return;
+                remove.disabled = true;
+                try { await deleteDoc(doc(db, 'scripts', id)); }
+                catch (error) {
+                    console.error('삭제 오류:', error);
+                    alert(`삭제하지 못했습니다. (${error.code || 'unknown'})`);
+                } finally { remove.disabled = false; }
             };
-
-            if (prepend && listContainer.firstChild) {
-                listContainer.insertBefore(li, listContainer.firstChild);
-            } else {
-                listContainer.appendChild(li);
-            }
-        }
-
-        function updateScriptItem(docSnap) {
-            const data = docSnap.data();
-            const existingItem = listContainer.querySelector(`[data-id="${docSnap.id}"]`);
-            if (existingItem) {
-                const preview = data.content ? data.content.substring(0, 30) + "..." : "내용 없음";
-                existingItem.querySelector('h3').textContent = data.title || "제목 없음";
-                existingItem.querySelector('p').textContent = preview;
-            }
-        }
-
-        function removeScriptItem(docId) {
-            const existingItem = listContainer.querySelector(`[data-id="${docId}"]`);
-            if (existingItem) {
-                existingItem.style.transition = 'opacity 0.3s';
-                existingItem.style.opacity = '0';
-                setTimeout(() => existingItem.remove(), 300);
-            }
+            li.append(info, remove);
+            return li;
         }
 
         // --- 2. 화면 전환 로직 ---
@@ -292,6 +350,8 @@
 
             if (!title) { alert("제목을 입력해주세요."); return; }
 
+            const saveButton = document.getElementById('btn-save');
+            saveButton.disabled = true;
             try {
                 if (currentDocId) {
                     await updateDoc(doc(db, "scripts", currentDocId), {
@@ -311,7 +371,9 @@
                 editorModal.style.display = 'none';
             } catch (e) {
                 console.error("Error:", e);
-                alert("저장 중 오류가 발생했습니다.");
+                alert(`저장 중 오류가 발생했습니다. (${e.code || 'unknown'})`);
+            } finally {
+                saveButton.disabled = false;
             }
         };
 
