@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>홈케어의 제왕 매출 관리</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>홈케어의 제왕 · 매출관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -199,6 +199,10 @@
     .month-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .month-btn { padding: 8px 0; font-size: 12px; }
   }
+
+  :root{--bg:#101512;--surface:#19211c;--surface2:#232e27;--surface3:#303d34;--border:#354339;--accent:#f2bb65;--text2:#b2beb5;--text3:#91a096;--green:#7bd6a1;--radius:16px}
+  .main{max-width:1100px;padding:24px}.header{height:76px}.logo{font-size:22px}.nav{position:sticky;top:76px;z-index:90}.nav-btn{padding:16px 24px}.kpi-grid{grid-template-columns:repeat(4,1fr)}.kpi-value{font-size:26px}.kpi-label,label{font-size:13px}.kpi-sub{font-size:12px}.recent-item{padding:18px}.btn{min-height:44px;font-size:13px}.btn-sm{min-height:40px;padding:8px 12px;font-size:12px}.ri-meta{line-height:1.8}.review-banner{padding:10px 20px;text-align:center;background:#f2bb65;color:#20251e;font-size:13px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.toolbar input{flex:2;min-width:180px}.toolbar select{flex:1;min-width:130px}.list-summary{color:var(--text2);font-size:13px;margin:12px 0}.quick-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}.intro{margin:8px 0 22px}.intro h1{font-size:28px;margin-bottom:8px}.intro p{color:var(--text2);font-size:14px}.task-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.task-grid button{text-align:left;padding:18px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);cursor:pointer;font-size:14px}.task-grid strong{display:block;color:var(--accent);font-size:23px;margin-top:8px}.entry-form[hidden]{display:none}.record{display:grid;grid-template-columns:1fr auto;gap:12px}.record-title{font-size:15px;font-weight:600}.record-meta{font-size:12px;color:var(--text2);margin-top:6px}.record-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.pill{font-size:11px;padding:4px 8px;background:var(--surface3);border-radius:6px;margin-left:8px}.month-selector{flex-wrap:wrap}.month-selector button{min-height:40px}.filter-chip{background:var(--surface2);color:var(--text);padding:10px;border:1px solid var(--border);border-radius:8px}.form-title{font-size:18px}.sync-dot{animation:none}.section-header{gap:12px;flex-wrap:wrap}
+  @media(max-width:768px){.main{padding:16px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.kpi-value{font-size:22px}.record{grid-template-columns:1fr}.record-actions{justify-content:flex-end}.task-grid{grid-template-columns:1fr}.task-grid button{display:flex;align-items:center;justify-content:space-between;padding:14px}.task-grid strong{margin:0;font-size:20px}.header{padding:0 14px}.logo{font-size:18px}#headerDate{display:none}.nav-btn{padding:14px}.intro h1{font-size:24px}}
 </style>
 </head>
 <body>
@@ -222,9 +226,9 @@
 
 <div class="main">
 
-  <div class="section active" id="s-dashboard">
+  <div class="section active" id="s-dashboard"><div class="intro"><h1>오늘의 기록, 한눈에.</h1><p>매출부터 경비까지 기록하고, 놓친 일을 확인하세요.</p></div><div class="quick-actions"><button class="btn btn-primary" onclick="openEntry('revenue')">＋ 매출 등록</button><button class="btn btn-ghost" onclick="openEntry('expense')">＋ 경비 등록</button><button class="btn btn-ghost" onclick="showSection('drive')">운행 기록</button></div><div id="tasks" class="task-grid"></div>
     <div class="section-header">
-      <div class="section-title">이번 달 현황</div>
+      <div class="section-title">선택 월 현황</div>
       <div class="month-selector">
         <button onclick="changeMonth(-1)">‹</button>
         <span id="currentMonthLabel"></span>
@@ -355,7 +359,7 @@
     <div class="form-card" style="margin-bottom:8px;">
       <div class="ratio-label"><span>사업용 주행 비율</span><span id="d-ratio-pct">0%</span></div>
       <div class="ratio-bar"><div class="ratio-fill" id="d-ratio-bar" style="width:0%"></div></div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;">이 비율만큼 차량 경비 공제 가능</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;">기록 기준 사업용 비율 · 계기판과 운행일지의 차이를 확인하세요</div>
     </div>
 
     <div class="form-card" style="margin-bottom:8px;">
@@ -619,48 +623,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  const app = initializeApp({
-    apiKey:"AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
-    authDomain:"chocosora-ad4df.firebaseapp.com",
-    databaseURL:"https://chocosora-ad4df-default-rtdb.firebaseio.com",
-    projectId:"chocosora-ad4df",
-    storageBucket:"chocosora-ad4df.firebasestorage.app",
-    messagingSenderId:"798065461606",
-    appId:"1:798065461606:web:fcc2308eae7a71e8f360a7"
-  });
-  const db = getDatabase(app);
-  window.fbDB=db; window.fbRef=ref; window.fbPush=push; window.fbRemove=remove; window.fbUpdate=update; window.fbGet=get;
-  document.getElementById('syncStatus').textContent='Firebase 연결됨';
-
-  function listen(path,cb){
-    onValue(ref(db,path),snap=>{const d={};snap.forEach(c=>{d[c.key]=c.val();});cb(d);});
-  }
-  listen('revenues',d=>{window._revenues=d;renderAll();});
-  listen('expenses',d=>{window._expenses=d;renderAll();});
-  listen('drives',d=>{window._drives=d;renderAll();});
-  listen('commissions',d=>{window._commissions=d;renderAll();});
-  listen('odometers',d=>{window._odometers=d||{};renderAll();});
-  listen('paymentMethods',d=>{
-    window._paymentMethods=d;
-    renderPaymentList();
-    rebuildPaymentSelects();
-  });
-
-  onValue(ref(db,'paymentMethods'),snap=>{
-    if(!snap.exists()){
-      [
-        {name:'현금',type:'현금',icon:'💵',color:'#4caf6e',order:0},
-        {name:'계좌이체',type:'계좌이체',icon:'🏦',color:'#5b8af0',order:1},
-        {name:'신한카드 더모아',type:'신용카드',icon:'💳',color:'#f5a623',order:2},
-        {name:'사업카드 B',type:'신용카드',icon:'💳',color:'#e91e8c',order:3},
-      ].forEach(d=>push(ref(db,'paymentMethods'),d));
-    }
-  },{onlyOnce:true});
-</script>
 
 <script>
   let currentMonth = new Date();
@@ -722,6 +685,7 @@
     if(drvLabel) drvLabel.textContent=monthLabelFromDate(driveMonth);
   }
   function updateOdometerForm(){
+    if(window.odomDirty) return;
     const mk = getOdometerMonthKey();
     const data = window._odometers[mk] || {};
     const startInput = document.getElementById('d-odometer-start');
@@ -742,7 +706,7 @@
   window.changeMonth=function(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);updateMonthLabel();renderAll();};
   window.changeRevenueMonth=function(d){revenueMonth=new Date(revenueMonth.getFullYear(),revenueMonth.getMonth()+d,1);updateSectionMonthLabels();renderRevenueList();renderCommissionList();};
   window.changeExpenseMonth=function(d){expenseMonth=new Date(expenseMonth.getFullYear(),expenseMonth.getMonth()+d,1);updateSectionMonthLabels();renderExpenseList();};
-  window.changeDriveMonth=function(d){driveMonth=new Date(driveMonth.getFullYear(),driveMonth.getMonth()+d,1);updateSectionMonthLabels();updateOdometerForm();renderDriveList();};
+  window.changeDriveMonth=function(d){window.odomDirty=false;driveMonth=new Date(driveMonth.getFullYear(),driveMonth.getMonth()+d,1);updateSectionMonthLabels();updateOdometerForm();renderDriveList();};
   function filterByMonth(obj){return filterByMonthKey(obj, getMonthKey());}
   function filterByMonthKey(obj, mk){return Object.entries(obj).filter(([,v])=>v.date&&v.date.startsWith(mk));}
   function fmt(n){return '₩'+Number(n||0).toLocaleString('ko-KR');}
@@ -822,7 +786,7 @@
     document.getElementById('edit-r-memo').value=v.memo||'';
     openModal('modal-revenue');
   };
-  window.saveRevenue=function(){
+  window.saveRevenue=async function(){
     const key=document.getElementById('edit-r-key').value;
     const data={
       date:document.getElementById('edit-r-date').value,
@@ -833,8 +797,8 @@
       work:document.getElementById('edit-r-work').value.trim(),
       memo:document.getElementById('edit-r-memo').value.trim(),
     };
-    if(!data.date||!data.site||!data.amount){showToast('날짜, 현장명, 금액을 확인해주세요','error');return;}
-    window.fbUpdate(window.fbRef(window.fbDB,`revenues/${key}`),data);
+    if(!data.date||!data.site||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜, 현장명, 금액을 확인해주세요','error');return;}
+    await window.fbUpdate(window.fbRef(window.fbDB,`revenues/${key}`),data);
     closeModal('modal-revenue');
     showToast('매출이 수정되었습니다','success');
   };
@@ -875,7 +839,7 @@
     },50);
     openModal('modal-expense');
   };
-  window.saveExpense=function(){
+  window.saveExpense=async function(){
     const key=document.getElementById('edit-e-key').value;
     
     let cat = document.getElementById('edit-e-cat').value;
@@ -893,8 +857,8 @@
       receipt:document.getElementById('edit-e-receipt').value,
       memo:document.getElementById('edit-e-memo').value.trim(),
     };
-    if(!data.date||!data.amount){showToast('날짜와 금액을 확인해주세요','error');return;}
-    window.fbUpdate(window.fbRef(window.fbDB,`expenses/${key}`),data);
+    if(!data.date||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜와 금액을 확인해주세요','error');return;}
+    await window.fbUpdate(window.fbRef(window.fbDB,`expenses/${key}`),data);
     closeModal('modal-expense');
     showToast('경비가 수정되었습니다','success');
   };
@@ -957,7 +921,7 @@
     container.insertAdjacentHTML('beforeend', html);
   };
 
-  window.saveOdometer=function(){
+  window.saveOdometer=async function(){
     const startRaw = document.getElementById('d-odometer-start').value;
     const endRaw = document.getElementById('d-odometer-end').value;
     const start = startRaw === '' ? null : Number(startRaw);
@@ -966,7 +930,8 @@
     if(start !== null && start < 0 || end !== null && end < 0) { showToast('주행거리는 0 이상으로 입력해주세요', 'error'); return; }
     if(start !== null && end !== null && end < start) { showToast('월말 거리는 월초 거리보다 작을 수 없습니다', 'error'); return; }
     const mk = getOdometerMonthKey();
-    window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { start, end, value: end, updatedAt: Date.now() });
+    window.odomDirty=false;
+    await window.fbUpdate(window.fbRef(window.fbDB, `odometers/${mk}`), { start, end, value: end, updatedAt: Date.now() });
     // 월말 입력 시 → 다음 달 월초에 자동 연동
     if(end !== null) {
       const nextMonth = new Date(driveMonth.getFullYear(), driveMonth.getMonth()+1, 1);
@@ -974,7 +939,7 @@
       const nextData = window._odometers[nextMk] || {};
       // 다음 달 월초가 아직 없거나 이미 같은 값이면 덮어씀
       if(nextData.start == null || nextData.start === end) {
-        window.fbUpdate(window.fbRef(window.fbDB, `odometers/${nextMk}`), { start: end });
+        await window.fbUpdate(window.fbRef(window.fbDB, `odometers/${nextMk}`), { start: end });
       }
     }
     showToast('월초·월말 누적 주행거리가 저장되었습니다 (다음 달 월초에도 자동 반영)', 'success');
@@ -982,12 +947,12 @@
 
   window.selectIcon=function(el){document.querySelectorAll('.icon-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedIcon=el.dataset.icon;};
   window.selectColor=function(el){document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedColor=el.dataset.color;};
-  window.addPaymentMethod=function(){
+  window.addPaymentMethod=async function(){
     const name=document.getElementById('pm-name').value.trim();
     const type=document.getElementById('pm-type').value;
     if(!name){showToast('이름을 입력해주세요','error');return;}
     const order=Object.keys(window._paymentMethods).length;
-    window.fbPush(window.fbRef(window.fbDB,'paymentMethods'),{name,type,icon:selectedIcon,color:selectedColor,order});
+    await window.fbPush(window.fbRef(window.fbDB,'paymentMethods'),{name,type,icon:selectedIcon,color:selectedColor,order});
     document.getElementById('pm-name').value='';
     showToast('결제수단이 추가되었습니다','success');
   };
@@ -998,18 +963,18 @@
     document.getElementById('edit-pm-type').value=m.type||'신용카드';
     openModal('modal-payment');
   };
-  window.savePayment=function(){
+  window.savePayment=async function(){
     const key=document.getElementById('edit-pm-key').value;
     const name=document.getElementById('edit-pm-name').value.trim();
     const type=document.getElementById('edit-pm-type').value;
     if(!name){showToast('이름을 입력해주세요','error');return;}
-    window.fbUpdate(window.fbRef(window.fbDB,`paymentMethods/${key}`),{name,type});
+    await window.fbUpdate(window.fbRef(window.fbDB,`paymentMethods/${key}`),{name,type});
     closeModal('modal-payment');
     showToast('수정되었습니다','success');
   };
-  window.deletePayment=function(key,name){
+  window.deletePayment=async function(key,name){
     if(!confirm(`"${name}" 결제수단을 삭제할까요?`))return;
-    window.fbRemove(window.fbRef(window.fbDB,`paymentMethods/${key}`));
+    await window.fbRemove(window.fbRef(window.fbDB,`paymentMethods/${key}`));
     showToast('삭제되었습니다');
   };
 
@@ -1043,8 +1008,8 @@
     const totalCom=comE.reduce((s,[,v])=>s+Number(v.amount||0),0);
     const profit=totalRev-totalExp-totalCom; 
     
-    const totalKm=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
-    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const totalKm=monthDistance(getMonthKey(),drvE);
+    const bizKm=drvE.reduce((s,[,v])=>s+businessKm(v),0);
     const ratio=totalKm>0?Math.round(bizKm/totalKm*100):0;
     
     document.getElementById('kpi-revenue').textContent=fmt(totalRev);
@@ -1149,7 +1114,7 @@
     const odomTotal = (odomStart !== null && odomEnd !== null) ? (odomEnd - odomStart) : null;
 
     // 일지 기반 사업용 km
-    const bizKm=entries.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=entries.reduce((s,[,v])=>s+businessKm(v),0);
     // 총 주행 = 계기판 기준이 있으면 그것 사용, 없으면 일지 합산
     const logTotal=entries.reduce((s,[,v])=>s+Number(v.km||0),0);
     const totalKm = odomTotal !== null ? odomTotal : logTotal;
@@ -1183,23 +1148,23 @@
       </div>`).join('');
   }
 
-  window.addRevenue=function(){
+  window.addRevenue=async function(){
     const data={date:document.getElementById('r-date').value,site:document.getElementById('r-site').value.trim(),amount:Number(document.getElementById('r-amount').value),method:document.getElementById('r-method').value,tax:document.getElementById('r-tax').value,work:document.getElementById('r-work').value.trim(),memo:document.getElementById('r-memo').value.trim(),createdAt:Date.now()};
-    if(!data.date||!data.site||!data.amount){showToast('날짜, 현장명, 금액을 입력해주세요','error');return;}
-    window.fbPush(window.fbRef(window.fbDB,'revenues'),data);
-    ['r-site','r-amount','r-work','r-memo'].forEach(id=>document.getElementById(id).value='');
+    if(!data.date||!data.site||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜, 현장명, 금액을 입력해주세요','error');return;}
+    await window.fbPush(window.fbRef(window.fbDB,'revenues'),data);
+    ['r-site','r-amount','r-work','r-memo','r-unpaid'].forEach(id=>document.getElementById(id).value='');
     showToast('매출이 저장되었습니다','success');
   };
 
-  window.addCommission=function(){
+  window.addCommission=async function(){
     const data={
       date:document.getElementById('c-date').value,
       amount:Number(document.getElementById('c-amount').value),
       memo:document.getElementById('c-memo').value.trim(),
       createdAt:Date.now()
     };
-    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
-    window.fbPush(window.fbRef(window.fbDB,'commissions'),data);
+    if(!data.date||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜와 금액을 입력해주세요','error');return;}
+    await window.fbPush(window.fbRef(window.fbDB,'commissions'),data);
     
     document.getElementById('c-amount').value='';
     document.getElementById('c-memo').value='';
@@ -1215,20 +1180,20 @@
     openModal('modal-commission');
   };
 
-  window.saveCommission=function(){
+  window.saveCommission=async function(){
     const key=document.getElementById('edit-c-key').value;
     const data={
       date:document.getElementById('edit-c-date').value,
       amount:Number(document.getElementById('edit-c-amount').value),
       memo:document.getElementById('edit-c-memo').value.trim(),
     };
-    if(!data.date||!data.amount){showToast('날짜와 금액을 확인해주세요','error');return;}
-    window.fbUpdate(window.fbRef(window.fbDB,`commissions/${key}`),data);
+    if(!data.date||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜와 금액을 확인해주세요','error');return;}
+    await window.fbUpdate(window.fbRef(window.fbDB,`commissions/${key}`),data);
     closeModal('modal-commission');
     showToast('수수료가 수정되었습니다','success');
   };
 
-  window.addExpense=function(){
+  window.addExpense=async function(){
     let cat = document.getElementById('e-cat').value;
     if(cat === '기타경비') {
         const otherVal = document.getElementById('e-cat-other').value.trim();
@@ -1245,13 +1210,13 @@
         memo:document.getElementById('e-memo').value.trim(),
         createdAt:Date.now()
     };
-    if(!data.date||!data.amount){showToast('날짜와 금액을 입력해주세요','error');return;}
-    window.fbPush(window.fbRef(window.fbDB,'expenses'),data);
-    ['e-amount','e-vendor','e-memo'].forEach(id=>document.getElementById(id).value='');
+    if(!data.date||(!Number.isFinite(data.amount)||data.amount<=0)){showToast('날짜와 금액을 입력해주세요','error');return;}
+    await window.fbPush(window.fbRef(window.fbDB,'expenses'),data);
+    ['e-amount','e-vendor','e-memo','e-item'].forEach(id=>document.getElementById(id).value='');
     showToast('경비가 저장되었습니다','success');
   };
 
-  window.addDrive=function(){
+  window.addDrive=async function(){
     const date = document.getElementById('d-date').value;
     if(!date) { showToast('날짜를 입력해주세요', 'error'); return; }
     
@@ -1319,7 +1284,7 @@
       createdAt: Date.now()
     };
     
-    window.fbPush(window.fbRef(window.fbDB,'drives'), data);
+    await window.fbPush(window.fbRef(window.fbDB,'drives'), data);
     
     document.getElementById('drive-segments-container').innerHTML = '';
     window.addDriveSegment();
@@ -1327,9 +1292,9 @@
     showToast(`하루 전체 운행기록(${totalKm}km)이 통합 저장되었습니다`, 'success');
   };
 
-  window.deleteItem=function(path,key){
+  window.deleteItem=async function(path,key){
     if(!confirm('삭제할까요?'))return;
-    window.fbRemove(window.fbRef(window.fbDB,`${path}/${key}`));
+    await window.fbRemove(window.fbRef(window.fbDB,`${path}/${key}`));
     showToast('삭제되었습니다');
   };
 
@@ -1338,7 +1303,7 @@
     const rType=document.getElementById('report-type').value;
     
     const revE=Object.entries(window._revenues).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
-    const expE=Object.entries(window._expenses).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
+    const expE=reportExpenseEntries(window._expenses,month,rType,document.getElementById('report-item-filter').value).sort((a,b)=>a[1].date.localeCompare(b[1].date));
     const drvE=Object.entries(window._drives).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date));
     const comE=Object.entries(window._commissions).filter(([,v])=>v.date&&v.date.startsWith(month)).sort((a,b)=>a[1].date.localeCompare(b[1].date)); 
     
@@ -1348,7 +1313,7 @@
     const netProfit=totalRev-totalExp-totalCom;
     
     const totalKm_log=drvE.reduce((s,[,v])=>s+Number(v.km||0),0);
-    const bizKm=drvE.filter(([,v])=>v.type==='사업').reduce((s,[,v])=>s+Number(v.km||0),0);
+    const bizKm=drvE.reduce((s,[,v])=>s+businessKm(v),0);
     // 계기판 기반 총 주행거리
     const odomData = window._odometers[month] || {};
     const odomStart = odomData.start ?? null;
@@ -1363,7 +1328,7 @@
 
     let revRows = revE.length ? revE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.site}</td><td>${v.work||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
     let comRows = comE.length ? comE.map(([,v]) => `<tr><td class="center">${v.date}</td><td>${v.memo||'본사 수수료'}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="3" class="center">내역이 없습니다.</td></tr>`;
-    let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${v.vendor||'-'}</td><td class="center">${v.method}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="5" class="center">내역이 없습니다.</td></tr>`;
+    let expRows = expE.length ? expE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.cat}</td><td>${esc(v.vendor||'-')}</td><td>${esc(v.item?.trim()||'미지정')}</td><td class="center">${esc(v.method)}</td><td class="right">${fmt(v.amount)}</td></tr>`).join('') : `<tr><td colspan="6" class="center">내역이 없습니다.</td></tr>`;
     let drvRows = drvE.length ? drvE.map(([,v]) => `<tr><td class="center">${v.date}</td><td class="center">${v.type}</td><td>[${v.path||'-'}]<br><span style="font-size:10px;color:#666;">${v.purpose||'-'}</span></td><td class="right">${v.km} km</td></tr>`).join('') : `<tr><td colspan="4" class="center">내역이 없습니다.</td></tr>`;
 
     let html = '';
@@ -1395,7 +1360,7 @@
 
           <div class="paper-section-title">3. 매입/경비 내역 요약</div>
           <table class="paper-table">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th>분류</th><th>거래처</th><th>품목</th><th>결제수단</th><th>금액</th></tr></thead>
             <tbody>${expRows}</tbody>
           </table>
 
@@ -1461,7 +1426,7 @@
 
           <div class="paper-section-title">매입/경비 상세 내역</div>
           <table class="paper-table">
-            <thead><tr><th style="width:15%">날짜</th><th style="width:20%">분류</th><th style="width:30%">거래처</th><th style="width:15%">결제수단</th><th style="width:20%">금액</th></tr></thead>
+            <thead><tr><th style="width:15%">날짜</th><th>분류</th><th>거래처</th><th>품목</th><th>결제수단</th><th>금액</th></tr></thead>
             <tbody>${expRows}</tbody>
           </table>
         </div>`;
@@ -1488,9 +1453,16 @@
     }
 
     document.getElementById('reportOutput').innerHTML = html;
+    if(rType==='expense'){
+      const note=document.createElement('div');
+      note.style.cssText='font-size:12px;margin:12px 0';
+      note.textContent='품목: '+(document.getElementById('report-item-filter').value||'전체 품목')+' · '+expE.length+'건 · 합계 '+fmt(totalExp);
+      document.querySelector('#printArea .paper-title').after(note);
+    }
   };
 
   window.exportPDF = function() {
+    generateReport();
     const element = document.getElementById('printArea');
     if(!element){ 
       showToast('먼저 리포트를 생성해주세요', 'error'); 
@@ -1550,6 +1522,7 @@
   }
 
   function parseDriveSegments(v) {
+      if(Array.isArray(v.segments)) return v.segments;
       let segments = [];
       let combinedPath = v.path || '';
       if(!combinedPath && v.pathFrom && v.pathTo) combinedPath = v.pathFrom + ' → ' + v.pathTo;
@@ -1663,7 +1636,7 @@
     openModal('modal-drive');
   };
   
-  window.saveDrive=function(){
+  window.saveDrive=async function(){
     const key=document.getElementById('edit-d-key').value;
     const date = document.getElementById('edit-d-date').value;
     if(!date) { showToast('날짜를 입력해주세요', 'error'); return; }
@@ -1729,10 +1702,139 @@
       km: totalKm
     };
 
-    window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
+    await window.fbUpdate(window.fbRef(window.fbDB,`drives/${key}`),data);
     closeModal('modal-drive');
     showToast('운행 기록이 수정되었습니다','success');
   };
+</script>
+<script>
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function businessKm(v){return Array.isArray(v.segments)?v.segments.filter(s=>s.rawPurpose!=='개인이동').reduce((a,s)=>a+Number(s.km),0):v.type==='사업'?Number(v.km||0):0}
+function monthDistance(m,entries){const o=window._odometers[m]||{};return o.start!=null&&o.end!=null?o.end-o.start:entries.reduce((a,[,v])=>a+Number(v.km||0),0)}
+window.openEntry=function(type){showSection(type);const f=document.querySelector('#s-'+type+' .entry-form');f.hidden=false;f.scrollIntoView({behavior:'smooth',block:'start'});};
+for(const type of ['revenue','expense']){
+ const section=document.getElementById('s-'+type), form=section.querySelector('.form-card');form.classList.add('entry-form');form.hidden=true;
+ const controls=document.createElement('div');controls.innerHTML=`<div class="section-header"><div class="section-title">${type==='revenue'?'매출 관리':'경비 관리'}</div><div class="btn-row"><button class="btn btn-ghost" onclick="exportCSV('${type}')">CSV 내보내기</button><button class="btn btn-primary" onclick="openEntry('${type}')">＋ ${type==='revenue'?'매출':'경비'} 등록</button></div></div><div class="toolbar"><input id="${type}-search" aria-label="내역 검색" placeholder="현장·거래처·메모 검색" oninput="render${type==='revenue'?'Revenue':'Expense'}List()"><select id="${type}-filter" aria-label="상태 필터" onchange="render${type==='revenue'?'Revenue':'Expense'}List()">${type==='revenue'?'<option value="">전체 상태</option><option value="unpaid">미입금·일부 입금</option><option value="tax">세금계산서 미발행</option>':'<option value="">전체 증빙</option><option value="receipt">증빙 미수취</option>'}</select></div><div id="${type}-summary" class="list-summary"></div>`;
+ section.prepend(controls);const close=document.createElement('button');close.className='btn btn-ghost btn-full';close.textContent='입력창 닫기';close.onclick=()=>form.hidden=true;form.append(close);
+}
+for(const prefix of ['r','edit-r']){
+ const group=document.createElement('div');group.className='form-group';group.innerHTML=`<label for="${prefix}-paid">미수금 (선택)</label><input id="${prefix}-paid" type="number" min="0" placeholder="없으면 비워두세요 · 기본 0원">`;
+ document.getElementById(prefix+'-amount').closest('.form-grid').append(group);
+}
+function outstanding(v){return Number(v.unpaid??(v.paid!=null?Math.max(0,Number(v.amount)-Number(v.paid)):0))}
+function listEntries(type){const isRev=type==='revenue',q=document.getElementById(type+'-search').value.trim().toLowerCase(),f=document.getElementById(type+'-filter').value;return filterByMonthKey(isRev?window._revenues:window._expenses,monthKeyFromDate(currentMonth)).filter(([,v])=>[v.site,v.work,v.vendor,v.cat,v.item,v.memo,v.method].join(' ').toLowerCase().includes(q)).filter(([,v])=>!f||(f==='unpaid'?outstanding(v)>0:f==='tax'?v.tax==='미발행':v.receipt==='미수취')).filter(([,v])=>isRev||expenseMatches(v)).sort((a,b)=>b[1].date.localeCompare(a[1].date))}
+function renderRecords(type){const isRev=type==='revenue',entries=listEntries(type);document.getElementById(type+'-summary').textContent=`${monthLabelFromDate(currentMonth)} · ${entries.length}건 · 합계 ${fmt(entries.reduce((s,[,v])=>s+Number(v.amount),0))}`;document.getElementById(type+'List').innerHTML=entries.length?entries.map(([k,v])=>`<div class="recent-item record"><div><div class="record-title">${esc(isRev?v.site:v.vendor||v.cat)}<span class="pill">${esc(isRev?(outstanding(v)?'잔액 '+fmt(outstanding(v)):'입금 완료'):v.receipt)}</span></div><div class="record-meta">${esc(v.date)} · ${esc(isRev?v.work:[v.cat,v.item||'품목 미지정'].join(' · '))} · ${esc(v.method)}${v.memo?' · '+esc(v.memo):''}</div></div><div class="record-actions"><strong style="color:var(--${isRev?'green':'red'});margin-right:10px">${fmt(v.amount)}</strong><button class="btn btn-ghost btn-sm" onclick="copyRecord('${type}','${k}')">복사</button><button class="btn btn-edit btn-sm" onclick="openEdit${isRev?'Revenue':'Expense'}('${k}')">수정</button><button class="btn btn-danger btn-sm" onclick="deleteItem('${isRev?'revenues':'expenses'}','${k}')">삭제</button></div></div>`).join(''):'<div class="empty-state">조건에 맞는 내역이 없습니다. 검색어나 조회 월을 바꿔보세요.</div>'}
+renderRevenueList=()=>renderRecords('revenue');renderExpenseList=()=>renderRecords('expense');
+const oldDashboard=renderDashboard;renderDashboard=function(){oldDashboard();const r=filterByMonth(window._revenues),e=filterByMonth(window._expenses);document.getElementById('tasks').innerHTML=`<button onclick="taskFilter('revenue','unpaid')">확인할 미수금<strong>${fmt(r.reduce((s,[,v])=>s+outstanding(v),0))}</strong></button><button onclick="taskFilter('revenue','tax')">세금계산서 미발행<strong>${r.filter(([,v])=>v.tax==='미발행').length}건</strong></button><button onclick="taskFilter('expense','receipt')">증빙 미수취<strong>${e.filter(([,v])=>v.receipt==='미수취').length}건</strong></button>`};
+window.taskFilter=(type,f)=>{document.getElementById(type+'-search').value='';document.getElementById(type+'-filter').value=f;showSection(type);renderRecords(type)};
+function selectMonth(d){currentMonth=new Date(currentMonth.getFullYear(),currentMonth.getMonth()+d,1);revenueMonth=new Date(currentMonth);expenseMonth=new Date(currentMonth);driveMonth=new Date(currentMonth);window.odomDirty=false;updateMonthLabel();updateSectionMonthLabels();renderAll();}
+window.changeMonth=window.changeRevenueMonth=window.changeExpenseMonth=window.changeDriveMonth=selectMonth;
+document.querySelectorAll('.month-selector').forEach(el=>{const b=document.createElement('button');b.textContent='이번 달';b.onclick=()=>{currentMonth=new Date();selectMonth(0)};el.append(b)});
+const originalEditRevenue=window.openEditRevenue;window.openEditRevenue=k=>{originalEditRevenue(k);document.getElementById('edit-r-unpaid').value=outstanding(window._revenues[k])||''};
+window.prepareRecord=function(collection,v,edit){
+ if(collection==='revenues'){
+  const raw=document.getElementById((edit?'edit-r':'r')+'-unpaid').value;
+  const unpaid=raw===''?0:Number(raw);
+  if(!Number.isFinite(unpaid)||unpaid<0||unpaid>v.amount)throw new Error('미수금은 0원 이상, 매출액 이하로 입력해주세요.');
+  return {...v,unpaid,paid:Number(v.amount)-unpaid};
+ }
+ if(collection==='expenses')return {...v,item:document.getElementById((edit?'edit-e':'e')+'-item').value.trim()};
+ return v;
+};
+window.copyRecord=(type,k)=>{const rev=type==='revenue',v=(rev?window._revenues:window._expenses)[k],p=rev?'r':'e';openEntry(type);for(const field of rev?['site','amount','method','tax','work','memo']:['amount','method','vendor','receipt','memo'])document.getElementById(p+'-'+field).value=v[field]||'';if(!rev){document.getElementById('e-cat').value=v.cat?.startsWith('기타경비')?'기타경비':v.cat;togglePurposeOther('e-cat','e-cat-other-wrap','기타경비');document.getElementById('e-cat-other').value=v.cat?.match(/^기타경비\((.*)\)$/)?.[1]||''}document.getElementById(p+'-date').value=today;if(rev)document.getElementById('r-unpaid').value='';showToast('복사했습니다. 날짜와 금액 확인 후 저장하세요.','success')};
+function refreshHints(){let dl=document.getElementById('site-hints');if(!dl){dl=document.createElement('datalist');dl.id='site-hints';document.body.append(dl);document.getElementById('r-site').setAttribute('list',dl.id)}dl.innerHTML=[...new Set(Object.values(window._revenues).map(v=>v.site))].map(x=>`<option value="${esc(x)}"></option>`).join('')}
+window.exportCSV=type=>{const rev=type==='revenue',rows=listEntries(type).map(([,v])=>rev?[v.date,v.site,v.work,v.amount,Number(v.amount)-outstanding(v),outstanding(v),v.method,v.tax,v.memo]:[v.date,v.vendor,v.cat,v.item||'미지정',v.amount,v.method,v.receipt,v.memo]);rows.unshift(rev?['날짜','현장','작업','매출액','입금액','미수금','결제','증빙','메모']:['날짜','거래처','분류','품목','금액','결제','증빙','메모']);const csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=type+'-'+getMonthKey()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+async function writeDrive(edit){const container=document.getElementById(edit?'edit-drive-segments-container':'drive-segments-container'),prefix=edit?'.edit-ds-':'.ds-',date=document.getElementById(edit?'edit-d-date':'d-date').value;const segments=[...container.children].map(el=>{const read=n=>el.querySelector(prefix+n).value.trim(),rawPurpose=read('purpose');return {from:read('path-from'),to:read('path-to'),km:Number(read('km')),rawPurpose,purpose:rawPurpose==='기타'?read('purpose-other'):rawPurpose}});if(!date||!segments.length||segments.some(s=>!s.from||!s.to||!Number.isFinite(s.km)||s.km<=0||!s.purpose))throw new Error('구간별 출발·도착지, 0보다 큰 거리와 목적을 입력해주세요.');const biz=segments.some(s=>s.rawPurpose!=='개인이동'),personal=segments.some(s=>s.rawPurpose==='개인이동');const data={date,segments,km:segments.reduce((a,s)=>a+s.km,0),type:biz&&personal?'혼합':biz?'사업':'개인',path:segments.map(s=>s.from+' → '+s.to).join(' / '),purpose:[...new Set(segments.map(s=>s.purpose))].join(', '),rawPurpose:'일괄저장'};if(edit){await window.fbUpdate(window.fbRef(window.fbDB,'drives/'+document.getElementById('edit-d-key').value),data);closeModal('modal-drive')}else{await window.fbPush(window.fbRef(window.fbDB,'drives'),{...data,createdAt:Date.now()});container.innerHTML='';window.addDriveSegment()}showToast('구간별 운행기록이 저장되었습니다.','success')}
+window.addDrive=()=>writeDrive(false);window.saveDrive=()=>writeDrive(true);
+for(const id of ['d-odometer-start','d-odometer-end'])document.getElementById(id).addEventListener('input',()=>window.odomDirty=true);
+for(const name of ['saveRevenue','saveExpense','saveOdometer','addPaymentMethod','savePayment','deletePayment','addRevenue','addCommission','saveCommission','addExpense','addDrive','deleteItem','saveDrive']){const fn=window[name];let pending=false;window[name]=async function(...args){if(pending)return;pending=true;const buttons=[...document.querySelectorAll('button')].filter(b=>(b.getAttribute('onclick')||'').includes(name+'('));buttons.forEach(b=>b.disabled=true);try{await fn(...args)}catch(e){showToast(e.message||'저장하지 못했습니다. 다시 시도해주세요.','error')}finally{pending=false;buttons.forEach(b=>b.disabled=false)}}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>closeModal(m.id))});
+const oldRebuild=rebuildPaymentSelects;rebuildPaymentSelects=function(){const values=['e-method','edit-e-method'].map(id=>document.getElementById(id).value);oldRebuild();['e-method','edit-e-method'].forEach((id,i)=>{const el=document.getElementById(id);if([...el.options].some(o=>o.value===values[i]))el.value=values[i]})};
+for(const prefix of ['e','edit-e']){
+ const group=document.createElement('div');group.className='form-group';group.innerHTML=`<label for="${prefix}-item">품목 (선택)</label><input id="${prefix}-item" list="expense-item-hints" placeholder="예: 전기차 충전, 실리콘, 배관 세정제">`;
+ document.getElementById(prefix+'-vendor').closest('.form-grid').append(group);
+ document.getElementById(prefix+'-vendor').setAttribute('list','expense-vendor-hints');
+}
+const hintBox=document.createElement('div');hintBox.innerHTML='<datalist id="expense-item-hints"></datalist><datalist id="expense-vendor-hints"></datalist>';document.body.append(hintBox);
+const expenseToolbar=document.createElement('div');expenseToolbar.className='toolbar';expenseToolbar.innerHTML='<select id="expense-vendor-filter" aria-label="거래처별 필터" onchange="renderExpenseList()"><option value="">전체 거래처</option></select><select id="expense-item-filter" aria-label="품목별 필터" onchange="renderExpenseList()"><option value="">전체 품목</option></select><button class="btn btn-ghost" onclick="clearExpenseFilters()">필터 초기화</button>';
+document.getElementById('expense-summary').before(expenseToolbar);
+const totals=document.createElement('div');totals.id='expense-breakdown';totals.className='breakdown';document.getElementById('expense-summary').after(totals);
+const fast=document.createElement('div');fast.className='charge-shortcuts';fast.innerHTML='<div><strong>⚡ 자주 쓰는 충전</strong><p>사업자를 선택하고 금액만 입력하세요.</p></div><button class="btn btn-ghost" onclick="quickCharge(\'휴맥스EV\')">휴맥스EV</button><button class="btn btn-ghost" onclick="quickCharge(\'플러그링크\')">플러그링크</button>';
+const expenseSection=document.getElementById('s-expense');
+const expenseForm=expenseSection.querySelector('.entry-form');
+expenseSection.prepend(fast);
+fast.after(expenseForm);
+expenseForm.hidden=false;
+expenseForm.lastElementChild.remove(); // Keep the expense entry form visible.
+
+function expenseMatches(v){const vendor=document.getElementById('expense-vendor-filter')?.value||'',item=document.getElementById('expense-item-filter')?.value||'';return (!vendor||(v.vendor?.trim()||'미지정')===vendor)&&(!item||(v.item?.trim()||'미지정')===item)}
+function fillOptions(id,values,label){const el=document.getElementById(id);if(!el)return;const old=el.value;el.innerHTML=`<option value="">${label}</option>`+[...new Set(values)].sort((a,b)=>a.localeCompare(b,'ko')).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if([...el.options].some(o=>o.value===old))el.value=old}
+function refreshExpenseHints(){const rows=Object.values(window._expenses);fillOptions('expense-vendor-filter',rows.map(v=>v.vendor?.trim()||'미지정'),'전체 거래처');fillOptions('expense-item-filter',rows.map(v=>v.item?.trim()||'미지정'),'전체 품목');for(const [id,values] of [['expense-vendor-hints',['휴맥스EV','플러그링크',...rows.map(v=>v.vendor)]],['expense-item-hints',['전기차 충전',...rows.map(v=>v.item)]]])document.getElementById(id).innerHTML=[...new Set(values.filter(Boolean))].map(v=>`<option value="${esc(v)}"></option>`).join('');renderExpenseList()}
+function groupExpenses(entries,field){const groups=new Map();for(const [,v] of entries){const key=v[field]?.trim()||'미지정';const g=groups.get(key)||{name:key,amount:0,count:0};g.amount+=Number(v.amount||0);g.count++;groups.set(key,g)}return [...groups.values()].sort((a,b)=>b.amount-a.amount)}
+function renderBreakdown(){const entries=listEntries('expense');const card=(field,title)=>`<div class="breakdown-card"><h3>${title}</h3>${groupExpenses(entries,field).map(g=>`<button class="group-row" data-field="${field}" data-name="${esc(g.name)}"><span>${esc(g.name)} <small>${g.count}건</small></span><strong>${fmt(g.amount)}</strong></button>`).join('')||'<p class="list-summary">해당 내역이 없습니다.</p>'}</div>`;document.getElementById('expense-breakdown').innerHTML=card('vendor','거래처별 사용 금액')+card('item','품목별 사용 금액');document.querySelectorAll('.group-row').forEach(b=>b.onclick=()=>{document.getElementById('expense-'+b.dataset.field+'-filter').value=b.dataset.name;renderExpenseList()})}
+renderExpenseList=()=>{renderRecords('expense');renderBreakdown()};
+window.clearExpenseFilters=()=>{for(const id of ['expense-search','expense-filter','expense-vendor-filter','expense-item-filter'])document.getElementById(id).value='';renderExpenseList()};
+window.quickCharge=function(vendor){const form=document.querySelector('#s-expense .entry-form');const hasDraft=['e-amount','e-vendor','e-memo','e-item'].some(id=>document.getElementById(id).value.trim());if(hasDraft&&!confirm('작성 중인 경비를 지우고 충전 내역을 입력할까요?'))return;openEntry('expense');document.getElementById('e-date').value=getLocalDateString();document.getElementById('e-cat').value='전기차충전';togglePurposeOther('e-cat','e-cat-other-wrap','기타경비');document.getElementById('e-vendor').value=vendor;document.getElementById('e-item').value='전기차 충전';document.getElementById('e-amount').value='';document.getElementById('e-memo').value='';document.getElementById('e-receipt').value='카드전표';try{const method=localStorage.getItem('bmg-charge-method-'+vendor);const select=document.getElementById('e-method');if([...select.options].some(o=>o.value===method))select.value=method}catch{}document.getElementById('e-amount').focus();showToast(vendor+' · 충전 금액을 입력해주세요.','success')};
+const baseOpenExpense=window.openEditExpense;window.openEditExpense=k=>{baseOpenExpense(k);document.getElementById('edit-e-item').value=window._expenses[k]?.item||''};
+const baseCopy=window.copyRecord;window.copyRecord=(type,k)=>{baseCopy(type,k);if(type==='expense')document.getElementById('e-item').value=window._expenses[k]?.item||''};
+const prepareBase=window.prepareRecord;window.prepareRecord=(collection,v,edit)=>{const data=prepareBase(collection,v,edit);if(collection==='expenses'&&data.cat==='전기차충전'&&!edit){try{localStorage.setItem('bmg-charge-method-'+data.vendor,data.method)}catch{}}return data};
+const style=document.createElement('style');style.textContent='.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 24px}.breakdown-card{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:16px;max-height:320px;overflow:auto}.breakdown-card h3{font-size:14px;margin-bottom:12px}.group-row{display:flex;justify-content:space-between;gap:12px;width:100%;border:0;border-bottom:1px solid var(--border);background:none;color:var(--text);padding:12px 0;text-align:left;cursor:pointer;font:inherit;font-size:13px}.group-row small{color:var(--text2)}.charge-shortcuts{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px;background:#26382d;border:1px solid #53745d;border-radius:14px;margin-bottom:20px}.charge-shortcuts>div{flex:1;min-width:200px}.charge-shortcuts p{font-size:12px;color:var(--text2);margin-top:5px}@media(max-width:768px){.breakdown{grid-template-columns:1fr}.charge-shortcuts button{flex:1}}';document.head.append(style);
+
+
+function reportExpenseEntries(data,month,type,item){return Object.entries(data).filter(([,v])=>v.date&&v.date.startsWith(month)).filter(([,v])=>type!=='expense'||!item||(v.item?.trim()||'미지정')===item)}
+const reportItemGroup=document.createElement('div');reportItemGroup.className='form-group full';
+reportItemGroup.innerHTML='<label for="report-item-filter">경비 품목 필터</label><select id="report-item-filter"><option value="">전체 품목</option></select><div class="list-summary" style="margin:0">경비 상세 리포트에서 선택한 품목의 내역과 합계를 확인합니다.</div>';
+document.getElementById('report-type').closest('.form-group').after(reportItemGroup);
+function syncReportItemFilter(){document.getElementById('report-item-filter').disabled=document.getElementById('report-type').value!=='expense'}
+document.getElementById('report-type').addEventListener('change',()=>{syncReportItemFilter();generateReport()});
+document.getElementById('report-item-filter').addEventListener('change',()=>generateReport());
+const refreshExpenseHintsBase=refreshExpenseHints;refreshExpenseHints=function(){refreshExpenseHintsBase();fillOptions('report-item-filter',Object.values(window._expenses).map(v=>v.item?.trim()||'미지정'),'전체 품목')};
+syncReportItemFilter();
+
+renderAll();refreshHints();refreshExpenseHints();
+
+</script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const app = initializeApp({
+    apiKey:"AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
+    authDomain:"chocosora-ad4df.firebaseapp.com",
+    databaseURL:"https://chocosora-ad4df-default-rtdb.firebaseio.com",
+    projectId:"chocosora-ad4df",
+    storageBucket:"chocosora-ad4df.firebasestorage.app",
+    messagingSenderId:"798065461606",
+    appId:"1:798065461606:web:fcc2308eae7a71e8f360a7"
+  });
+  const db = getDatabase(app);
+  window.fbDB=db; window.fbRef=ref; window.fbPush=(r,v)=>push(r,window.prepareRecord(r.key,v,false)); window.fbRemove=remove; window.fbUpdate=(r,v)=>update(r,window.prepareRecord(r.parent?.key,v,true)); window.fbGet=get;
+  onValue(ref(db,'.info/connected'),snap=>{document.getElementById('syncStatus').textContent=snap.val()?'서버 연결됨':'연결 대기 중';});
+
+  function listen(path,cb){
+    onValue(ref(db,path),snap=>{const d={};snap.forEach(c=>{d[c.key]=c.val();});cb(d);},error=>{document.getElementById('syncStatus').textContent='불러오기 실패';showToast('데이터를 불러오지 못했습니다. 연결과 접근 권한을 확인해주세요.','error');});
+  }
+  listen('revenues',d=>{window._revenues=d;renderAll();refreshHints();});
+  listen('expenses',d=>{window._expenses=d;renderAll();refreshExpenseHints();});
+  listen('drives',d=>{window._drives=d;renderAll();});
+  listen('commissions',d=>{window._commissions=d;renderAll();});
+  listen('odometers',d=>{window._odometers=d||{};renderAll();});
+  listen('paymentMethods',d=>{
+    window._paymentMethods=d;
+    renderPaymentList();
+    rebuildPaymentSelects();
+  });
+
+  onValue(ref(db,'paymentMethods'),snap=>{
+    if(!snap.exists()){
+      [
+        {name:'현금',type:'현금',icon:'💵',color:'#4caf6e',order:0},
+        {name:'계좌이체',type:'계좌이체',icon:'🏦',color:'#5b8af0',order:1},
+        {name:'신한카드 더모아',type:'신용카드',icon:'💳',color:'#f5a623',order:2},
+        {name:'사업카드 B',type:'신용카드',icon:'💳',color:'#e91e8c',order:3},
+      ].forEach(d=>push(ref(db,'paymentMethods'),d));
+    }
+  },{onlyOnce:true});
 </script>
 </body>
 </html>
