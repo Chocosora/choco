@@ -1,20 +1,22 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="night">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>홈케어의 제왕 - 하수구 1기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>하수구 1기 · 공동 작업 일지</title>
+    <meta name="theme-color" content="#0b1220">
+    <meta name="color-scheme" content="dark">
     
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
 
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=faf0b7f3e2f5b11fa2f1bf1d492e3b2b&libraries=services"></script>
+    
+    
 
     <script type="importmap">
     {
@@ -36,7 +38,9 @@
             background-color: #F3F4F6;
             -webkit-tap-highlight-color: transparent;
         }
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        button:focus-visible, [role="button"]:focus-visible { outline: 3px solid #14b8a6; outline-offset: 2px; }
+        @media (max-width: 640px) { input, textarea, select { font-size: 16px !important; } }
+
         .daily-route-map { height: 360px; width: 100%; border-radius: 1.25rem; overflow: hidden; }
         .route-number-marker {
             width: 30px; height: 30px; border-radius: 9999px;
@@ -69,6 +73,150 @@
             overflow-wrap: anywhere;
             line-height: 1.55;
         }
+    
+/* Sibling-only night theme: no changes to shared data or settlement logic. */
+html[data-theme="night"] { color-scheme: dark; background: #0b1220; }
+html[data-theme="night"] body { background: #0b1220; color: #d6e0ed; }
+html[data-theme="night"] header { background: #101c2e !important; border-bottom: 1px solid #34465d; box-shadow: 0 8px 24px #0003; }
+html[data-theme="night"] input, html[data-theme="night"] textarea, html[data-theme="night"] select { color-scheme: dark; caret-color: #71dfcd; }
+html[data-theme="night"] input::placeholder, html[data-theme="night"] textarea::placeholder { color: #9bafc7 !important; opacity: 1; }
+html[data-theme="night"] ::selection { background: #22665e; color: #fff; }
+
+html[data-theme="night"] .active\:bg-slate-50:active { background-color: #111d2e !important; }
+html[data-theme="night"] .active\:bg-teal-50:active { background-color: #102f34 !important; }
+html[data-theme="night"] .active\:border-teal-300:active { border-color: #3c8279 !important; }
+html[data-theme="night"] .active\:text-teal-700:active { color: #71dfcd !important; }
+html[data-theme="night"] .bg-amber-50 { background-color: #352b1c !important; }
+html[data-theme="night"] .bg-amber-50\/60 { background-color: #352b1c99 !important; }
+html[data-theme="night"] .bg-amber-50\/70 { background-color: #352b1cb2 !important; }
+html[data-theme="night"] .bg-amber-50\/90 { background-color: #352b1ce5 !important; }
+html[data-theme="night"] .bg-blue-100 { background-color: #1d3956 !important; }
+html[data-theme="night"] .bg-blue-50\/60 { background-color: #142d4699 !important; }
+html[data-theme="night"] .bg-blue-50\/70 { background-color: #142d46b2 !important; }
+html[data-theme="night"] .bg-gray-50 { background-color: #0b1220 !important; }
+html[data-theme="night"] .bg-green-100 { background-color: #1d4135 !important; }
+html[data-theme="night"] .bg-green-50 { background-color: #17332d !important; }
+html[data-theme="night"] .bg-indigo-100 { background-color: #30395c !important; }
+html[data-theme="night"] .bg-indigo-50 { background-color: #252b4b !important; }
+html[data-theme="night"] .bg-red-50 { background-color: #38232b !important; }
+html[data-theme="night"] .bg-rose-50 { background-color: #38232e !important; }
+html[data-theme="night"] .bg-slate-100 { background-color: #1c2b40 !important; }
+html[data-theme="night"] .bg-slate-100\/80 { background-color: #1c2b40cc !important; }
+html[data-theme="night"] .bg-slate-200 { background-color: #2c3d54 !important; }
+html[data-theme="night"] .bg-slate-300 { background-color: #667b96 !important; }
+html[data-theme="night"] .bg-slate-50 { background-color: #111d2e !important; }
+html[data-theme="night"] .bg-slate-50\/70 { background-color: #111d2eb2 !important; }
+html[data-theme="night"] .bg-slate-50\/80 { background-color: #111d2ecc !important; }
+html[data-theme="night"] .bg-slate-700 { background-color: #344b68 !important; }
+html[data-theme="night"] .bg-slate-800 { background-color: #285570 !important; }
+html[data-theme="night"] .bg-slate-900 { background-color: #1d455f !important; }
+html[data-theme="night"] .bg-slate-900\/60 { background-color: #02061799 !important; }
+html[data-theme="night"] .bg-teal-100 { background-color: #153d40 !important; }
+html[data-theme="night"] .bg-teal-200 { background-color: #1c4b4c !important; }
+html[data-theme="night"] .bg-teal-50 { background-color: #102f34 !important; }
+html[data-theme="night"] .bg-teal-50\/50 { background-color: #102f347f !important; }
+html[data-theme="night"] .bg-white { background-color: #162235 !important; }
+html[data-theme="night"] .bg-white\/80 { background-color: #162235cc !important; }
+html[data-theme="night"] .bg-yellow-50\/50 { background-color: #342f1d7f !important; }
+html[data-theme="night"] .border-amber-100 { border-color: #64502c !important; }
+html[data-theme="night"] .border-amber-200 { border-color: #806338 !important; }
+html[data-theme="night"] .border-amber-300 { border-color: #a27e3e !important; }
+html[data-theme="night"] .border-blue-100 { border-color: #294b6b !important; }
+html[data-theme="night"] .border-green-200 { border-color: #32614b !important; }
+html[data-theme="night"] .border-indigo-100 { border-color: #3e486f !important; }
+html[data-theme="night"] .border-indigo-200 { border-color: #505e8a !important; }
+html[data-theme="night"] .border-red-100 { border-color: #613340 !important; }
+html[data-theme="night"] .border-red-200 { border-color: #78424d !important; }
+html[data-theme="night"] .border-rose-100 { border-color: #613547 !important; }
+html[data-theme="night"] .border-rose-200 { border-color: #744359 !important; }
+html[data-theme="night"] .border-rose-300 { border-color: #92516b !important; }
+html[data-theme="night"] .border-slate-100 { border-color: #293b51 !important; }
+html[data-theme="night"] .border-slate-200 { border-color: #34465d !important; }
+html[data-theme="night"] .border-slate-200\/80 { border-color: #34465dcc !important; }
+html[data-theme="night"] .border-slate-300 { border-color: #526781 !important; }
+html[data-theme="night"] .border-teal-100 { border-color: #20524f !important; }
+html[data-theme="night"] .border-teal-200 { border-color: #2b6761 !important; }
+html[data-theme="night"] .border-white { border-color: #34465d !important; }
+html[data-theme="night"] .border-yellow-100 { border-color: #60532c !important; }
+html[data-theme="night"] .border-yellow-200 { border-color: #80713d !important; }
+html[data-theme="night"] .border-yellow-200\/50 { border-color: #80713d7f !important; }
+html[data-theme="night"] .disabled\:text-slate-400:disabled { color: #9bafc7 !important; }
+html[data-theme="night"] .hover\:bg-blue-200:hover { background-color: #294a6a !important; }
+html[data-theme="night"] .hover\:bg-blue-50:hover { background-color: #142d46 !important; }
+html[data-theme="night"] .hover\:bg-green-100:hover { background-color: #1d4135 !important; }
+html[data-theme="night"] .hover\:bg-green-200:hover { background-color: #285442 !important; }
+html[data-theme="night"] .hover\:bg-green-50:hover { background-color: #17332d !important; }
+html[data-theme="night"] .hover\:bg-indigo-100:hover { background-color: #30395c !important; }
+html[data-theme="night"] .hover\:bg-indigo-200:hover { background-color: #3b4770 !important; }
+html[data-theme="night"] .hover\:bg-red-100:hover { background-color: #492b35 !important; }
+html[data-theme="night"] .hover\:bg-red-50:hover { background-color: #38232b !important; }
+html[data-theme="night"] .hover\:bg-rose-100:hover { background-color: #4a2c3a !important; }
+html[data-theme="night"] .hover\:bg-slate-100:hover { background-color: #1c2b40 !important; }
+html[data-theme="night"] .hover\:bg-slate-200:hover { background-color: #2c3d54 !important; }
+html[data-theme="night"] .hover\:bg-slate-50:hover { background-color: #111d2e !important; }
+html[data-theme="night"] .hover\:bg-slate-900:hover { background-color: #1d455f !important; }
+html[data-theme="night"] .hover\:bg-teal-50:hover { background-color: #102f34 !important; }
+html[data-theme="night"] .hover\:bg-yellow-50:hover { background-color: #342f1d !important; }
+html[data-theme="night"] .hover\:border-blue-300:hover { border-color: #3a678f !important; }
+html[data-theme="night"] .hover\:border-green-200:hover { border-color: #32614b !important; }
+html[data-theme="night"] .hover\:border-red-200:hover { border-color: #78424d !important; }
+html[data-theme="night"] .hover\:border-teal-200:hover { border-color: #2b6761 !important; }
+html[data-theme="night"] .hover\:border-teal-300:hover { border-color: #3c8279 !important; }
+html[data-theme="night"] .hover\:border-yellow-200:hover { border-color: #80713d !important; }
+html[data-theme="night"] .hover\:text-blue-600:hover { color: #91c9ff !important; }
+html[data-theme="night"] .hover\:text-red-500:hover { color: #ff9aa5 !important; }
+html[data-theme="night"] .hover\:text-slate-600:hover { color: #c0cee0 !important; }
+html[data-theme="night"] .hover\:text-slate-700:hover { color: #d6e0ed !important; }
+html[data-theme="night"] .hover\:text-teal-600:hover { color: #71dfcd !important; }
+html[data-theme="night"] .hover\:text-teal-700:hover { color: #71dfcd !important; }
+html[data-theme="night"] .placeholder\:text-slate-400::placeholder { color: #9bafc7 !important; }
+html[data-theme="night"] .text-amber-500 { color: #f5cf85 !important; }
+html[data-theme="night"] .text-amber-600 { color: #f5cf85 !important; }
+html[data-theme="night"] .text-amber-700 { color: #f5cf85 !important; }
+html[data-theme="night"] .text-amber-800 { color: #f5cf85 !important; }
+html[data-theme="night"] .text-amber-900 { color: #f5cf85 !important; }
+html[data-theme="night"] .text-blue-400 { color: #91c9ff !important; }
+html[data-theme="night"] .text-blue-500 { color: #91c9ff !important; }
+html[data-theme="night"] .text-blue-600 { color: #91c9ff !important; }
+html[data-theme="night"] .text-blue-700 { color: #91c9ff !important; }
+html[data-theme="night"] .text-emerald-600 { color: #7cddbb !important; }
+html[data-theme="night"] .text-green-600 { color: #90ddb1 !important; }
+html[data-theme="night"] .text-green-700 { color: #90ddb1 !important; }
+html[data-theme="night"] .text-indigo-500 { color: #b1bfff !important; }
+html[data-theme="night"] .text-indigo-600 { color: #b1bfff !important; }
+html[data-theme="night"] .text-indigo-700 { color: #b1bfff !important; }
+html[data-theme="night"] .text-indigo-800 { color: #b1bfff !important; }
+html[data-theme="night"] .text-red-400 { color: #ff9aa5 !important; }
+html[data-theme="night"] .text-red-500 { color: #ff9aa5 !important; }
+html[data-theme="night"] .text-red-700 { color: #ff9aa5 !important; }
+html[data-theme="night"] .text-red-800 { color: #ff9aa5 !important; }
+html[data-theme="night"] .text-rose-500 { color: #ffabc3 !important; }
+html[data-theme="night"] .text-rose-600 { color: #ffabc3 !important; }
+html[data-theme="night"] .text-rose-700 { color: #ffabc3 !important; }
+html[data-theme="night"] .text-slate-300 { color: #b6c6d8 !important; }
+html[data-theme="night"] .text-slate-400 { color: #9bafc7 !important; }
+html[data-theme="night"] .text-slate-500 { color: #aabbd0 !important; }
+html[data-theme="night"] .text-slate-600 { color: #c0cee0 !important; }
+html[data-theme="night"] .text-slate-700 { color: #d6e0ed !important; }
+html[data-theme="night"] .text-slate-800 { color: #edf3fa !important; }
+html[data-theme="night"] .text-slate-900 { color: #f8fafc !important; }
+html[data-theme="night"] .text-teal-400 { color: #71dfcd !important; }
+html[data-theme="night"] .text-teal-500 { color: #71dfcd !important; }
+html[data-theme="night"] .text-teal-600 { color: #71dfcd !important; }
+html[data-theme="night"] .text-teal-700 { color: #71dfcd !important; }
+html[data-theme="night"] .text-teal-800 { color: #71dfcd !important; }
+html[data-theme="night"] .text-yellow-600 { color: #e9d78f !important; }
+html[data-theme="night"] .text-yellow-800 { color: #e9d78f !important; }
+
+html[data-theme="night"] .shadow-teal-200, html[data-theme="night"] .shadow-slate-200, html[data-theme="night"] .shadow-amber-100 { --tw-shadow-color: #0004 !important; }
+html[data-theme="night"] .leaflet-container { background: #18283b; color: #152238; }
+html[data-theme="night"] .leaflet-popup-content-wrapper, html[data-theme="night"] .leaflet-popup-tip { background: #162235; color: #edf3fa; }
+html[data-theme="night"] .leaflet-bar a { background: #162235; color: #edf3fa; border-color: #34465d; }
+html[data-theme="night"] .leaflet-control-attribution { background: #162235ed; color: #b6c6d8; }
+html[data-theme="night"] .leaflet-control-attribution a { color: #91c9ff; }
+html[data-theme="night"] .bg-amber-400 { color: #281d09 !important; }
+html[data-theme="night"] .bg-amber-400 .text-amber-950 { color: #281d09 !important; }
+
     </style>
 </head>
 <body>
@@ -81,6 +229,20 @@
         import { initializeApp } from 'firebase/app';
         import { getDatabase, ref, push, onValue, remove, set, update, get } from 'firebase/database';
 
+        const scriptLoads = new Map();
+        const loadScript = (url) => {
+            if (!scriptLoads.has(url)) scriptLoads.set(url, new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url; script.async = true;
+                const timer = setTimeout(() => reject(new Error('연결 시간이 초과되었습니다. 다시 시도해주세요.')), 12000);
+                script.onload = () => { clearTimeout(timer); resolve(); };
+                script.onerror = () => { clearTimeout(timer); reject(new Error('기능을 불러오지 못했습니다. 다시 시도해주세요.')); };
+                document.head.appendChild(script);
+            }).catch(error => { scriptLoads.delete(url); throw error; }));
+            return scriptLoads.get(url);
+        };
+        const loadKakao = () => loadScript('https://dapi.kakao.com/v2/maps/sdk.js?appkey=faf0b7f3e2f5b11fa2f1bf1d492e3b2b&libraries=services&autoload=false')
+            .then(() => new Promise(resolve => window.kakao.maps.load(resolve)));
         const firebaseConfig = {
             apiKey: "AIzaSyC4FWP-jskItmNA4SVP-kDGA1gL_U85asw",
             authDomain: "chocosora-ad4df.firebaseapp.com",
@@ -199,6 +361,7 @@
                 setTimeout(() => map.invalidateSize(), 100);
             }, [points]);
 
+            useEffect(() => () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } }, []);
             return (
                 <section className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 space-y-3">
                     <div className="flex items-center justify-between gap-2">
@@ -278,6 +441,12 @@
             const [isSaving, setIsSaving] = useState(false);
             const [toastMessage, setToastMessage] = useState('');
             const [jobs, setJobs] = useState({});
+            const [dataLoading, setDataLoading] = useState(true);
+            const [dataError, setDataError] = useState('');
+            const [reloadToken, setReloadToken] = useState(0);
+            const [showRoute, setShowRoute] = useState(false);
+            const amountFor = job => Number(job.totalAmount || 0);
+
             const [offDays, setOffDays] = useState({});
             const [editingOffId, setEditingOffId] = useState(null);
             const [offDayForm, setOffDayForm] = useState({ type: 'full', startTime: '09:00', endTime: '18:00', reason: '' });
@@ -320,7 +489,8 @@
 
             useEffect(() => {
                 const jobsRef = ref(database, `${DB_SECTION}/homecare_jobs`);
-                const unsubJobs = onValue(jobsRef, (snapshot) => setJobs(snapshot.val() || {}));
+                setDataLoading(true); setDataError('');
+                const unsubJobs = onValue(jobsRef, (snapshot) => { setJobs(snapshot.val() || {}); setDataLoading(false); }, () => { setDataLoading(false); setDataError('작업 기록을 불러오지 못했습니다. 연결 상태를 확인해주세요.'); });
 
                 const offDaysRef = ref(database, `${DB_SECTION}/homecare_offdays`);
                 const unsubOffDays = onValue(offDaysRef, (snapshot) => setOffDays(snapshot.val() || {}));
@@ -340,7 +510,7 @@
                     unsubOffDays();
                     unsubTemplates();
                 };
-            }, []);
+            }, [reloadToken]);
 
             const jobsByDate = useMemo(() => {
                 const map = {};
@@ -368,35 +538,17 @@
                 return map;
             }, [offDays]);
 
-            const activeDateOffDays = useMemo(() => {
-                return Object.entries(offDays)
-                    .map(([key, offDay]) => ({ key, ...offDay }))
-                    .filter(offDay => offDay.date === activeDate)
-                    .sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
-            }, [offDays, activeDate]);
-
-            const activeDateJobs = useMemo(() => {
-                const jobList = Object.entries(jobs)
-                    .map(([key, job]) => ({ key, ...job }))
-                    .filter(job => job.dates && job.dates.includes(activeDate));
-
-                return jobList.sort((a, b) => {
-                    const timeA = a.visitTime || '23:59';
-                    const timeB = b.visitTime || '23:59';
-                    return timeA.localeCompare(timeB);
-                });
-            }, [jobs, activeDate]);
+            const activeDateOffDays = useMemo(() => offDaysByDate[activeDate] || [], [offDaysByDate, activeDate]);
+            const activeDateJobs = useMemo(() => [...(jobsByDate[activeDate] || [])].sort((a,b) => (a.visitTime || '23:59').localeCompare(b.visitTime || '23:59')), [jobsByDate, activeDate]);
 
             const activeFullOffDays = useMemo(() => {
                 return activeDateOffDays.filter(offDay => (offDay.type || 'full') === 'full');
             }, [activeDateOffDays]);
 
             const todayDashboardJobs = useMemo(() => {
-                return Object.entries(jobs)
-                    .map(([key, job]) => ({ key, ...job }))
-                    .filter(job => job.dates && job.dates.includes(todayStr) && (job.status || 'pending') !== 'cancelled')
+                return (jobsByDate[todayStr] || []).filter(job => (job.status || 'pending') !== 'cancelled')
                     .sort((a, b) => (a.visitTime || '23:59').localeCompare(b.visitTime || '23:59'));
-            }, [jobs, todayStr]);
+            }, [jobsByDate, todayStr]);
 
             const cleanPhoneNumber = (value) => String(value || '').replace(/[^0-9+]/g, '');
 
@@ -504,6 +656,8 @@
 
             const kakaoJsSearch = (addressText) => {
                 return new Promise((resolve) => {
+                    const timer = setTimeout(() => resolve(null), 8000);
+                    const finish = resolve; resolve = value => { clearTimeout(timer); finish(value); };
                     try {
                         if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
                             resolve(null);
@@ -535,7 +689,7 @@
 
             const osmSearch = async (addressText) => {
                 try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(addressText)}`);
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(addressText)}`, { signal: AbortSignal.timeout(8000) });
                     const data = await res.json();
                     if (Array.isArray(data) && data[0]?.lat && data[0]?.lon) {
                         return { lat: Number(data[0].lat), lng: Number(data[0].lon), matchedQuery: addressText, source: 'osm' };
@@ -549,6 +703,7 @@
             const kakaoFetchJson = async (url) => {
                 const res = await fetch(url, {
                     method: 'GET',
+                    signal: AbortSignal.timeout(8000),
                     headers: { 'Authorization': `KakaoAK ${KAKAO_API_KEY}` }
                 });
                 const data = await res.json();
@@ -564,7 +719,7 @@
                 if (typeof queryOrJob === 'object' && queryOrJob) {
                     const savedLat = Number(queryOrJob.routeLat ?? queryOrJob.lat ?? queryOrJob.latitude ?? queryOrJob.coord?.lat);
                     const savedLng = Number(queryOrJob.routeLng ?? queryOrJob.lng ?? queryOrJob.longitude ?? queryOrJob.coord?.lng);
-                    if (Number.isFinite(savedLat) && Number.isFinite(savedLng)) {
+                    if (Number.isFinite(savedLat) && Number.isFinite(savedLng) && Math.abs(savedLat) > 0.00001 && Math.abs(savedLng) > 0.00001) {
                         return {
                             lat: savedLat,
                             lng: savedLng,
@@ -637,6 +792,8 @@
                 if (alreadySame) return;
 
                 try {
+                    const latest = (await get(ref(database, `${DB_SECTION}/homecare_jobs/${job.key}`))).val();
+                    if (!latest || latest.address !== job.address || (latest.details || '') !== (job.details || '')) return;
                     await update(ref(database, `${DB_SECTION}/homecare_jobs/${job.key}`), {
                         routeLat: coord.lat,
                         routeLng: coord.lng,
@@ -649,11 +806,13 @@
                 }
             };
 
+            const routeSignature = JSON.stringify(activeDateJobs.map(j => [j.key, j.address, j.details, j.visitTime, j.status]));
             useEffect(() => {
                 let cancelled = false;
 
                 const buildDailyRoute = async () => {
-                    if (currentView !== 'daily') {
+                    if (currentView !== 'daily' || !showRoute) {
+                        setIsRouteLoading(false);
                         setDailyRoutePoints([]);
                         setRouteDebugItems([]);
                         setRouteFailedItems([]);
@@ -665,6 +824,9 @@
                         .sort((a, b) => (a.visitTime || '23:59').localeCompare(b.visitTime || '23:59'));
 
                     if (routeJobs.length === 0) {
+                        setIsRouteLoading(false);
+                        await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js').catch(() => {});
+                        if (cancelled) return;
                         setDailyRoutePoints([{ type: 'home', order: '집', address: HOME_ADDRESS, ...HOME_COORD }]);
                         setRouteDebugItems([]);
                         setRouteFailedItems([]);
@@ -674,6 +836,9 @@
                     setIsRouteLoading(true);
 
                     try {
+                        await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+                        try { await loadKakao(); } catch (e) { console.warn(e); }
+                        if (cancelled) return;
                         const homeCoord = HOME_COORD; // 집은 매번 검색하지 않고 고정 좌표를 사용해서 즉시 표시
                         const homePoint = { type: 'home', order: '집', address: HOME_ADDRESS, ...homeCoord };
                         const jobPoints = [];
@@ -693,6 +858,7 @@
 
                             if (coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lng)) {
                                 await saveRouteCoordToJob(job, coord);
+                                if (cancelled) return;
 
                                 const { matchedQuery, source, ...latLng } = coord;
                                 jobPoints.push({
@@ -734,14 +900,12 @@
 
                 buildDailyRoute();
                 return () => { cancelled = true; };
-            }, [currentView, activeDate, activeDateJobs]);
+            }, [currentView, activeDate, routeSignature, showRoute]);
 
             const consultationJobs = useMemo(() => {
-                return Object.entries(jobs)
-                    .map(([key, job]) => ({ key, ...job }))
-                    .filter(job => job.dates && job.dates.includes('waiting'))
+                return [...(jobsByDate.waiting || [])]
                     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            }, [jobs]);
+            }, [jobsByDate]);
 
             const getMaterialBreakdown = (job) => {
                 let kim = 0;
@@ -1002,6 +1166,7 @@
             };
 
             const searchAddressDocuments = async (query) => {
+                try { await loadKakao(); } catch (error) { console.warn(error); }
                 const services = window.kakao?.maps?.services;
                 if (services) {
                     try {
@@ -1253,13 +1418,11 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     ? (editingId ? (jobs[editingId].dates || ['waiting']) : ['waiting'])
                     : [jobDate];
 
-                let routeCoord = null;
-                try {
-                    routeCoord = await geocodeForRoute({ address: latestAddress, details: latestDetails });
-                } catch (error) {
-                    console.warn('저장 전 좌표 변환 실패:', latestAddress, latestDetails, error);
-                }
-                
+                const existingJob = editingId ? jobs[editingId] : null;
+                const sameAddress = existingJob && existingJob.address === latestAddress && (existingJob.details || '') === latestDetails;
+                const routeCoord = sameAddress && Number.isFinite(existingJob.routeLat) && Number.isFinite(existingJob.routeLng)
+                    ? { lat: existingJob.routeLat, lng: existingJob.routeLng, matchedQuery: existingJob.routeMatchedQuery, source: existingJob.routeSource } : null;
+
                 const jobData = {
                     address: latestAddress,
                     details: latestDetails,
@@ -1275,11 +1438,11 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     cancelReason: editingId ? (jobs[editingId].cancelReason || '') : '',
                     additionalContacts: editingId ? (jobs[editingId].additionalContacts || []) : [],
                     createdAt: editingId ? jobs[editingId].createdAt : Date.now(),
-                    routeLat: routeCoord?.lat ?? (editingId ? (jobs[editingId].routeLat ?? null) : null),
-                    routeLng: routeCoord?.lng ?? (editingId ? (jobs[editingId].routeLng ?? null) : null),
-                    routeMatchedQuery: routeCoord?.matchedQuery ?? (editingId ? (jobs[editingId].routeMatchedQuery || '') : ''),
-                    routeSource: routeCoord?.source ?? (editingId ? (jobs[editingId].routeSource || '') : ''),
-                    routeUpdatedAt: routeCoord ? Date.now() : (editingId ? (jobs[editingId].routeUpdatedAt || null) : null)
+                    routeLat: routeCoord?.lat ?? (sameAddress ? (jobs[editingId].routeLat ?? null) : null),
+                    routeLng: routeCoord?.lng ?? (sameAddress ? (jobs[editingId].routeLng ?? null) : null),
+                    routeMatchedQuery: routeCoord?.matchedQuery ?? (sameAddress ? (jobs[editingId].routeMatchedQuery || '') : ''),
+                    routeSource: routeCoord?.source ?? (sameAddress ? (jobs[editingId].routeSource || '') : ''),
+                    routeUpdatedAt: routeCoord ? Date.now() : (sameAddress ? (jobs[editingId].routeUpdatedAt || null) : null)
                 };
 
                 try {
@@ -1597,7 +1760,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                 }
             };
 
-            const handleExcelExport = () => {
+            const handleExcelExport = async () => {
+                try { await loadScript('https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'); } catch(e) { alert(e.message); return; }
                 if (!window.XLSX) {
                     alert('엑셀 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
                     return;
@@ -1639,7 +1803,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                 XLSX.writeFile(wb, `홈케어매출_${currentDateView.getFullYear()}년_${currentDateView.getMonth()+1}월.xlsx`);
             };
 
-            const handlePDFExport = () => {
+            const handlePDFExport = async () => {
+                try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); } catch(e) { alert(e.message); return; }
                 if (!window.jspdf) {
                     alert('PDF 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
                     return;
@@ -2013,7 +2178,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                         className="w-full py-3 bg-slate-800 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 duration-200 shadow-lg shadow-slate-200 disabled:opacity-50 mb-5"
                     >
                         {isProcessing ? <Loader2 className="animate-spin w-4 h-4" /> : <SearchCheck className="w-4 h-4" />}
-                        {isProcessing ? "AI 분석 & 지도 검색 중..." : "AI 정밀 주소 변환"}
+                        {isProcessing ? "주소·연락처를 확인하고 있습니다..." : "문자에서 주소·연락처 가져오기"}
                     </button>
 
                     {addressCheckMessage && <div role="status" className="mb-3 p-3 rounded-xl bg-amber-50 text-amber-900 text-sm">{addressCheckMessage}</div>}
@@ -2273,6 +2438,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     </header>
 
                     <main className="p-2 sm:p-5 space-y-4 sm:space-y-6">
+                        {dataLoading && <div role="status" className="p-4 bg-teal-50 text-teal-800 rounded-xl flex gap-2 items-center"><Loader2 className="w-4 h-4 animate-spin" />작업 기록을 불러오고 있습니다…</div>}
+                        {dataError && <div role="alert" className="p-4 bg-red-50 text-red-800 rounded-xl">{dataError}<button className="ml-3 underline font-bold" onClick={() => setReloadToken(v => v + 1)}>다시 시도</button></div>}
                         {currentView === 'calendar' && (
                             <section className="bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-5 shadow-sm border border-slate-100">
                                 <div className="flex justify-between items-center mb-3 sm:mb-6 px-1 sm:px-2">
@@ -2288,6 +2455,12 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                     </button>
                                 </div>
                                 
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-4 px-1">
+                                    <p className="text-xs text-slate-500">하루 건수 · 총매출 <span className="text-slate-400">(만원)</span></p>
+                                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                                        <button onClick={() => setCurrentDateView(new Date())} className="px-2 py-1.5 text-xs font-bold">오늘</button>
+                                    </div>
+                                </div>
                                 <div className="grid grid-cols-7 gap-[1px] text-center mb-1">
                                     {['일','월','화','수','목','금','토'].map((d,i) => (
                                         <div key={d} className={`text-[11px] font-bold pb-1 ${i===0?'text-red-400':i===6?'text-blue-400':'text-slate-400'}`}>{d}</div>
@@ -2301,6 +2474,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                         const isToday = dateStr === todayStr;
                                         const dayJobs = jobsByDate[dateStr] || [];
                                         const dayOffs = offDaysByDate[dateStr] || [];
+                                        const countedJobs = dayJobs.filter(j => (j.status || 'pending') !== 'cancelled');
+                                        const dayTotal = countedJobs.reduce((sum,j) => sum + amountFor(j), 0);
                                         const hasJobs = dayJobs.length > 0;
                                         const hasOffDays = dayOffs.length > 0;
                                         const hasFullDayOff = dayOffs.some(o => (o.type || 'full') === 'full');
@@ -2326,10 +2501,14 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                             <div
                                                 key={day}
                                                 role="button"
+                                                tabIndex={0}
+                                                aria-label={`${dateStr}, 작업 ${countedJobs.length}건, 총매출 ${formatAmountStr(dayTotal)}`}
+                                                onKeyDown={e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDailyView(dateStr); } }}
                                                 onClick={() => openDailyView(dateStr)}
                                                 className={`cursor-pointer relative flex flex-col items-center justify-start pt-1 pb-1 px-0.5 sm:px-1 border min-h-[105px] sm:min-h-[120px] overflow-hidden ${hasFullDayOff ? 'border-rose-300 bg-rose-50' : isToday ? 'border-teal-400 bg-teal-50 shadow-sm' : hasOffDays ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
                                             >
                                                 <span className={`text-[11px] sm:text-[12px] font-bold mb-0.5 ${hasFullDayOff ? 'text-rose-700' : isToday ? 'text-teal-700' : 'text-slate-700'}`}>{day}</span>
+                                                {countedJobs.length > 0 && <div className="w-full mb-1.5 pb-1.5 border-b border-slate-200/80 flex items-center justify-center gap-0.5 whitespace-nowrap text-[9px] sm:text-[11px] leading-tight"><span className="font-medium text-slate-500">{countedJobs.length}건</span><span className="text-slate-400" aria-hidden="true">·</span><span className="font-bold text-teal-800">{formatAmountStr(dayTotal)}</span></div>}
                                                 
                                                 {fullDayOffs.length > 0 && (
                                                     <div className="flex flex-col gap-[3px] w-full mb-1">
@@ -2361,14 +2540,14 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                                             if (currentStatus === 'completed') statusColor = 'bg-teal-500'; 
                                                             if (currentStatus === 'cancelled') statusColor = 'bg-red-400';
                                                             
-                                                            const displayAmt = job.netIncome !== undefined ? job.netIncome : job.totalAmount;
+                                                            const displayAmt = amountFor(job);
                                                             const amt = formatAmountStr(displayAmt);
                                                             
                                                             return (
                                                                 <div key={item.key} className="flex items-center justify-center gap-0.5 sm:gap-1 bg-slate-50/80 rounded py-[3px] px-0.5 border border-slate-100 w-full shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                                                                     <div className={`w-1.5 h-1.5 rounded-full ${statusColor} flex-shrink-0`}></div>
-                                                                    <span className="text-[8px] font-black text-slate-500 tracking-tighter leading-none">{job.visitTime || '--:--'}</span>
-                                                                    <span className="text-[9px] font-extrabold text-slate-700 tracking-tighter truncate leading-none mt-[1px]">{amt}</span>
+                                                                    <span className="text-[10px] font-bold text-slate-500 tracking-tighter leading-none">{job.visitTime || '--:--'}</span>
+                                                                    <span className="text-[10px] font-extrabold text-slate-700 tracking-tighter truncate leading-none mt-[1px]">{amt}</span>
                                                                 </div>
                                                             );
                                                         })}
@@ -2421,7 +2600,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                     </button>
                                 </div>
 
-                                {todayDashboardJobs.length === 0 ? (
+                                {dataLoading || dataError ? <p className="p-3 text-sm text-slate-500">{dataLoading ? '오늘 일정을 확인하고 있습니다.' : '연결 후 오늘 일정을 확인할 수 있습니다.'}</p> : todayDashboardJobs.length === 0 ? (
                                     <button
                                         onClick={() => openDailyView(todayStr)}
                                         className="w-full bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3 text-center text-xs font-bold text-slate-500 active:scale-[0.99]"
@@ -2617,7 +2796,10 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                     </button>
                                 </div>
 
-                                <DailyRouteMap points={dailyRoutePoints} loading={isRouteLoading} debugItems={routeDebugItems} failedItems={routeFailedItems} />
+                                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                                    <button aria-expanded={showRoute} onClick={() => setShowRoute(v => !v)} className="w-full px-4 py-4 flex items-center justify-between text-sm font-bold text-slate-700"><span>이동 지도 · 방문 순서</span><span className="text-teal-700">{showRoute ? '접기 −' : '지도 보기 +'}</span></button>
+                                    {showRoute && <DailyRouteMap points={dailyRoutePoints} loading={isRouteLoading} failedItems={routeFailedItems} />}
+                                </div>
 
                                 {showOffDayPanel && (
                                 <section className="bg-white rounded-3xl p-5 shadow-sm border border-amber-100 space-y-4">
