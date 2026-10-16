@@ -1718,7 +1718,7 @@ for(const type of ['revenue','expense']){
  section.prepend(controls);const close=document.createElement('button');close.className='btn btn-ghost btn-full';close.textContent='입력창 닫기';close.onclick=()=>form.hidden=true;form.append(close);
 }
 for(const prefix of ['r','edit-r']){
- const group=document.createElement('div');group.className='form-group';group.innerHTML=`<label for="${prefix}-paid">미수금 (선택)</label><input id="${prefix}-paid" type="number" min="0" placeholder="없으면 비워두세요 · 기본 0원">`;
+ const group=document.createElement('div');group.className='form-group';group.innerHTML=`<label for="${prefix}-unpaid">미수금 (선택)</label><input id="${prefix}-unpaid" type="number" min="0" placeholder="없으면 비워두세요 · 기본 0원">`;
  document.getElementById(prefix+'-amount').closest('.form-grid').append(group);
 }
 function outstanding(v){return Number(v.unpaid??(v.paid!=null?Math.max(0,Number(v.amount)-Number(v.paid)):0))}
