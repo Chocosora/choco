@@ -272,7 +272,8 @@
 
 
         // Receipt feature: isolated from existing job editing and database writes.
-        const ReceiptDialog = ({ job, onClose }) => {
+        const ReceiptDialog = ({ job, onClose, isReceipt = false }) => {
+            const documentTitle = isReceipt ? '영수증' : '작업내역서';
             const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
             const [address, setAddress] = useState(job.address || '');
             const [customer, setCustomer] = useState(job.details || '');
@@ -281,8 +282,6 @@
             const [printing, setPrinting] = useState(false);
             const [vatMode, setVatMode] = useState('included');
             const [error, setError] = useState('');
-            const [logoReady, setLogoReady] = useState(false);
-            const [logoFailed, setLogoFailed] = useState(false);
             const paper = useRef(null);
             const closeButton = useRef(null);
             const dialog = useRef(null);
@@ -308,15 +307,21 @@
                 try {
                     await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => window.html2canvas);
                     if (format === 'pdf') await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
+                    await document.fonts.ready;
+                    const previewStyle = getComputedStyle(paper.current);
+                    const exportWidth = paper.current.getBoundingClientRect().width;
+                    const exportViewport = window.innerWidth;
                     staging = document.createElement('div');
-                    staging.style.cssText = 'position:absolute;left:-10000px;top:0;width:794px;background:white';
+                    staging.style.cssText = `position:absolute;left:-10000px;top:0;width:${exportWidth}px;background:white`;
                     const copy = paper.current.cloneNode(true);
-                    copy.style.width = '794px'; copy.style.padding = '40px';
+                    copy.style.boxSizing = 'border-box';
+                    copy.style.width = `${exportWidth}px`;
+                    copy.style.padding = previewStyle.padding;
                     staging.appendChild(copy); document.body.appendChild(staging);
                     await document.fonts.ready;
                     await Promise.all(Array.from(copy.querySelectorAll('img')).map(img => img.decode()));
-                    const canvas = await window.html2canvas(copy, { scale:2, useCORS:true, backgroundColor:'#ffffff', windowWidth:1000, logging:false });
-                    const name = `작업내역서_${issued}_${customer.replace(/[\\/:*?"<>|]/g,'_').slice(0,50)}`;
+                    const canvas = await window.html2canvas(copy, { scale:2, useCORS:true, backgroundColor:'#ffffff', windowWidth:exportViewport, logging:false });
+                    const name = `${documentTitle}_${issued}_${customer.replace(/[\\/:*?"<>|]/g,'_').slice(0,50)}`;
                     if (format === 'jpg') {
                         const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',0.95));
                         if (!blob) throw new Error('JPG 파일 생성에 실패했습니다.');
@@ -325,6 +330,12 @@
                         setTimeout(() => URL.revokeObjectURL(url), 60000);
                     } else {
                         const pdf = new window.jspdf.jsPDF('p','mm','a4');
+                        if (isReceipt) {
+                            const ratio = Math.min(190/canvas.width, 277/canvas.height);
+                            pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',(210-canvas.width*ratio)/2,10,canvas.width*ratio,canvas.height*ratio);
+                            pdf.save(name+'.pdf');
+                            return;
+                        }
                         const pageHeight = Math.floor(canvas.width * 277 / 190);
                         // Choose page boundaries outside rows/paragraphs where possible.
                         const scale = canvas.width / copy.getBoundingClientRect().width;
@@ -374,14 +385,20 @@
                     frameRef.current?.remove();
                     frame = document.createElement('iframe');
                     frameRef.current = frame;
-                    frame.title = '작업내역서 인쇄';
+                    frame.title = documentTitle + ' 인쇄';
                     frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1100px;border:0';
                     document.body.appendChild(frame);
                     const doc = frame.contentDocument;
                     doc.open();
                     doc.write('<!doctype html><html lang="ko"><head><meta charset="UTF-8"><title>홈케어의 제왕 작업내역서</title><style>'+receiptPrintStyle+'</style></head><body></body></html>');
                     doc.close();
-                    doc.body.appendChild(paper.current.cloneNode(true));
+                    const printedPaper = paper.current.cloneNode(true);
+                    doc.body.appendChild(printedPaper);
+                    doc.title = '홈케어의 제왕 ' + documentTitle;
+                    if (isReceipt) {
+                        const scale = Math.min(1, 1000 / printedPaper.scrollHeight);
+                        if (scale < 1) printedPaper.style.zoom = scale;
+                    }
                     await Promise.all(Array.from(doc.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload = resolve; img.onerror = resolve; setTimeout(resolve, 8000); })));
                     if (Array.from(doc.images).some(img => !img.complete || !img.naturalWidth)) throw new Error('로고를 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');
                     frame.contentWindow.focus();
@@ -395,7 +412,7 @@
                     <style>{receiptPrintStyle}</style>
                     <div className="bg-slate-50 rounded-2xl w-full max-w-3xl my-auto shadow-xl p-4 sm:p-6">
                         <div className="flex items-center justify-between gap-3 mb-4">
-                            <h2 id="receipt-dialog-title" className="text-xl font-extrabold text-slate-800">작업내역서 발행</h2>
+                            <h2 id="receipt-dialog-title" className="text-xl font-extrabold text-slate-800">{documentTitle} 발행</h2>
                             <button ref={closeButton} onClick={onClose} className="p-2 text-sm font-bold text-slate-600">닫기</button>
                         </div>
                         <div className="grid sm:grid-cols-2 gap-3 mb-3">
@@ -410,31 +427,34 @@
                             </select>
                         </label>
                         <p className="text-xs text-slate-500 mb-4">{vatMode === 'included' ? '기존 작업비를 그대로 표시하며, 작업내역서에는 부가세 문구와 세액 구분을 표시하지 않습니다.' : '기존 작업비를 공급가액으로 보고 부가세 10%를 더합니다.'} 원 단위 반올림. 작업 기록의 금액은 변경되지 않습니다. 입력 내용은 이 창에서만 유지됩니다.</p>
-                        <div ref={paper} className="hc-receipt-paper">
-                            <header className="hc-receipt-header">
-                                <img crossOrigin="anonymous" src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" onLoad={()=>setLogoReady(true)} onError={()=>{setLogoFailed(true);setLogoReady(false);}} />
-                                <div><h1>작업내역서</h1><p>발행일 {issued}</p></div>
-                            </header>
-                            <div className="hc-statement-parties">
-                                <section><h2>공급자 · 사업자 정보</h2><dl><dt>등록번호</dt><dd>245-58-01020</dd><dt>상호</dt><dd>홈케어의 제왕</dd><dt>대표자</dt><dd>박시언</dd><dt>사업장</dt><dd>경기도 남양주시 별내중앙로 34, 5층 502-A40호(별내동, 로뎀타워)</dd></dl></section>
-                                <section><h2>공급받는 자 · 고객 정보</h2><dl><dt>고객명</dt><dd>{customer || '—'}</dd><dt>주소</dt><dd>{address || '—'}</dd><dt>작업일</dt><dd>{(job.dates || []).filter(d=>d!=='waiting').join(', ') || '미정'}</dd></dl></section>
+                        <div ref={paper} className="hc-receipt-paper hc-simple-receipt">
+                            <div className="hc-simple-title-row">
+                                <img crossOrigin="anonymous" src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" />
+                                <h1>{isReceipt ? '영 수 증' : '작업내역서'}</h1>
                             </div>
-                            <table><thead><tr><th>작업 내역</th><th>금액 {vatMode === 'exclusive' ? '(VAT 별도)' : ''}</th></tr></thead><tbody>{rows.length ? rows.map((task,i)=><tr key={i}><td>{i+1}. {task.description || '작업'}</td><td>{money(Number(task.amount || 0)*10000)}원</td></tr>) : <tr><td colSpan="2">등록된 작업 내역이 없습니다.</td></tr>}</tbody></table>
-                            {vatMode === 'exclusive' && <div className="hc-statement-tax"><p><span>공급가액</span><b>{money(supplyAmount)}원</b></p><p><span>부가세 (10%)</span><b>{money(vatAmount)}원</b></p></div>}
-                            <div className="hc-receipt-total"><span>합계</span><strong>{money(finalAmount)}원</strong></div>
-                            {memo.trim() && <section className="hc-receipt-memo"><h2>작업 상세 설명 / 기타 의견</h2><p>{memo}</p></section>}
-                            <section className="hc-receipt-account"><h2>입금 계좌</h2><p>카카오뱅크 <strong>3333-37-0795904</strong></p><p>예금주: 박시언(홈케어의 제왕)</p></section>
-                            <footer>믿고 맡겨주셔서 감사합니다.<br/>홈케어의 제왕</footer>
+                            <div className="hc-simple-recipient"><span>{[address.trim(), customer.trim()].filter(Boolean).join(' ') || '—'} 귀하</span><span style={{whiteSpace:'nowrap'}}>{issued}</span></div>
+                            <table className="hc-simple-supplier"><colgroup><col style={{width:'6%'}}/><col style={{width:'17%'}}/><col style={{width:'27%'}}/><col style={{width:'8%'}}/><col style={{width:'42%'}}/></colgroup><tbody>
+                                <tr><th rowSpan="4" className="hc-simple-vertical">공<br/>급<br/>자</th><th>등록번호</th><td colSpan="3">245-58-01020</td></tr>
+                                <tr><th>상호</th><td>홈케어의 제왕</td><th>성명</th><td>박시언</td></tr>
+                                <tr><th>사업장 소재지</th><td colSpan="3">경기도 남양주시 별내중앙로 34, 5층 502-A40호(별내동, 로뎀타워)</td></tr>
+                                <tr><th>업태</th><td>건설업 외</td><th>종목</th><td>배관 및 냉·난방 공사업 외</td></tr>
+                            </tbody></table>
+                            <table className="hc-simple-amount"><thead><tr><th>작성년월일</th><th>금액</th><th>비고</th></tr></thead><tbody><tr><td>{issued}</td><td><strong>₩ {money(finalAmount)}</strong></td><td>{vatMode === 'exclusive' ? `공급가액 ${money(supplyAmount)}원\n부가세 ${money(vatAmount)}원` : ''}</td></tr></tbody></table>
+                            <p className="hc-simple-confirm">{isReceipt ? '위 금액을 영수함' : '아래와 같이 작업 내역을 안내드립니다.'}</p>
+                            <table className="hc-simple-items"><colgroup><col style={{width:'13%'}}/><col style={{width:'39%'}}/><col style={{width:'10%'}}/><col style={{width:'18%'}}/><col style={{width:'20%'}}/></colgroup><thead><tr><th>월일</th><th>{isReceipt ? '품목' : '작업 내용'}</th><th>수량</th><th>단가</th><th>금액</th></tr></thead><tbody>
+                                {rows.map((task,i)=><tr key={i}><td>{((job.dates || []).find(d=>d!=='waiting') || issued).slice(5).replace('-','/')}</td><td>{task.description || '작업'}</td><td>1</td><td>{money(Number(task.amount || 0)*10000)}</td><td>{money(Number(task.amount || 0)*10000)}</td></tr>)}
+                                {Array.from({length:Math.max(0,5-rows.length)},(_,i)=><tr key={'blank'+i}><td>　</td><td></td><td></td><td></td><td></td></tr>)}
+                            </tbody></table>
+                            <div className="hc-simple-notes"><b>작업 설명 / 기타 의견</b><p>{memo.trim() || '—'}</p></div>
+                            <div className="hc-simple-bank">카카오뱅크 <b>3333-37-0795904</b><br/>예금주: 박시언(홈케어의 제왕)</div>
                         </div>
-                        {logoFailed && <p role="alert" className="text-sm text-red-600 mt-3">로고를 불러오지 못했습니다. 인터넷 연결을 확인하고 창을 다시 열어주세요.</p>}
                         {error && <p role="alert" className="text-sm text-red-600 mt-3">{error}</p>}
                         <div className="flex flex-wrap gap-2 mt-4">
-                            <button disabled={printing || !logoReady} onClick={()=>saveDocument('pdf')} className="flex-1 py-3 rounded-xl bg-teal-700 text-white font-bold disabled:opacity-50">PDF 저장</button>
-                            <button disabled={printing || !logoReady} onClick={()=>saveDocument('jpg')} className="flex-1 py-3 rounded-xl bg-slate-800 text-white font-bold disabled:opacity-50">JPG 저장</button>
-                            <button disabled={printing || !logoReady} onClick={printReceipt} className="px-5 py-3 rounded-xl border border-slate-300 font-bold disabled:opacity-50">인쇄</button>
+                            <button disabled={printing} onClick={()=>saveDocument('pdf')} className="flex-1 py-3 rounded-xl bg-teal-700 text-white font-bold disabled:opacity-50">PDF 저장</button>
+                            <button disabled={printing} onClick={()=>saveDocument('jpg')} className="flex-1 py-3 rounded-xl bg-slate-800 text-white font-bold disabled:opacity-50">JPG 저장</button>
+                            <button disabled={printing} onClick={printReceipt} className="px-5 py-3 rounded-xl border border-slate-300 font-bold disabled:opacity-50">인쇄</button>
                         </div>
                         {printing && <p role="status" className="mt-2 text-sm text-teal-700">파일 준비 중입니다…</p>}
-                        {!logoReady && !logoFailed && <p role="status" className="mt-2 text-sm">로고 불러오는 중…</p>}
                     </div>
                 </div>
             );
@@ -473,6 +493,31 @@
             .hc-receipt-account {margin-top:20px;padding:16px;border:1px solid #dce5e5;border-radius:8px;break-inside:avoid;}
             .hc-receipt-paper footer {text-align:center;color:#64748b;font-size:12px;margin-top:28px;}
             @media(max-width:480px) {.hc-receipt-paper {padding:18px;font-size:12px;}.hc-receipt-header img {width:78px;height:78px;}}
+
+            .hc-receipt-paper.hc-simple-receipt {color:#111;font-size:13px;line-height:1.6;}
+            .hc-simple-receipt h1 {text-align:center;font-size:26px;font-weight:800;margin:0 0 20px;letter-spacing:10px;}
+            .hc-simple-title-row {display:grid;grid-template-columns:64px minmax(0,1fr) 64px;align-items:center;gap:10px;margin-bottom:20px;}
+            .hc-simple-title-row img {display:block;width:64px;height:64px;object-fit:contain;}
+            .hc-simple-receipt .hc-simple-title-row h1 {margin:0;letter-spacing:5px;}
+            .hc-simple-recipient {display:flex;justify-content:space-between;gap:12px;font-size:13px;margin-bottom:6px;}
+            .hc-simple-address {font-size:13px;margin-bottom:12px!important;}
+            .hc-simple-receipt table {border:2px solid #111;}
+            .hc-simple-receipt th,.hc-simple-receipt td {border:1px solid #111;padding:8px 6px;background:white;font-size:13px;vertical-align:middle;}
+            .hc-simple-receipt th {text-align:center;}
+            .hc-simple-receipt th:last-child,.hc-simple-receipt td:last-child {width:auto;text-align:center;}
+            .hc-simple-supplier th:first-child.hc-simple-vertical {text-align:center;}
+            .hc-simple-supplier th {white-space:nowrap;padding-left:4px;padding-right:4px;}
+            .hc-simple-supplier td {text-align:left!important;}
+            .hc-simple-amount {margin-top:12px;}
+            .hc-simple-amount td {text-align:center;}
+            .hc-simple-amount strong {font-size:14px;font-weight:700;}
+            .hc-simple-confirm {font-size:13px;text-align:center;border:2px solid #111;border-top:0;margin:0!important;padding:12px;}
+            .hc-simple-items {margin-top:12px;}
+            .hc-simple-items td {text-align:center;}
+            .hc-simple-items td:nth-child(2) {text-align:left;}
+            .hc-simple-items td:nth-child(4),.hc-simple-items td:nth-child(5) {text-align:right;}
+            .hc-simple-notes {font-size:13px;border:2px solid #111;border-top:0;padding:12px;min-height:80px;}
+            .hc-simple-bank {font-size:13px;border:2px solid #111;border-top:0;padding:12px;text-align:center;}
             @media print {@page {size:A4;margin:15mm;} body {margin:0;} .hc-receipt-paper {padding:0;font-size:12px;} .hc-receipt-paper thead {display:table-header-group;} .hc-receipt-paper tr,.hc-receipt-total {break-inside:avoid;} .hc-receipt-paper {print-color-adjust:exact;-webkit-print-color-adjust:exact;}}
         `;
 
@@ -518,6 +563,7 @@
             
             const [editingId, setEditingId] = useState(null);
             const [receiptJob, setReceiptJob] = useState(null);
+            const [simpleReceiptJob, setSimpleReceiptJob] = useState(null);
             const [smsModal, setSmsModal] = useState(null); 
             const [extraContactModal, setExtraContactModal] = useState(null);
             const [extraContactForm, setExtraContactForm] = useState({ relation: '', phone: '' });
@@ -2874,6 +2920,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                                     )}
 
                                                     <div className="ml-auto flex gap-1">
+                                                        <button type="button" onClick={() => setSimpleReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200" title="영수증 발행">영수증</button>
                                                         <button type="button" onClick={() => setReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100" title="작업내역서 발행">작업내역서</button>
                                                         <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
                                                             <Copy className="w-3.5 h-3.5" />
@@ -3107,7 +3154,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                                         )}
 
                                                         <div className="ml-auto flex gap-1">
-                                                            <button type="button" onClick={() => setReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100" title="작업내역서 발행">작업내역서</button>
+                                                            <button type="button" onClick={() => setSimpleReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200" title="영수증 발행">영수증</button>
+                                                        <button type="button" onClick={() => setReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100" title="작업내역서 발행">작업내역서</button>
                                                         <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
                                                                 <Copy className="w-3.5 h-3.5" />
                                                             </button>
@@ -3337,6 +3385,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     )}
 
                     {receiptJob && <ReceiptDialog job={receiptJob} onClose={() => setReceiptJob(null)} />}
+                    {simpleReceiptJob && <ReceiptDialog job={simpleReceiptJob} isReceipt onClose={() => setSimpleReceiptJob(null)} />}
 
                     {smsModal && !isEditingTemplates && (
                         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm">
