@@ -270,6 +270,212 @@
             { title: '리뷰 작성 요청', body: '고객님, 오늘 막힌 하수구는 시원하게 잘 해결해 드렸습니다!\n믿고 맡겨주셔서 감사합니다.\n\n작업 결과에 만족하셨다면, 앞서 약속해주신 구글 리뷰 작성을 조심스럽게 부탁드리고자 합니다.\n아래 내용을 참고해 작성해 주시면 저희가 지역 내에서 더 신뢰받는 업체로 성장하는 데 큰 도움이 됩니다.\n\n[리뷰 작성 팁!]\n✔ 검색 키워드 포함\n\'{지역} 하수구 업체 하수구의제왕\' 문구를 포함해 주시면 정말 감사하겠습니다.\n(예: 송파 하수구 업체 하수구의제왕 덕분에 해결했어요!)\n\n✔ 느낀 점 공유\n저희의 친절함이나 전문적인 작업 과정에 대해 짧게 언급해 주시면 저희 팀원들에게 큰 격려가 됩니다.\n\n[리뷰 작성 링크]\nhttps://g.page/r/Cbpx5qL6PxIsEBM/review\n\n혹시 이용 중 불편하신 점이 있었다면 언제든 말씀해 주세요.\n늘 전문성을 바탕으로 책임감 있게 사후 관리까지 책임지는 하수구의제왕이 되겠습니다.\n감사합니다!' }
         ];
 
+
+        // Receipt feature: isolated from existing job editing and database writes.
+        const ReceiptDialog = ({ job, onClose }) => {
+            const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+            const [address, setAddress] = useState(job.address || '');
+            const [customer, setCustomer] = useState(job.details || '');
+            const [issued, setIssued] = useState(localDate);
+            const [memo, setMemo] = useState('');
+            const [printing, setPrinting] = useState(false);
+            const [vatMode, setVatMode] = useState('included');
+            const [error, setError] = useState('');
+            const [logoReady, setLogoReady] = useState(false);
+            const [logoFailed, setLogoFailed] = useState(false);
+            const paper = useRef(null);
+            const closeButton = useRef(null);
+            const dialog = useRef(null);
+            const frameRef = useRef(null);
+            const money = value => (Number.isFinite(Number(value)) ? Number(value) : 0).toLocaleString('ko-KR');
+            const rows = Array.isArray(job.tasks) ? job.tasks : [];
+            const baseAmount = Math.max(0, Math.round(Number(job.totalAmount) || 0));
+            const supplyAmount = vatMode === 'included' ? Math.round(baseAmount / 1.1) : baseAmount;
+            const vatAmount = vatMode === 'included' ? baseAmount - supplyAmount : Math.round(baseAmount * 0.1);
+            const finalAmount = supplyAmount + vatAmount;
+            const ensureLibrary = (url, ready) => ready() ? Promise.resolve() : new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                const timer = setTimeout(() => { script.remove(); reject(new Error('저장 도구를 불러오는 시간이 초과되었습니다. 다시 시도해주세요.')); }, 20000);
+                script.src = url;
+                script.onload = () => { clearTimeout(timer); ready() ? resolve() : reject(new Error('저장 도구를 불러오지 못했습니다.')); };
+                script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('인터넷 연결을 확인한 뒤 다시 저장해주세요.')); };
+                document.head.appendChild(script);
+            });
+            const saveDocument = async format => {
+                if (!issued || !customer.trim() || !address.trim()) { setError('발행일, 고객명, 주소를 입력해주세요.'); return; }
+                setPrinting(true); setError('');
+                let staging;
+                try {
+                    await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => window.html2canvas);
+                    if (format === 'pdf') await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
+                    staging = document.createElement('div');
+                    staging.style.cssText = 'position:absolute;left:-10000px;top:0;width:794px;background:white';
+                    const copy = paper.current.cloneNode(true);
+                    copy.style.width = '794px'; copy.style.padding = '40px';
+                    staging.appendChild(copy); document.body.appendChild(staging);
+                    await document.fonts.ready;
+                    await Promise.all(Array.from(copy.querySelectorAll('img')).map(img => img.decode()));
+                    const canvas = await window.html2canvas(copy, { scale:2, useCORS:true, backgroundColor:'#ffffff', windowWidth:1000, logging:false });
+                    const name = `작업내역서_${issued}_${customer.replace(/[\\/:*?"<>|]/g,'_').slice(0,50)}`;
+                    if (format === 'jpg') {
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',0.95));
+                        if (!blob) throw new Error('JPG 파일 생성에 실패했습니다.');
+                        const url = URL.createObjectURL(blob), link = document.createElement('a');
+                        link.href = url; link.download = name + '.jpg'; document.body.appendChild(link); link.click(); link.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 60000);
+                    } else {
+                        const pdf = new window.jspdf.jsPDF('p','mm','a4');
+                        const pageHeight = Math.floor(canvas.width * 277 / 190);
+                        // Choose page boundaries outside rows/paragraphs where possible.
+                        const scale = canvas.width / copy.getBoundingClientRect().width;
+                        const top = copy.getBoundingClientRect().top;
+                        const blocks = Array.from(copy.querySelectorAll('tr,p,h1,h2,.hc-receipt-total')).map(el => {
+                            const rect = el.getBoundingClientRect(); return { start:Math.floor((rect.top-top)*scale), end:Math.ceil((rect.bottom-top)*scale) };
+                        });
+                        let y=0, page=0;
+                        while(y < canvas.height) {
+                            let end = Math.min(y+pageHeight, canvas.height);
+                            const crossing = blocks.filter(b => b.start < end && b.end > end && b.start > y);
+                            if(crossing.length) end = Math.min(...crossing.map(b=>b.start));
+                            if(end <= y) end = Math.min(y+pageHeight,canvas.height);
+                            const slice = document.createElement('canvas'); slice.width = canvas.width; slice.height = end-y;
+                            slice.getContext('2d').drawImage(canvas,0,y,canvas.width,end-y,0,0,canvas.width,end-y);
+                            if(page++) pdf.addPage();
+                            pdf.addImage(slice.toDataURL('image/jpeg',0.95),'JPEG',10,10,190,(end-y)*190/canvas.width);
+                            y=end;
+                        }
+                        pdf.save(name+'.pdf');
+                    }
+                } catch(e) { setError('저장 실패: '+(e.message || '잠시 후 다시 시도해주세요.')); }
+                finally { staging?.remove(); setPrinting(false); }
+            };
+            useEffect(() => {
+                const previous = document.activeElement;
+                const oldOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+                closeButton.current?.focus();
+                const keydown = e => {
+                    if(e.key === 'Escape') onClose();
+                    if(e.key === 'Tab') {
+                        const elements = Array.from(dialog.current.querySelectorAll('button:not(:disabled),input,textarea,select')).filter(el => el.getClientRects().length);
+                        const first = elements[0], last = elements[elements.length-1];
+                        if(e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+                        else if(!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+                    }
+                };
+                document.addEventListener('keydown', keydown);
+                return () => { document.body.style.overflow = oldOverflow; document.removeEventListener('keydown', keydown); previous?.focus(); frameRef.current?.remove(); };
+            }, []);
+            const printReceipt = async () => {
+                if (!issued || !customer.trim() || !address.trim()) { setError('발행일, 고객명, 주소를 입력해주세요.'); return; }
+                setError(''); setPrinting(true);
+                let frame;
+                try {
+                    frameRef.current?.remove();
+                    frame = document.createElement('iframe');
+                    frameRef.current = frame;
+                    frame.title = '작업내역서 인쇄';
+                    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1100px;border:0';
+                    document.body.appendChild(frame);
+                    const doc = frame.contentDocument;
+                    doc.open();
+                    doc.write('<!doctype html><html lang="ko"><head><meta charset="UTF-8"><title>홈케어의 제왕 작업내역서</title><style>'+receiptPrintStyle+'</style></head><body></body></html>');
+                    doc.close();
+                    doc.body.appendChild(paper.current.cloneNode(true));
+                    await Promise.all(Array.from(doc.images).map(img => img.complete ? Promise.resolve() : new Promise(resolve => { img.onload = resolve; img.onerror = resolve; setTimeout(resolve, 8000); })));
+                    if (Array.from(doc.images).some(img => !img.complete || !img.naturalWidth)) throw new Error('로고를 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                } catch (e) { setError(e.message || '인쇄 화면을 열지 못했습니다. 다시 시도해주세요.'); }
+                finally { setPrinting(false); }
+            };
+            const fieldClass = 'w-full p-3 rounded-xl border border-slate-200 bg-white text-sm mt-1';
+            return (
+                <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="receipt-dialog-title" className="fixed inset-0 bg-slate-900/60 flex items-start justify-center overflow-y-auto p-3 sm:p-6" style={{zIndex:10000}}>
+                    <style>{receiptPrintStyle}</style>
+                    <div className="bg-slate-50 rounded-2xl w-full max-w-3xl my-auto shadow-xl p-4 sm:p-6">
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                            <h2 id="receipt-dialog-title" className="text-xl font-extrabold text-slate-800">작업내역서 발행</h2>
+                            <button ref={closeButton} onClick={onClose} className="p-2 text-sm font-bold text-slate-600">닫기</button>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                            <label className="text-sm font-bold text-slate-600">발행일<input type="date" className={fieldClass} value={issued} onChange={e=>setIssued(e.target.value)} /></label>
+                            <label className="text-sm font-bold text-slate-600">고객명 · 주소 2에서 불러옴<input className={fieldClass} value={customer} onChange={e=>setCustomer(e.target.value)} /></label>
+                            <label className="text-sm font-bold text-slate-600 sm:col-span-2">주소 · 주소 1에서 불러옴<input className={fieldClass} value={address} onChange={e=>setAddress(e.target.value)} /></label>
+                            <label className="text-sm font-bold text-slate-600 sm:col-span-2">작업 상세 설명 / 기타 의견<textarea rows="4" className={fieldClass} value={memo} onChange={e=>setMemo(e.target.value)} placeholder="실제 작업 내용, 조치 결과, 관리 방법 및 기타 의견을 자유롭게 적어주세요." /></label>
+                        </div>
+                        <label className="block text-sm font-bold text-slate-600 mb-3">부가세 계산 방식
+                            <select className={fieldClass} value={vatMode} onChange={e=>setVatMode(e.target.value)}>
+                                <option value="included">부가세 포함 · 기존 금액 유지</option><option value="exclusive">부가세 별도 · 기존 금액에 10% 추가</option>
+                            </select>
+                        </label>
+                        <p className="text-xs text-slate-500 mb-4">{vatMode === 'included' ? '기존 작업비를 그대로 표시하며, 작업내역서에는 부가세 문구와 세액 구분을 표시하지 않습니다.' : '기존 작업비를 공급가액으로 보고 부가세 10%를 더합니다.'} 원 단위 반올림. 작업 기록의 금액은 변경되지 않습니다. 입력 내용은 이 창에서만 유지됩니다.</p>
+                        <div ref={paper} className="hc-receipt-paper">
+                            <header className="hc-receipt-header">
+                                <img crossOrigin="anonymous" src="https://chocosora.github.io/choco/hc.png" alt="홈케어의 제왕 로고" onLoad={()=>setLogoReady(true)} onError={()=>{setLogoFailed(true);setLogoReady(false);}} />
+                                <div><h1>작업내역서</h1><p>발행일 {issued}</p></div>
+                            </header>
+                            <div className="hc-statement-parties">
+                                <section><h2>공급자 · 사업자 정보</h2><dl><dt>등록번호</dt><dd>245-58-01020</dd><dt>상호</dt><dd>홈케어의 제왕</dd><dt>대표자</dt><dd>박시언</dd><dt>사업장</dt><dd>경기도 남양주시 별내중앙로 34, 5층 502-A40호(별내동, 로뎀타워)</dd></dl></section>
+                                <section><h2>공급받는 자 · 고객 정보</h2><dl><dt>고객명</dt><dd>{customer || '—'}</dd><dt>주소</dt><dd>{address || '—'}</dd><dt>작업일</dt><dd>{(job.dates || []).filter(d=>d!=='waiting').join(', ') || '미정'}</dd></dl></section>
+                            </div>
+                            <table><thead><tr><th>작업 내역</th><th>금액 {vatMode === 'exclusive' ? '(VAT 별도)' : ''}</th></tr></thead><tbody>{rows.length ? rows.map((task,i)=><tr key={i}><td>{i+1}. {task.description || '작업'}</td><td>{money(Number(task.amount || 0)*10000)}원</td></tr>) : <tr><td colSpan="2">등록된 작업 내역이 없습니다.</td></tr>}</tbody></table>
+                            {vatMode === 'exclusive' && <div className="hc-statement-tax"><p><span>공급가액</span><b>{money(supplyAmount)}원</b></p><p><span>부가세 (10%)</span><b>{money(vatAmount)}원</b></p></div>}
+                            <div className="hc-receipt-total"><span>합계</span><strong>{money(finalAmount)}원</strong></div>
+                            {memo.trim() && <section className="hc-receipt-memo"><h2>작업 상세 설명 / 기타 의견</h2><p>{memo}</p></section>}
+                            <section className="hc-receipt-account"><h2>입금 계좌</h2><p>카카오뱅크 <strong>3333-37-0795904</strong></p><p>예금주: 박시언(홈케어의 제왕)</p></section>
+                            <footer>믿고 맡겨주셔서 감사합니다.<br/>홈케어의 제왕</footer>
+                        </div>
+                        {logoFailed && <p role="alert" className="text-sm text-red-600 mt-3">로고를 불러오지 못했습니다. 인터넷 연결을 확인하고 창을 다시 열어주세요.</p>}
+                        {error && <p role="alert" className="text-sm text-red-600 mt-3">{error}</p>}
+                        <div className="flex flex-wrap gap-2 mt-4">
+                            <button disabled={printing || !logoReady} onClick={()=>saveDocument('pdf')} className="flex-1 py-3 rounded-xl bg-teal-700 text-white font-bold disabled:opacity-50">PDF 저장</button>
+                            <button disabled={printing || !logoReady} onClick={()=>saveDocument('jpg')} className="flex-1 py-3 rounded-xl bg-slate-800 text-white font-bold disabled:opacity-50">JPG 저장</button>
+                            <button disabled={printing || !logoReady} onClick={printReceipt} className="px-5 py-3 rounded-xl border border-slate-300 font-bold disabled:opacity-50">인쇄</button>
+                        </div>
+                        {printing && <p role="status" className="mt-2 text-sm text-teal-700">파일 준비 중입니다…</p>}
+                        {!logoReady && !logoFailed && <p role="status" className="mt-2 text-sm">로고 불러오는 중…</p>}
+                    </div>
+                </div>
+            );
+        };
+        const receiptPrintStyle = `
+            .hc-receipt-paper { background:#fff;color:#172b35;padding:32px;font:14px/1.65 Pretendard,-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;overflow-wrap:anywhere; }
+            .hc-receipt-paper * {box-sizing:border-box;}
+            .hc-receipt-paper p {margin:4px 0;white-space:pre-wrap;}
+            .hc-receipt-header {display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:3px solid #0d9488;padding-bottom:20px;margin-bottom:20px;}
+            .hc-receipt-header img {width:105px;height:105px;object-fit:contain;}
+            .hc-receipt-header h1 {font-size:32px;letter-spacing:3px;margin:0;font-weight:800;}
+            .hc-receipt-header p {font-size:12px;color:#64748b;}
+            .hc-statement-parties {display:grid;grid-template-columns:1fr 1fr;border:1px solid #94a3b8;margin-bottom:20px;}
+            .hc-statement-parties section + section {border-left:1px solid #94a3b8;}
+            .hc-statement-parties h2 {padding:9px 12px;background:#f1f5f9;border-bottom:1px solid #94a3b8;margin:0!important;}
+            .hc-statement-parties dl {display:grid;grid-template-columns:65px 1fr;margin:0;font-size:12px;}
+            .hc-statement-parties dt,.hc-statement-parties dd {padding:8px;margin:0;border-bottom:1px solid #e2e8f0;white-space:pre-wrap;}
+            .hc-statement-parties dt {font-weight:bold;background:#f8fafc;}
+            .hc-statement-banner {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 12px;border:2px solid #334155;margin-bottom:20px;}
+            .hc-statement-banner strong {font-size:24px;}
+            .hc-statement-banner small {font-size:10px;}
+            .hc-statement-tax {padding:10px 8px;border-bottom:1px solid #cbd5e1;}
+            .hc-statement-tax p {display:flex;justify-content:space-between;}
+            @media(max-width:480px) {.hc-statement-parties {grid-template-columns:1fr;}.hc-statement-parties section + section {border-left:0;border-top:1px solid #94a3b8;}.hc-receipt-header h1 {font-size:24px;}}
+            .hc-receipt-business strong {font-size:20px;}
+            .hc-receipt-business p {font-size:12px;}
+            .hc-receipt-customer {margin:20px 0;padding:14px 0;border-top:1px solid #dce5e5;border-bottom:1px solid #dce5e5;}
+            .hc-receipt-customer b {display:inline-block;min-width:60px;}
+            .hc-receipt-paper table {width:100%;border-collapse:collapse;table-layout:fixed;}
+            .hc-receipt-paper th,.hc-receipt-paper td {text-align:left;padding:11px 8px;border-bottom:1px solid #dce5e5;white-space:pre-wrap;}
+            .hc-receipt-paper th {background:#f0fdfa;font-size:12px;}
+            .hc-receipt-paper th:last-child,.hc-receipt-paper td:last-child {width:32%;text-align:right;}
+            .hc-receipt-total {display:flex;justify-content:space-between;gap:12px;padding:18px 8px;font-size:18px;border-bottom:2px solid #0d9488;}
+            .hc-receipt-paper h2 {font-size:13px;font-weight:700;margin:0 0 8px;}
+            .hc-receipt-memo {padding:20px 0;}
+            .hc-receipt-account {margin-top:20px;padding:16px;border:1px solid #dce5e5;border-radius:8px;break-inside:avoid;}
+            .hc-receipt-paper footer {text-align:center;color:#64748b;font-size:12px;margin-top:28px;}
+            @media(max-width:480px) {.hc-receipt-paper {padding:18px;font-size:12px;}.hc-receipt-header img {width:78px;height:78px;}}
+            @media print {@page {size:A4;margin:15mm;} body {margin:0;} .hc-receipt-paper {padding:0;font-size:12px;} .hc-receipt-paper thead {display:table-header-group;} .hc-receipt-paper tr,.hc-receipt-total {break-inside:avoid;} .hc-receipt-paper {print-color-adjust:exact;-webkit-print-color-adjust:exact;}}
+        `;
+
         const App = () => {
             const today = new Date();
             today.setHours(0,0,0,0);
@@ -311,6 +517,7 @@
             const [currentDateView, setCurrentDateView] = useState(new Date(today));
             
             const [editingId, setEditingId] = useState(null);
+            const [receiptJob, setReceiptJob] = useState(null);
             const [smsModal, setSmsModal] = useState(null); 
             const [extraContactModal, setExtraContactModal] = useState(null);
             const [extraContactForm, setExtraContactForm] = useState({ relation: '', phone: '' });
@@ -2667,6 +2874,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                                     )}
 
                                                     <div className="ml-auto flex gap-1">
+                                                        <button type="button" onClick={() => setReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100" title="작업내역서 발행">작업내역서</button>
                                                         <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
                                                             <Copy className="w-3.5 h-3.5" />
                                                         </button>
@@ -2899,7 +3107,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                                         )}
 
                                                         <div className="ml-auto flex gap-1">
-                                                            <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
+                                                            <button type="button" onClick={() => setReceiptJob(job)} className="px-2 py-1.5 rounded-md text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100" title="작업내역서 발행">작업내역서</button>
+                                                        <button onClick={() => handleCopyJobInfo(job)} className="p-1.5 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="주소/핸드폰번호 복사">
                                                                 <Copy className="w-3.5 h-3.5" />
                                                             </button>
                                                             <button onClick={() => handleEditStart(job)} className={`p-1.5 rounded-md ${isEditing ? 'bg-teal-200 text-teal-700' : 'text-slate-400 hover:bg-slate-100 hover:text-teal-600'}`}>
@@ -3126,6 +3335,8 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                             </div>
                         </div>
                     )}
+
+                    {receiptJob && <ReceiptDialog job={receiptJob} onClose={() => setReceiptJob(null)} />}
 
                     {smsModal && !isEditingTemplates && (
                         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-5 backdrop-blur-sm">
