@@ -308,15 +308,19 @@
                     await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => window.html2canvas);
                     if (format === 'pdf') await ensureLibrary('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf);
                     await document.fonts.ready;
-                    const previewStyle = getComputedStyle(paper.current);
-                    const exportWidth = paper.current.getBoundingClientRect().width;
-                    const exportViewport = window.innerWidth;
+                    // Fixed desktop layout: 609 CSS px produces a 1218 px JPG at scale 2.
+                    // Never derive export dimensions or padding from the mobile preview.
+                    const exportWidth = 609;
+                    const exportViewport = 1024;
                     staging = document.createElement('div');
                     staging.style.cssText = `position:absolute;left:-10000px;top:0;width:${exportWidth}px;background:white`;
                     const copy = paper.current.cloneNode(true);
                     copy.style.boxSizing = 'border-box';
                     copy.style.width = `${exportWidth}px`;
-                    copy.style.padding = previewStyle.padding;
+                    copy.style.padding = '32px';
+                    copy.style.maxWidth = 'none';
+                    copy.style.setProperty('-webkit-text-size-adjust', 'none');
+                    copy.style.setProperty('text-size-adjust', 'none');
                     staging.appendChild(copy); document.body.appendChild(staging);
                     await document.fonts.ready;
                     await Promise.all(Array.from(copy.querySelectorAll('img')).map(img => img.decode()));
