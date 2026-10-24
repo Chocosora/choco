@@ -123,6 +123,7 @@
                     <button class="btn-font" id="btn-dec">-</button>
                     <button class="btn-font" id="btn-inc">+</button>
                 </div>
+                <button id="btn-align" class="offline-button" aria-pressed="false">가운데 정렬</button>
                 <button id="save-current" class="offline-button">오프라인 저장</button>
                 <button id="btn-edit">수정</button>
             </div>
@@ -467,6 +468,22 @@
         document.getElementById('btn-reset').onclick = () => {
             resetHighlight();
         };
+
+        const alignmentButton = document.getElementById('btn-align');
+        const alignmentKey = 'choco-prom-alignment:' + location.pathname;
+        let centered = false;
+        try { centered = localStorage.getItem(alignmentKey) === 'center'; } catch (_) {}
+        function applyAlignment() {
+            scriptContainer.style.textAlign = centered ? 'center' : 'left';
+            alignmentButton.textContent = centered ? '왼쪽 정렬' : '가운데 정렬';
+            alignmentButton.setAttribute('aria-pressed', String(centered));
+        }
+        alignmentButton.onclick = () => {
+            centered = !centered;
+            applyAlignment();
+            try { localStorage.setItem(alignmentKey, centered ? 'center' : 'left'); } catch (_) {}
+        };
+        applyAlignment();
 
         let fontSize = 26;
         document.getElementById('btn-inc').onclick = () => { fontSize+=2; scriptContainer.style.fontSize = fontSize+'px'; };
