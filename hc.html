@@ -590,8 +590,20 @@
                 { description: '석회제거', amount: '10' },
                 { description: '양변기 이물질 제거', amount: '15' },
                 { description: '백시멘트 시공', amount: '5' },
-                { description: '세탁실 유가 점검', amount: '10' }
+                { description: '세탁실 유가 점검', amount: '10' },
+                { description: '스탠 배수통', amount: '10' }
             ];
+            // 10만원짜리 스탠 배수통 작업 한 줄을 1건으로 정산한다.
+            // 기존 작업 데이터 구조를 유지하여 저장·수정·백업에도 동일하게 적용한다.
+            const countSteelDrainTasks = (job) => (job.tasks || []).filter(task =>
+                (task.description || '').replace(/\s/g, '') === '스탠배수통' && Number(task.amount) === 10
+            ).length;
+            const calculateCommission = (net, steelDrainCount) =>
+                (net - steelDrainCount * 100000) * 0.3 + steelDrainCount * 40000;
+            const commissionLabel = (steelDrainCount) => steelDrainCount > 0
+                ? `수수료(30%) + 스탠 배수통 ${steelDrainCount}건`
+                : '수수료(30%)';
+
             const addressInputRef = useRef(null);
             const detailsInputRef = useRef(null);
 
@@ -1040,13 +1052,15 @@
                     }
                 });
 
-                const fee = totalNet * 0.3; 
+                const steelDrainCount = monthJobs.reduce((sum, job) => sum + countSteelDrainTasks(job), 0);
+                const fee = calculateCommission(totalNet, steelDrainCount);
                 const finalProfit = totalNet - fee;
 
                 return {
                     totalRev,
                     totalMat,
                     totalNet,
+                    steelDrainCount,
                     fee,
                     finalProfit,
                     completedCount,
@@ -1839,7 +1853,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                     const dateStr = job.dates.find(d => d.startsWith(`${currentDateView.getFullYear()}-${String(currentDateView.getMonth() + 1).padStart(2, '0')}`)) || job.dates[0];
                     const tasksStr = job.tasks?.map(t => t.description || '내용없음').join(', ') || '내용없음';
                     const net = job.netIncome !== undefined ? job.netIncome : ((job.totalAmount || 0) - (job.totalMaterialCost || 0));
-                    const fee = net * 0.3;
+                    const fee = calculateCommission(net, countSteelDrainTasks(job));
                     const finalProfit = net - fee;
                     
                     wsData.push([
@@ -1907,7 +1921,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                         ['총 매출',    `${monthlyStats.totalRev.toLocaleString()} 원`],
                         ['총 자재비',  `-${monthlyStats.totalMat.toLocaleString()} 원`],
                         ['순수입',     `${monthlyStats.totalNet.toLocaleString()} 원`],
-                        ['수수료(30%)',`-${monthlyStats.fee.toLocaleString()} 원`],
+                        [commissionLabel(monthlyStats.steelDrainCount),`-${monthlyStats.fee.toLocaleString()} 원`],
                         ['최종 정산액',`${monthlyStats.finalProfit.toLocaleString()} 원`],
                     ];
 
@@ -1927,11 +1941,11 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                         pdf.setFontSize(8);
                         pdf.setFont('NanumGothic', 'normal');
                         pdf.setTextColor(100, 100, 120);
-                        pdf.text(label, x + colW / 2, boxTop + 6, { align: 'center' });
+                        pdf.text(label.includes(' + 스탠 배수통') ? label.replace(' + ', '\n+ ') : label, x + colW / 2, boxTop + 6, { align: 'center' });
                         // 값
                         pdf.setFontSize(isLast ? 10 : 9);
                         pdf.setFont('NanumGothic', 'bold');
-                        pdf.setTextColor(isLast ? 67 : (label.includes('-') || label === '총 자재비' || label === '수수료(30%)') ? 200 : 30,
+                        pdf.setTextColor(isLast ? 67 : (label.includes('-') || label === '총 자재비' || label.startsWith('수수료(30%)')) ? 200 : 30,
                                          isLast ? 56 : 30,
                                          isLast ? 202 : 30);
                         pdf.text(value, x + colW / 2, boxTop + 14, { align: 'center' });
@@ -1984,7 +1998,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                         const dateStr = (job.dates.find(d => d.startsWith(prefix)) || '').slice(5).replace('-', '/');
                         const tasksStr = job.tasks?.map(t => t.description || '').filter(Boolean).join(', ') || '-';
                         const net = job.netIncome !== undefined ? job.netIncome : ((job.totalAmount || 0) - (job.totalMaterialCost || 0));
-                        const finalPr = net - (net * 0.3);
+                        const finalPr = net - calculateCommission(net, countSteelDrainTasks(job));
 
                         const rowData = [
                             dateStr,
@@ -2084,12 +2098,21 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                 });
 
                 const net = totalRev - totalMat;
-                const fee = net * 0.3;
+                const steelDrainCount = completedJobs.reduce((sum, job) => sum + countSteelDrainTasks(job), 0);
+                const fee = calculateCommission(net, steelDrainCount);
 
                 report += `------------------------\n`;
                 report += `■ 일일 매출: ${totalRev.toLocaleString()}원\n`;
                 report += `■ 총 자재비: ${totalMat.toLocaleString()}원\n`;
-                report += `■ 수수료(30%): ${fee.toLocaleString()}원`;
+                if (steelDrainCount > 0) {
+                    const regularFee = (net - steelDrainCount * 100000) * 0.3;
+                    const steelDrainFee = steelDrainCount * 40000;
+                    report += `■ 수수료(30%): ${regularFee.toLocaleString()}원\n`;
+                    report += `■ 스탠 배수통 ${steelDrainCount}건: ${steelDrainFee.toLocaleString()}원\n`;
+                    report += `■ 총 수수료: ${fee.toLocaleString()}원`;
+                } else {
+                    report += `■ 수수료(30%): ${fee.toLocaleString()}원`;
+                }
 
                 return report;
             };
@@ -2686,7 +2709,7 @@ notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요�
                                             <div className="text-xl font-extrabold text-indigo-700">{monthlyStats.totalNet.toLocaleString()}원</div>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-bold text-slate-600 border-t border-indigo-200 pt-2.5">
-                                            <span>수수료 (30%)</span>
+                                            <span>{monthlyStats.steelDrainCount > 0 ? commissionLabel(monthlyStats.steelDrainCount) : '수수료 (30%)'}</span>
                                             <span className="text-red-500">-{monthlyStats.fee.toLocaleString()}원</span>
                                         </div>
                                         <div className="flex justify-between items-center text-base font-extrabold text-slate-800 mt-1.5">
