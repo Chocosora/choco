@@ -1130,20 +1130,51 @@
                     road.underground_yn === 'Y' ? '지하' : '', building].filter(Boolean).join(' ');
             };
 
-            // 도로명+건물번호 바로 뒤의 축약 동·호수는 AI가 누락해도 원문에서 복원한다.
+            // 도로명+건물번호 뒤의 건물명 및 동·호수는 AI가 누락하거나 검색어에 넣어도 원문에서 복원한다.
             const recoverUnitDetails = (source, searchQuery, details) => {
                 const road = source.match(/[가-힣][가-힣0-9]*(?:대로|로|길)\s*\d+(?:-\d+)?(?=\s|,|$)/);
                 if (!road) return { searchQuery, details };
                 const tail = source.slice(road.index + road[0].length);
-                const unit = tail.match(/^[\s,]+(\d{1,4})\s*[-–]\s*(\d{1,4})(?![\d-])(?=\s|[,.)]|$)/);
-                if (!unit || /^0/.test(unit[1]) || /^0/.test(unit[2])) return { searchQuery, details };
+
+                // 1) 원문에서 도로명주소와 동·호수 사이에 적힌 아파트/건물명 추출
+                let buildingName = '';
+                const unitMatch = tail.match(/(?:(?<!\d)\d{1,4}\s*동(?:\s*\d{1,4}\s*호)?|(?<![\d-])\d{1,4}\s*[-–]\s*\d{1,4}(?![\d-])|(?<!\d)\d{1,4}\s*호)/);
+                if (unitMatch && unitMatch.index > 0) {
+                    const between = tail.slice(0, unitMatch.index)
+                        .replace(/\([^)]*\)/g, ' ')
+                        .replace(/^[\s,.:;-]+|[\s,.:;-]+$/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    const isVisitHint = /(?:주차|진입|출입|정문|후문|비밀번호|비번|도착|방문|연락|전화|문자)/.test(between);
+                    const isPhone = /\d{2,4}[ -]?\d{3,4}[ -]?\d{4}/.test(between);
+                    if (between && /[가-힣A-Za-z]/.test(between) && between.length <= 30 && !isVisitHint && !isPhone) {
+                        buildingName = between;
+                    }
+                }
+
+                let cleanQuery = searchQuery;
+                let cleanDetails = details;
+
+                // AI가 건물명을 search_query에 잘못 넣었을 경우 제거하고 details 앞에 복원
+                if (buildingName) {
+                    const bPattern = new RegExp(buildingName.trim().split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*'), 'g');
+                    cleanQuery = cleanQuery.replace(bPattern, '').replace(/\s+/g, ' ').trim();
+                    const compactDetails = cleanDetails.replace(/\s+/g, '');
+                    const compactBName = buildingName.replace(/\s+/g, '');
+                    if (!compactDetails.includes(compactBName)) {
+                        cleanDetails = [buildingName, cleanDetails].filter(Boolean).join(' ');
+                    }
+                }
+
+                // 2) 축약형 동·호수(예: 108-1803) 복원 (건물명 뒤에 나오는 경우도 포함)
+                const afterBuilding = buildingName && unitMatch ? tail.slice(unitMatch.index) : tail;
+                const unit = afterBuilding.match(/^[\s,]*(\d{1,4})\s*[-–]\s*(\d{1,4})(?![\d-])(?=\s|[,.)]|$)/);
+                if (!unit || /^0/.test(unit[1]) || /^0/.test(unit[2])) return { searchQuery: cleanQuery, details: cleanDetails };
                 const building = unit[1], room = unit[2];
                 const shorthand = new RegExp(`(?<![\\d-])${building}\\s*[-–]\\s*${room}(?![\\d-])`, 'g');
                 const explicit = new RegExp(`(?<!\\d)${building}\\s*동\\s*${room}\\s*호`, 'g');
-                // AI가 축약 표기를 검색어에 포함한 경우 검색어에서도 분리한다.
-                const cleanQuery = searchQuery.replace(shorthand, '').replace(explicit, '').trim();
-                let cleanDetails = details.replace(shorthand, '').replace(explicit, '');
-                cleanDetails = cleanDetails
+                cleanQuery = cleanQuery.replace(shorthand, '').replace(explicit, '').trim();
+                cleanDetails = cleanDetails.replace(shorthand, '').replace(explicit, '')
                     .replace(new RegExp(`(?<!\\d)${building}\\s*동`, 'g'), '')
                     .replace(new RegExp(`(?<!\\d)${room}\\s*호`, 'g'), '')
                     .replace(/\s+/g, ' ').trim();
@@ -1315,8 +1346,9 @@
                 setIsProcessing(true);
                 try {
                     const prompt = `고객 문자에서 주소 정보를 추출해 JSON으로 반환해.
-search_query: 원문에 있는 도로명+건물번호 또는 지번 주소. 시도/시군구를 보존하고 없는 지역은 추측하지 마. 도로명 숫자, 길, 번길, 건물번호를 삭제하거나 바꾸지 마. 도로명/지번이 없을 때만 지역+건물명 사용.
-details: 아파트명/건물명, 동·호수, 실제 방문 층수. 주소 뒤의 "1407-2510" 같은 축약 표기는 "1407동 2510호"로 풀어서 반드시 details에 넣어. 도로명주소의 건물번호(예: 180-2)와 구분해.
+search_query: 원문에 있는 도로명+건물번호 또는 지번 주소만 추출해. 시도/시군구를 보존하고 없는 지역은 추측하지 마. 도로명 숫자, 길, 번길, 건물번호를 삭제하거나 바꾸지 마. 원문에 도로명/지번 주소가 있으면 아파트명/건물명은 절대 search_query에 넣지 말고 details로 보내. 도로명/지번이 아예 없을 때만 지역+건물명 사용.
+details: 원문에 적혀 있는 아파트명/건물명, 동·호수, 실제 방문 층수. 원문에 아파트명/건물명이 적혀 있으면 생략하지 말고 동·호수와 함께 반드시 details에 넣어. 반대로 원문에 아파트명/건물명이 없고 동·호수만 있으면 아파트명을 임의로 추측해서 넣지 말고 동·호수만 넣어. 주소 뒤의 "1407-2510" 같은 축약 표기는 "1407동 2510호"로 풀어서 반드시 details에 넣어. 도로명주소의 건물번호(예: 180-2)와 구분해.
+예: "경기도 남양주시 화도읍 비룡로 186\n두산위브 트레지움 108동 1803호" → search_query="경기도 남양주시 화도읍 비룡로 186", details="두산위브 트레지움 108동 1803호", notes="".
 예: "미사강변동로180 1407-2510" → search_query="미사강변동로 180", details="1407동 2510호", notes="".
 예: "미사강변동로180-2" → search_query="미사강변동로 180-2", details="", notes="".
 notes: 주차 위치·주차할 층수, 출입 경로, 비밀번호, 연락 요청을 빠짐없이 간결한 메모로 정리.
